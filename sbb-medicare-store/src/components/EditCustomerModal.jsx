@@ -1,0 +1,243 @@
+import { useState, useEffect } from 'react';
+import { customersAPI } from '../services/api';
+import { X } from 'lucide-react';
+
+export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer }) {
+    const [formData, setFormData] = useState({
+        full_name: '',
+        mobile_number: '',
+        address: '',
+        landmark: '',
+        latitude: '',
+        longitude: ''
+    });
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (customer) {
+            setFormData({
+                full_name: customer.full_name || '',
+                mobile_number: customer.mobile_number || '',
+                address: customer.address || '',
+                landmark: customer.landmark || '',
+                latitude: customer.latitude || '',
+                longitude: customer.longitude || ''
+            });
+        }
+    }, [customer]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const validate = () => {
+        const newErrors = {};
+
+        if (!formData.full_name.trim()) {
+            newErrors.full_name = 'Full name is required';
+        }
+
+        if (!formData.mobile_number.trim()) {
+            newErrors.mobile_number = 'Mobile number is required';
+        } else if (!/^\d{10}$/.test(formData.mobile_number.trim())) {
+            newErrors.mobile_number = 'Mobile number must be 10 digits';
+        }
+
+        if (!formData.address.trim()) {
+            newErrors.address = 'Address is required';
+        }
+
+        return newErrors;
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const validationErrors = validate();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // Clean up the data
+            const submitData = {
+                full_name: formData.full_name.trim(),
+                mobile_number: formData.mobile_number.trim(),
+                address: formData.address.trim(),
+                landmark: formData.landmark.trim() || null,
+                latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+                longitude: formData.longitude ? parseFloat(formData.longitude) : null
+            };
+
+            await customersAPI.update(customer.id, submitData);
+            alert('Customer updated successfully!');
+
+            setErrors({});
+
+            if (onSuccess) onSuccess();
+            onClose();
+        } catch (error) {
+            console.error('Error updating customer:', error);
+            alert(error.response?.data?.message || 'Error updating customer');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen || !customer) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                    <div className="flex justify-between items-start mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Edit Customer</h2>
+                        <button
+                            onClick={onClose}
+                            className="text-gray-400 hover:text-gray-600"
+                            disabled={isSubmitting}
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Full Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="full_name"
+                                value={formData.full_name}
+                                onChange={handleChange}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    errors.full_name ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Enter customer full name"
+                                disabled={isSubmitting}
+                            />
+                            {errors.full_name && (
+                                <p className="text-red-500 text-sm mt-1">{errors.full_name}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Mobile Number <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="mobile_number"
+                                value={formData.mobile_number}
+                                onChange={handleChange}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    errors.mobile_number ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="10-digit mobile number"
+                                maxLength="10"
+                                disabled={isSubmitting}
+                            />
+                            {errors.mobile_number && (
+                                <p className="text-red-500 text-sm mt-1">{errors.mobile_number}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Address <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                name="address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                rows="3"
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    errors.address ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Enter complete delivery address"
+                                disabled={isSubmitting}
+                            />
+                            {errors.address && (
+                                <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Landmark (Optional)
+                            </label>
+                            <input
+                                type="text"
+                                name="landmark"
+                                value={formData.landmark}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Near City Mall"
+                                disabled={isSubmitting}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Latitude (Optional)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    name="latitude"
+                                    value={formData.latitude}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g., 12.9716"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Longitude (Optional)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    name="longitude"
+                                    value={formData.longitude}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="e.g., 77.5946"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? 'Updating...' : 'Update Customer'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={isSubmitting}
+                                className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
