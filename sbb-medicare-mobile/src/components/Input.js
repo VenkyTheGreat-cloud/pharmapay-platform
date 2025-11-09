@@ -25,7 +25,7 @@ const Input = ({
           error && styles.inputError,
           !editable && styles.disabled,
         ]}
-        value={value}
+        value={value || ''}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="#9CA3AF"
