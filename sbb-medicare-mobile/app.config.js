@@ -6,12 +6,10 @@ export default {
     slug: 'sbb-medicare-mobile',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     splash: {
-      image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff',
+      backgroundColor: '#3B82F6',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
@@ -29,10 +27,6 @@ export default {
       },
     },
     android: {
-      adaptiveIcon: {
-        foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#ffffff',
-      },
       package: 'com.sbbmedicare.delivery',
       permissions: [
         'ACCESS_FINE_LOCATION',
@@ -47,9 +41,7 @@ export default {
         },
       },
     },
-    web: {
-      favicon: './assets/favicon.png',
-    },
+    web: {},
     plugins: [
       [
         'expo-location',
@@ -67,8 +59,11 @@ export default {
       ],
     ],
     extra: {
-      apiUrl: process.env.API_URL || 'http://localhost:5000/api',
+      apiUrl: process.env.API_URL || 'https://sbb-medicare-api.onrender.com/api',
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
+      eas: {
+        projectId: 'sbb-medicare-mobile',
+      },
     },
   },
 };
