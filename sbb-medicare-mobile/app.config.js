@@ -62,7 +62,7 @@ export default {
       apiUrl: process.env.API_URL || 'https://sbb-medicare-api.onrender.com/api',
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
       eas: {
-        projectId: 'sbb-medicare-mobile',
+        projectId: 'a0686e3d-7909-4dc1-8d80-cb448a35e70e',
       },
     },
   },
