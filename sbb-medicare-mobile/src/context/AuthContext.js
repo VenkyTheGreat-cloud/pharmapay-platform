@@ -65,16 +65,23 @@ export const AuthProvider = ({ children }) => {
   const register = async (registrationData) => {
     try {
       const response = await apiService.register(registrationData);
-      const { token, user: userData } = response.data;
+      const { token, user: userData, message } = response.data;
 
-      // Save token and user data
-      await storage.saveToken(token);
-      await storage.saveUser(userData);
+      // If token is provided, user is approved and can login
+      if (token) {
+        await storage.saveToken(token);
+        await storage.saveUser(userData);
+        setUser(userData);
+        setIsAuthenticated(true);
+        return { success: true };
+      }
 
-      setUser(userData);
-      setIsAuthenticated(true);
-
-      return { success: true };
+      // If no token, account is pending approval
+      return {
+        success: true,
+        pending: true,
+        message: message || 'Registration successful. Your account is pending approval.'
+      };
     } catch (error) {
       console.error('Registration error:', error);
       return {
