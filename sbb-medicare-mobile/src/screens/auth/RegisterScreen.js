@@ -167,9 +167,22 @@ const RegisterScreen = ({ navigation }) => {
 
     setLoading(false);
 
-    if (!result.success) {
+    if (result.success && result.pending) {
+      // Account created but pending approval
+      RNAlert.alert(
+        'Registration Successful!',
+        result.message || 'Your account has been created and is pending admin approval. You will be able to login once approved.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } else if (!result.success) {
       setError(result.message);
     }
+    // If result.success and no pending, user is auto-logged in (no action needed)
   };
 
   return (
