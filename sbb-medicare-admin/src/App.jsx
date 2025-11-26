@@ -5,7 +5,6 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import StoreStaffPage from './pages/StoreStaffPage';
-import OrdersPage from './pages/OrdersPage';
 import CustomersPage from './pages/CustomersPage';
 
 // Protected Route wrapper
@@ -57,14 +56,6 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <StoreStaffPage />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/orders"
-                element={
-                    <ProtectedRoute>
-                        <OrdersPage />
                     </ProtectedRoute>
                 }
             />

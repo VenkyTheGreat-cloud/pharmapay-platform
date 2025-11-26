@@ -18,26 +18,38 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (mobileOrEmail, password) => {
         try {
-            const response = await authAPI.login({ email, password });
-            const { token, user } = response.data;
+            const response = await authAPI.login({ mobileEmail: mobileOrEmail, password });
+            const { token, refreshToken, user: apiUser } = response.data.data || {};
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            setUser(user);
+            if (token) {
+                localStorage.setItem('token', token);
+            }
+            if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+            }
+
+            localStorage.setItem('user', JSON.stringify(apiUser));
+            setUser(apiUser);
 
             return { success: true };
         } catch (error) {
             return {
                 success: false,
-                error: error.response?.data?.error || 'Login failed',
+                error: error.response?.data?.message || 'Login failed',
             };
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await authAPI.logout();
+        } catch {
+            // ignore logout API failures and still clear client state
+        }
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         setUser(null);
     };

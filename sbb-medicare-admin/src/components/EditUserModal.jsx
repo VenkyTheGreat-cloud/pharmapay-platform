@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { usersAPI } from '../services/api';
+import { deliveryBoysAPI, accessControlAPI } from '../services/api';
 
-export default function EditUserModal({ isOpen, onClose, onSuccess, user }) {
+export default function EditUserModal({ isOpen, onClose, onSuccess, user, userType = 'delivery_boy' }) {
     const [formData, setFormData] = useState({
-        full_name: '',
-        mobile_number: '',
+        name: '',
+        mobile: '',
         address: '',
-        profile_image: '',
-        status: 'active'
+        status: 'active',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -16,11 +15,10 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }) {
     useEffect(() => {
         if (user) {
             setFormData({
-                full_name: user.full_name || '',
-                mobile_number: user.mobile_number || '',
+                name: user.name || '',
+                mobile: user.mobile || '',
                 address: user.address || '',
-                profile_image: user.profile_image || '',
-                status: user.status || 'active'
+                status: user.isActive ? 'active' : 'inactive',
             });
         }
     }, [user]);
@@ -31,12 +29,26 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }) {
         setLoading(true);
 
         try {
-            await usersAPI.update(user.id, formData);
+            if (userType === 'delivery_boy') {
+                await deliveryBoysAPI.update(user.id, {
+                    name: formData.name,
+                    mobile: formData.mobile,
+                    address: formData.address,
+                });
+                await deliveryBoysAPI.toggleActive(user.id, formData.status === 'active');
+            } else {
+                await accessControlAPI.update(user.id, {
+                    name: formData.name,
+                    mobile: formData.mobile,
+                    address: formData.address,
+                });
+                await accessControlAPI.toggleActive(user.id, formData.status === 'active');
+            }
             alert('User updated successfully!');
             onSuccess();
             onClose();
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to update user');
+            setError(err.response?.data?.message || 'Failed to update user');
         } finally {
             setLoading(false);
         }
@@ -85,8 +97,8 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }) {
                             </label>
                             <input
                                 type="text"
-                                value={formData.full_name}
-                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />
@@ -98,8 +110,8 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user }) {
                             </label>
                             <input
                                 type="tel"
-                                value={formData.mobile_number}
-                                onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })}
+                                value={formData.mobile}
+                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />

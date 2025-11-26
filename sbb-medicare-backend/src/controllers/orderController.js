@@ -3,15 +3,42 @@ const OrderItem = require('../models/OrderItem');
 const Customer = require('../models/Customer');
 const DeliveryBoy = require('../models/DeliveryBoy');
 const LocationUpdate = require('../models/LocationUpdate');
+const Payment = require('../models/Payment');
 const logger = require('../config/logger');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
 const { query, transaction } = require('../config/database');
 
+// Helper: normalize incoming date string to YYYY-MM-DD (for consistent filtering)
+const normalizeDateParam = (rawDate) => {
+    if (!rawDate) return null;
+
+    // If it's an ISO datetime (e.g. 2025-11-26T00:00:00.000Z), take the date part
+    if (/^\d{4}-\d{2}-\d{2}T/.test(rawDate)) {
+        return rawDate.slice(0, 10);
+    }
+
+    // If it's already YYYY-MM-DD, use as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+        return rawDate;
+    }
+
+    // Handle common UI formats: DD/MM/YYYY or DD-MM-YYYY
+    const m = rawDate.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+    if (m) {
+        const [, dd, mm, yyyy] = m;
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // Fallback: let PostgreSQL cast it; return raw
+    return rawDate;
+};
+
 // Get all orders with pagination
 exports.getAllOrders = async (req, res, next) => {
     try {
-        const { status, date, page = 1, limit = 20 } = req.query;
+        const { status, date: rawDate, page = 1, limit = 20 } = req.query;
         const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
+        const date = normalizeDateParam(rawDate);
 
         const filters = {
             limit: Math.min(parseInt(limit), 50),
@@ -368,6 +395,70 @@ exports.getOrdersByCustomerMobile = async (req, res, next) => {
         }));
 
         res.json(successResponse(ordersWithItems));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Dashboard statistics for date range
+exports.getDashboardStats = async (req, res, next) => {
+    try {
+        const { from, to } = req.query;
+        if (!from) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'from date is required'));
+        }
+
+        const fromDate = normalizeDateParam(from);
+        const toDate = normalizeDateParam(to || from);
+        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
+
+        // Stats per status for the range (based on assigned_at)
+        const stats = await Order.getDashboardStats({
+            storeId,
+            fromDate,
+            toDate,
+        });
+
+        // Total collected amount for this range
+        const collectedAmount = await Payment.getCollectedAmountByDateRange(fromDate, toDate, storeId);
+
+        // Orders list in range, excluding ongoing (only DELIVERED / CANCELLED)
+        const orders = await Order.getCompletedByDateRange({
+            storeId,
+            fromDate,
+            toDate,
+        });
+
+        // Attach items to each order
+        const ordersWithItems = await Promise.all(
+            orders.map(async (order) => {
+                const items = await OrderItem.findByOrderId(order.id);
+                return {
+                    ...order,
+                    items: items.map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: parseFloat(item.price),
+                        total: parseFloat(item.total),
+                    })),
+                };
+            })
+        );
+
+        return res.json(
+            successResponse({
+                stats: {
+                    totalOrders: parseInt(stats.total_orders || 0, 10),
+                    deliveredOrders: parseInt(stats.delivered_orders || 0, 10),
+                    assignedOrders: parseInt(stats.assigned_orders || 0, 10),
+                    pickedUpOrders: parseInt(stats.picked_up_orders || 0, 10),
+                    paymentCollectionOrders: parseInt(stats.payment_collection_orders || 0, 10),
+                    collectedAmount,
+                },
+                orders: ordersWithItems,
+            })
+        );
     } catch (error) {
         next(error);
     }

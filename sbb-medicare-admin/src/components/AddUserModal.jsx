@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { usersAPI } from '../services/api';
+import { deliveryBoysAPI, accessControlAPI } from '../services/api';
 
 export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'delivery_boy' }) {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        full_name: '',
-        mobile_number: '',
+        name: '',
+        mobile: '',
         address: '',
-        profile_image: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -20,24 +19,36 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
         setLoading(true);
 
         try {
-            await usersAPI.create({
-                ...formData,
-                role: userType
-            });
+            if (userType === 'delivery_boy') {
+                await deliveryBoysAPI.create({
+                    name: formData.name,
+                    email: formData.email,
+                    mobile: formData.mobile,
+                    address: formData.address,
+                    // backend will set status / isActive
+                });
+            } else {
+                await accessControlAPI.create({
+                    name: formData.name,
+                    email: formData.email,
+                    mobile: formData.mobile,
+                    password: formData.password,
+                    address: formData.address,
+                });
+            }
 
-            alert(`${userType === 'store_staff' ? 'Store Staff' : 'Delivery Boy'} created successfully!`);
+            alert(`${userType === 'store_staff' ? 'Store Manager' : 'Delivery Boy'} created successfully!`);
             onSuccess();
             onClose();
             setFormData({
                 email: '',
                 password: '',
-                full_name: '',
-                mobile_number: '',
+                name: '',
+                mobile: '',
                 address: '',
-                profile_image: ''
             });
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to create user');
+            setError(err.response?.data?.message || 'Failed to create user');
         } finally {
             setLoading(false);
         }
@@ -74,8 +85,8 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                             </label>
                             <input
                                 type="text"
-                                value={formData.full_name}
-                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />
@@ -96,7 +107,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Password *
+                                Password {userType === 'store_staff' && '*'} 
                             </label>
                             <input
                                 type="password"
@@ -104,7 +115,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 minLength={6}
-                                required
+                                required={userType === 'store_staff'}
                             />
                             <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
                         </div>
@@ -115,8 +126,8 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                             </label>
                             <input
                                 type="tel"
-                                value={formData.mobile_number}
-                                onChange={(e) => setFormData({ ...formData, mobile_number: e.target.value })}
+                                value={formData.mobile}
+                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />

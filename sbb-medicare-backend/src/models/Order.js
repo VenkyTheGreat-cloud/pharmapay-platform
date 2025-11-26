@@ -99,8 +99,11 @@ class Order {
             paramCount++;
         }
 
+        // Date filter (treats value as a calendar day, regardless of time)
+        // Business definition: \"today's orders\" = orders ASSIGNED on that day
         if (filters.date) {
-            queryText += ` AND DATE(o.created_at) = $${paramCount}`;
+            // Accept either 'YYYY-MM-DD' or full ISO datetime; we cast to ::date
+            queryText += ` AND o.assigned_at >= $${paramCount}::date AND o.assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
             params.push(filters.date);
             paramCount++;
         }
@@ -147,8 +150,9 @@ class Order {
             paramCount++;
         }
 
+        // Same date handling as in findAll (based on assigned_at)
         if (filters.date) {
-            queryText += ` AND DATE(created_at) = $${paramCount}`;
+            queryText += ` AND assigned_at >= $${paramCount}::date AND assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
             params.push(filters.date);
             paramCount++;
         }
@@ -187,6 +191,72 @@ class Order {
         }
 
         queryText += ' ORDER BY o.created_at DESC';
+        const result = await query(queryText, params);
+        return result.rows;
+    }
+
+    // Get dashboard statistics for a date range (based on created_at)
+    static async getDashboardStats({ storeId, fromDate, toDate }) {
+        const params = [];
+        let paramCount = 1;
+
+        let where = 'WHERE o.created_at >= $1::date AND o.created_at < ($2::date + INTERVAL \'1 day\')';
+        params.push(fromDate, toDate || fromDate);
+        paramCount = 3;
+
+        if (storeId) {
+            where += ` AND o.store_id = $${paramCount}`;
+            params.push(storeId);
+            paramCount++;
+        }
+
+        const statsQuery = `
+            SELECT
+                COUNT(*) AS total_orders,
+                COUNT(*) FILTER (WHERE o.status = 'DELIVERED') AS delivered_orders,
+                COUNT(*) FILTER (WHERE o.status = 'ASSIGNED') AS assigned_orders,
+                COUNT(*) FILTER (WHERE o.status = 'PICKED_UP') AS picked_up_orders,
+                COUNT(*) FILTER (WHERE o.status = 'PAYMENT_COLLECTION') AS payment_collection_orders
+            FROM orders o
+            ${where}
+        `;
+
+        const statsResult = await query(statsQuery, params);
+        return statsResult.rows[0];
+    }
+
+    // Get orders in date range for list
+    // Requirements:
+    // - Only orders inside date range (created_at)
+    // - Show statuses: ASSIGNED, PICKED_UP, PAYMENT_COLLECTION, DELIVERED
+    // - Do NOT show IN_TRANSIT or other active statuses
+    static async getCompletedByDateRange({ storeId, fromDate, toDate }) {
+        const params = [];
+        let paramCount = 1;
+
+        let queryText = `
+            SELECT o.*,
+                   db.name as delivery_boy_name,
+                   db.mobile as delivery_boy_mobile,
+                   u.name as store_name
+            FROM orders o
+            LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+            LEFT JOIN users u ON o.store_id = u.id
+            WHERE o.created_at >= $1::date
+              AND o.created_at < ($2::date + INTERVAL '1 day')
+              AND o.status IN ('ASSIGNED', 'PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED')
+        `;
+        params.push(fromDate, toDate || fromDate);
+        paramCount = 3;
+
+        if (storeId) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(storeId);
+            paramCount++;
+        }
+
+        queryText += ' ORDER BY o.assigned_at DESC';
+
         const result = await query(queryText, params);
         return result.rows;
     }

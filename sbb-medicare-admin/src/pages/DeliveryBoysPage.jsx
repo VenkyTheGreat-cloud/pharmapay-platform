@@ -1,27 +1,25 @@
 import { useState, useEffect } from 'react';
-import { usersAPI } from '../services/api';
-import { UserCheck, UserX, Users, Clock, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { deliveryBoysAPI } from '../services/api';
+import { UserCheck, UserX, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
 
 export default function DeliveryBoysPage() {
     const [deliveryBoys, setDeliveryBoys] = useState([]);
-    const [pendingRequests, setPendingRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('all'); // all, active, pending
+    const [activeTab, setActiveTab] = useState('all'); // all, active, inactive
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         loadDeliveryBoys();
-        loadPendingRequests();
     }, []);
 
     const loadDeliveryBoys = async () => {
         try {
-            const response = await usersAPI.getDeliveryBoys();
-            setDeliveryBoys(response.data.delivery_boys || []);
+            const response = await deliveryBoysAPI.getAll();
+            setDeliveryBoys(response.data?.data || []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
         } finally {
@@ -29,46 +27,11 @@ export default function DeliveryBoysPage() {
         }
     };
 
-    const loadPendingRequests = async () => {
-        try {
-            const response = await usersAPI.getPendingRequests();
-            setPendingRequests(response.data.pending_requests || []);
-        } catch (error) {
-            console.error('Error loading pending requests:', error);
-        }
-    };
-
-    const handleApprove = async (userId) => {
-        if (!confirm('Approve this delivery boy?')) return;
-
-        try {
-            await usersAPI.updateStatus(userId, 'active');
-            loadDeliveryBoys();
-            loadPendingRequests();
-            alert('Delivery boy approved successfully');
-        } catch (error) {
-            alert('Error approving delivery boy');
-        }
-    };
-
-    const handleReject = async (userId) => {
-        if (!confirm('Reject this delivery boy request?')) return;
-
-        try {
-            await usersAPI.updateStatus(userId, 'rejected');
-            loadDeliveryBoys();
-            loadPendingRequests();
-            alert('Request rejected');
-        } catch (error) {
-            alert('Error rejecting request');
-        }
-    };
-
     const handleDelete = async (userId) => {
         if (!confirm('Are you sure you want to delete this delivery boy?')) return;
 
         try {
-            await usersAPI.delete(userId);
+            await deliveryBoysAPI.delete(userId);
             loadDeliveryBoys();
             alert('Delivery boy deleted successfully');
         } catch (error) {
@@ -80,7 +43,7 @@ export default function DeliveryBoysPage() {
         if (!confirm('Deactivate this delivery boy?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'inactive');
+            await deliveryBoysAPI.toggleActive(userId, false);
             loadDeliveryBoys();
             alert('Delivery boy deactivated');
         } catch (error) {
@@ -89,8 +52,8 @@ export default function DeliveryBoysPage() {
     };
 
     const filteredDeliveryBoys = deliveryBoys.filter((boy) => {
-        if (activeTab === 'active') return boy.status === 'active';
-        if (activeTab === 'pending') return boy.status === 'pending';
+        if (activeTab === 'active') return boy.isActive;
+        if (activeTab === 'inactive') return !boy.isActive;
         return true;
     });
 
@@ -119,16 +82,6 @@ export default function DeliveryBoysPage() {
                 </button>
             </div>
 
-            {/* Pending Requests Alert */}
-            {pendingRequests.length > 0 && (
-                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-yellow-600" />
-                    <span className="text-yellow-800">
-                        You have {pendingRequests.length} pending approval request(s)
-                    </span>
-                </div>
-            )}
-
             {/* Tabs */}
             <div className="mb-6 flex gap-4 border-b">
                 <button
@@ -149,17 +102,17 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({deliveryBoys.filter((b) => b.status === 'active').length})
+                    Active ({deliveryBoys.filter((b) => b.isActive).length})
                 </button>
                 <button
-                    onClick={() => setActiveTab('pending')}
+                    onClick={() => setActiveTab('inactive')}
                     className={`pb-2 px-4 ${
-                        activeTab === 'pending'
+                        activeTab === 'inactive'
                             ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
-                    Pending ({pendingRequests.length})
+                    Inactive ({deliveryBoys.filter((b) => !b.isActive).length})
                 </button>
             </div>
 
@@ -197,38 +150,21 @@ export default function DeliveryBoysPage() {
                                 <tr key={boy.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{boy.full_name}</div>
+                                            <div className="text-sm font-medium text-gray-900">{boy.name}</div>
                                             <div className="text-sm text-gray-500">{boy.email}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{boy.mobile_number}</div>
+                                        <div className="text-sm text-gray-900">{boy.mobile}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge status={boy.status} />
+                                        <StatusBadge isActive={boy.isActive} status={boy.status} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(boy.created_at).toLocaleDateString()}
+                                        {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        {boy.status === 'pending' ? (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleApprove(boy.id)}
-                                                    className="text-green-600 hover:text-green-900"
-                                                    title="Approve"
-                                                >
-                                                    <CheckCircle className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReject(boy.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Reject"
-                                                >
-                                                    <XCircle className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        ) : boy.status === 'active' ? (
+                                        {boy.isActive ? (
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => {
@@ -290,7 +226,6 @@ export default function DeliveryBoysPage() {
                 onClose={() => setShowAddModal(false)}
                 onSuccess={() => {
                     loadDeliveryBoys();
-                    loadPendingRequests();
                 }}
                 userType="delivery_boy"
             />
@@ -304,23 +239,24 @@ export default function DeliveryBoysPage() {
                 }}
                 onSuccess={() => {
                     loadDeliveryBoys();
-                    loadPendingRequests();
                 }}
                 user={selectedUser}
+                userType="delivery_boy"
             />
         </div>
     );
 }
 
-function StatusBadge({ status }) {
-    const statusConfig = {
-        active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
-        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
-        inactive: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' },
-        rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' },
-    };
+function StatusBadge({ isActive, status }) {
+    let config;
 
-    const config = statusConfig[status] || statusConfig.pending;
+    if (status === 'pending') {
+        config = { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending Approval' };
+    } else if (isActive) {
+        config = { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' };
+    } else {
+        config = { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' };
+    }
 
     return (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${config.bg} ${config.text}`}>

@@ -16,6 +16,9 @@ router.get('/today', checkStoreAccess, orderController.getTodayOrders);
 // Get ongoing orders
 router.get('/ongoing', checkStoreAccess, orderController.getOngoingOrders);
 
+// Dashboard statistics for date range
+router.get('/dashboard', checkStoreAccess, orderController.getDashboardStats);
+
 // Get order by ID
 router.get('/:id', checkStoreAccess, orderController.getOrderById);
 

@@ -115,6 +115,28 @@ class Payment {
         );
         return result.rows[0];
     }
+
+    // Get total collected amount for orders in a date range (based on order.created_at)
+    static async getCollectedAmountByDateRange(fromDate, toDate, storeId = null) {
+        let queryText = `
+            SELECT COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as total_collected
+            FROM payments p
+            INNER JOIN orders o ON p.order_id = o.id
+            WHERE p.status = 'CONFIRMED'
+              AND o.created_at >= $1::date
+              AND o.created_at < ($2::date + INTERVAL '1 day')
+        `;
+        const params = [fromDate, toDate || fromDate];
+        let paramCount = 3;
+
+        if (storeId) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(storeId);
+        }
+
+        const result = await query(queryText, params);
+        return parseFloat(result.rows[0].total_collected || 0);
+    }
 }
 
 module.exports = Payment;

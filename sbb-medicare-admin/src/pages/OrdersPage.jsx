@@ -1,27 +1,51 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, Calendar, Filter, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: '',
-        date_from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        date_to: new Date().toISOString().split('T')[0],
+        page: 1,
+        limit: 20,
     });
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
         loadOrders();
-    }, [filters]);
+    }, [filters.status, filters.page, filters.limit]);
+
+    const normalizeOrder = (apiOrder) => ({
+        id: apiOrder.id,
+        orderNumber: apiOrder.orderNumber,
+        customerName: apiOrder.customerName,
+        customerMobile: apiOrder.customerMobile,
+        deliveryBoyName: apiOrder.deliveryBoyName,
+        deliveryBoyMobile: apiOrder.deliveryBoyMobile,
+        status: apiOrder.status,
+        amount: apiOrder.amount,
+        paymentMode: apiOrder.paymentMode,
+        paymentStatus: apiOrder.paymentStatus,
+        customerComments: apiOrder.customerComments,
+        address: apiOrder.address,
+        createdTime: apiOrder.createdTime,
+        deliveredAt: apiOrder.deliveredAt,
+        items: apiOrder.items || [],
+    });
 
     const loadOrders = async () => {
         try {
             setLoading(true);
-            const response = await ordersAPI.getAll(filters);
-            setOrders(response.data.orders || []);
+            const params = {
+                status: filters.status || undefined,
+                page: filters.page,
+                limit: filters.limit,
+            };
+            const response = await ordersAPI.getAll(params);
+            const list = response.data?.data?.orders || [];
+            setOrders(list.map(normalizeOrder));
         } catch (error) {
             console.error('Error loading orders:', error);
         } finally {
@@ -32,7 +56,8 @@ export default function OrdersPage() {
     const viewOrderDetails = async (orderId) => {
         try {
             const response = await ordersAPI.getById(orderId);
-            setSelectedOrder(response.data.order);
+            const apiOrder = response.data?.data;
+            setSelectedOrder(normalizeOrder(apiOrder));
             setShowModal(true);
         } catch (error) {
             console.error('Error loading order details:', error);
@@ -41,12 +66,11 @@ export default function OrdersPage() {
 
     const getStatusColor = (status) => {
         const colors = {
-            new: 'bg-blue-100 text-blue-800',
-            assigned: 'bg-purple-100 text-purple-800',
-            picked_up: 'bg-yellow-100 text-yellow-800',
-            in_transit: 'bg-orange-100 text-orange-800',
-            delivered: 'bg-green-100 text-green-800',
-            cancelled: 'bg-red-100 text-red-800',
+            ASSIGNED: 'bg-purple-100 text-purple-800',
+            PICKED_UP: 'bg-yellow-100 text-yellow-800',
+            IN_TRANSIT: 'bg-orange-100 text-orange-800',
+            DELIVERED: 'bg-green-100 text-green-800',
+            CANCELLED: 'bg-red-100 text-red-800',
         };
         return colors[status] || 'bg-gray-100 text-gray-800';
     };
@@ -65,35 +89,15 @@ export default function OrdersPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                         <select
                             value={filters.status}
-                            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                            onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
                             className="border border-gray-300 rounded px-3 py-2"
                         >
                             <option value="">All Status</option>
-                            <option value="new">New</option>
-                            <option value="assigned">Assigned</option>
-                            <option value="picked_up">Picked Up</option>
-                            <option value="in_transit">In Transit</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="IN_TRANSIT">In Transit</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
                         </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                        <input
-                            type="date"
-                            value={filters.date_from}
-                            onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
-                            className="border border-gray-300 rounded px-3 py-2"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                        <input
-                            type="date"
-                            value={filters.date_to}
-                            onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
-                            className="border border-gray-300 rounded px-3 py-2"
-                        />
                     </div>
                 </div>
             </div>
@@ -143,20 +147,20 @@ export default function OrdersPage() {
                                     <tr key={order.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {order.order_number}
+                                                {order.orderNumber}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.customer_name}</div>
-                                            <div className="text-sm text-gray-500">{order.customer_mobile}</div>
+                                            <div className="text-sm text-gray-900">{order.customerName}</div>
+                                            <div className="text-sm text-gray-500">{order.customerMobile}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
-                                                {order.delivery_boy_name || 'Not assigned'}
+                                                {order.deliveryBoyName || 'Not assigned'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">₹{order.total_amount}</div>
+                                            <div className="text-sm text-gray-900">₹{order.amount}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -164,11 +168,13 @@ export default function OrdersPage() {
                                                     order.status
                                                 )}`}
                                             >
-                                                {order.status.replace('_', ' ').toUpperCase()}
+                                                {order.status}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(order.created_at).toLocaleDateString()}
+                                            {order.createdTime
+                                                ? new Date(order.createdTime).toLocaleDateString()
+                                                : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <button
@@ -205,14 +211,14 @@ export default function OrdersPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Order Number</h3>
-                                    <p className="text-gray-900">{selectedOrder.order_number}</p>
+                                    <p className="text-gray-900">{selectedOrder.orderNumber}</p>
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Customer</h3>
-                                    <p className="text-gray-900">{selectedOrder.customer_name}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customer_mobile}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customer_address}</p>
+                                    <p className="text-gray-900">{selectedOrder.customerName}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.address}</p>
                                 </div>
 
                                 <div>
@@ -224,7 +230,7 @@ export default function OrdersPage() {
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Total Amount</h3>
-                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.total_amount}</p>
+                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount}</p>
                                 </div>
 
                                 <div>
@@ -234,22 +240,22 @@ export default function OrdersPage() {
                                             selectedOrder.status
                                         )}`}
                                     >
-                                        {selectedOrder.status.replace('_', ' ').toUpperCase()}
+                                        {selectedOrder.status}
                                     </span>
                                 </div>
 
-                                {selectedOrder.delivery_boy_name && (
+                                {selectedOrder.deliveryBoyName && (
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Delivery Boy</h3>
-                                        <p className="text-gray-900">{selectedOrder.delivery_boy_name}</p>
-                                        <p className="text-sm text-gray-600">{selectedOrder.delivery_boy_mobile}</p>
+                                        <p className="text-gray-900">{selectedOrder.deliveryBoyName}</p>
+                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile}</p>
                                     </div>
                                 )}
 
-                                {selectedOrder.notes && (
+                                {selectedOrder.customerComments && (
                                     <div>
-                                        <h3 className="font-semibold text-gray-700">Notes</h3>
-                                        <p className="text-gray-900">{selectedOrder.notes}</p>
+                                        <h3 className="font-semibold text-gray-700">Customer Comments</h3>
+                                        <p className="text-gray-900">{selectedOrder.customerComments}</p>
                                     </div>
                                 )}
                             </div>

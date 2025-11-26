@@ -1,159 +1,199 @@
 import { useState, useEffect } from 'react';
-import { ordersAPI, paymentsAPI } from '../services/api';
-import { Package, DollarSign, CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ordersAPI } from '../services/api';
+import { Package, DollarSign, CheckCircle, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
-    const [orderStats, setOrderStats] = useState([]);
-    const [paymentStats, setPaymentStats] = useState(null);
+    const [allOrders, setAllOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState({
-        date_from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        date_to: new Date().toISOString().split('T')[0],
+    const [filters, setFilters] = useState(() => {
+        const today = new Date();
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const fmt = (d) => d.toISOString().split('T')[0];
+        return {
+            fromDate: fmt(sevenDaysAgo),
+            toDate: fmt(today),
+        };
     });
 
     useEffect(() => {
-        loadStats();
-    }, [dateRange]);
+        loadDashboardData();
+    }, []);
 
-    const loadStats = async () => {
+    const loadDashboardData = async () => {
         try {
             setLoading(true);
-            const [ordersRes, paymentsRes] = await Promise.all([
-                ordersAPI.getStatistics(dateRange),
-                paymentsAPI.getStatistics(dateRange),
-            ]);
-
-            setOrderStats(ordersRes.data.statistics || []);
-            setPaymentStats(paymentsRes.data.statistics || {});
+            const allRes = await ordersAPI.getAll({ page: 1, limit: 500 });
+            const allList = allRes.data?.data?.orders || [];
+            setAllOrders(allList);
         } catch (error) {
-            console.error('Error loading stats:', error);
+            console.error('Error loading dashboard data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const totalOrders = orderStats.reduce((sum, day) => sum + parseInt(day.total_orders || 0), 0);
-    const totalRevenue = orderStats.reduce((sum, day) => sum + parseFloat(day.total_amount || 0), 0);
-    const deliveredOrders = orderStats.reduce((sum, day) => sum + parseInt(day.delivered_orders || 0), 0);
+    const filteredOrders = allOrders.filter((order) => {
+        if (!order.createdTime) return true;
+        const orderDate = order.createdTime.split('T')[0];
+        if (filters.fromDate && orderDate < filters.fromDate) return false;
+        if (filters.toDate && orderDate > filters.toDate) return false;
+        return true;
+    });
+
+    // Stats for the selected date range
+    const totalOrders = filteredOrders.length;
+    const assignedOrders = filteredOrders.filter((o) => o.status === 'ASSIGNED').length;
+    const pickedUpOrders = filteredOrders.filter(
+        (o) => o.status === 'PICKED_UP' || o.status === 'IN_TRANSIT'
+    ).length;
+    const deliveredOrders = filteredOrders.filter((o) => o.status === 'DELIVERED').length;
+    const collectedAmount = filteredOrders
+        .filter((o) => o.status === 'DELIVERED')
+        .reduce((sum, o) => sum + (o.amount || 0), 0);
 
     return (
         <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">Overview of orders and deliveries</p>
-            </div>
-
-            {/* Date Range Filter */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4 flex gap-4 items-end">
+            <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
-                    <input
-                        type="date"
-                        value={dateRange.date_from}
-                        onChange={(e) => setDateRange({ ...dateRange, date_from: e.target.value })}
-                        className="border border-gray-300 rounded px-3 py-2"
-                    />
+                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                    <p className="text-gray-600 mt-1">Orders overview, filters, and details</p>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                    <input
-                        type="date"
-                        value={dateRange.date_to}
-                        onChange={(e) => setDateRange({ ...dateRange, date_to: e.target.value })}
-                        className="border border-gray-300 rounded px-3 py-2"
-                    />
+
+                {/* Date filter for full orders table */}
+                <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+                        <input
+                            type="date"
+                            value={filters.fromDate}
+                            onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+                        <input
+                            type="date"
+                            value={filters.toDate}
+                            onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        />
+                    </div>
                 </div>
             </div>
 
             {loading ? (
                 <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading statistics...</p>
+                    <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
                 <>
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    {/* Stats Cards for selected range */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
                         <StatCard
                             icon={<Package className="w-6 h-6" />}
-                            label="Total Orders"
+                            label="Created Orders"
                             value={totalOrders}
                             color="blue"
                         />
                         <StatCard
-                            icon={<DollarSign className="w-6 h-6" />}
-                            label="Total Revenue"
-                            value={`₹${totalRevenue.toFixed(2)}`}
-                            color="green"
+                            icon={<Clock className="w-6 h-6" />}
+                            label="Assigned Orders"
+                            value={assignedOrders}
+                            color="orange"
                         />
                         <StatCard
                             icon={<CheckCircle className="w-6 h-6" />}
-                            label="Delivered"
+                            label="Picked / In Transit"
+                            value={pickedUpOrders}
+                            color="green"
+                        />
+                        <StatCard
+                            icon={<DollarSign className="w-6 h-6" />}
+                            label="Delivered Orders"
                             value={deliveredOrders}
                             color="purple"
                         />
                         <StatCard
-                            icon={<Clock className="w-6 h-6" />}
-                            label="Pending"
-                            value={totalOrders - deliveredOrders}
-                            color="orange"
+                            icon={<DollarSign className="w-6 h-6" />}
+                            label="Collected Amount"
+                            value={`₹${collectedAmount.toFixed(2)}`}
+                            color="purple"
                         />
                     </div>
 
-                    {/* Payment Stats */}
-                    {paymentStats && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Cash:</span>
-                                        <span className="font-semibold">{paymentStats.cash_payments || 0}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Bank:</span>
-                                        <span className="font-semibold">{paymentStats.bank_payments || 0}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Split:</span>
-                                        <span className="font-semibold">{paymentStats.split_payments || 0}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cash Collection</h3>
-                                <p className="text-3xl font-bold text-green-600">
-                                    ₹{parseFloat(paymentStats.total_cash || 0).toFixed(2)}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-2">Total cash collected</p>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Bank Transfers</h3>
-                                <p className="text-3xl font-bold text-blue-600">
-                                    ₹{parseFloat(paymentStats.total_bank || 0).toFixed(2)}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-2">Total bank payments</p>
-                            </div>
+                    {/* Orders Table for selected date range */}
+                    <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
+                        <div className="px-6 py-4 border-b flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-gray-900">Orders in Date Range</h2>
+                            <p className="text-xs text-gray-500">
+                                Showing {filteredOrders.length} of {allOrders.length} orders
+                            </p>
                         </div>
-                    )}
-
-                    {/* Orders Chart */}
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders Overview</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={orderStats}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="order_date" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="total_orders" fill="#3b82f6" name="Total Orders" />
-                                <Bar dataKey="delivered_orders" fill="#10b981" name="Delivered" />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Order #
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Customer
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Delivery Boy
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Amount
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Status
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Created
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredOrders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                                No orders in this date range
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredOrders.map((order) => (
+                                            <tr key={order.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {order.orderNumber}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <div>{order.customerName}</div>
+                                                    <div className="text-gray-500 text-xs">{order.customerMobile}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <div>{order.deliveryBoyName || 'Not assigned'}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    ₹{order.amount}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {order.createdTime
+                                                        ? new Date(order.createdTime).toLocaleString()
+                                                        : '-'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </>
             )}
