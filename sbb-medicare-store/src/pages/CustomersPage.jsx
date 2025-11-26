@@ -21,7 +21,9 @@ export default function CustomersPage() {
         try {
             setLoading(true);
             const response = await customersAPI.getAll();
-            setCustomers(response.data.customers || []);
+            // Backend format: { success, data: { data: [...], pagination: {...} } }
+            const list = response.data?.data?.data || [];
+            setCustomers(list);
         } catch (error) {
             console.error('Error loading customers:', error);
         } finally {
@@ -37,7 +39,8 @@ export default function CustomersPage() {
 
         try {
             const response = await customersAPI.search(searchQuery);
-            setCustomers(response.data.customers || []);
+            const list = response.data?.data?.data || [];
+            setCustomers(list);
         } catch (error) {
             console.error('Error searching customers:', error);
         }
@@ -46,7 +49,8 @@ export default function CustomersPage() {
     const viewCustomerDetails = async (customerId) => {
         try {
             const response = await customersAPI.getById(customerId);
-            setSelectedCustomer(response.data.customer);
+            // Backend: { success, data: {...customer} }
+            setSelectedCustomer(response.data?.data);
             setShowViewModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
@@ -56,7 +60,7 @@ export default function CustomersPage() {
     const handleEdit = async (customerId) => {
         try {
             const response = await customersAPI.getById(customerId);
-            setSelectedCustomer(response.data.customer);
+            setSelectedCustomer(response.data?.data);
             setShowEditModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
@@ -156,11 +160,11 @@ export default function CustomersPage() {
                                     <tr key={customer.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {customer.full_name}
+                                                {customer.name}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{customer.mobile_number}</div>
+                                            <div className="text-sm text-gray-900">{customer.mobile}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900 max-w-xs truncate">
@@ -168,7 +172,7 @@ export default function CustomersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(customer.created_at).toLocaleDateString()}
+                                            {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <div className="flex gap-2">
@@ -187,7 +191,7 @@ export default function CustomersPage() {
                                                     <Edit className="w-5 h-5" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(customer.id, customer.full_name)}
+                                                    onClick={() => handleDelete(customer.id, customer.name)}
                                                     className="text-red-600 hover:text-red-900"
                                                     title="Delete"
                                                 >

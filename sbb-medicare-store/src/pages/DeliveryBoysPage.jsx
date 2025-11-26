@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersAPI } from '../services/api';
+import { deliveryBoysAPI } from '../services/api';
 import { UserCheck, UserX, Users, Clock, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
 
 export default function DeliveryBoysPage() {
@@ -17,8 +17,9 @@ export default function DeliveryBoysPage() {
 
     const loadDeliveryBoys = async () => {
         try {
-            const response = await usersAPI.getDeliveryBoys();
-            setDeliveryBoys(response.data.delivery_boys || []);
+            const response = await deliveryBoysAPI.list();
+            // Backend: { success, data: [...] }
+            setDeliveryBoys(response.data?.data || []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
         } finally {
@@ -28,8 +29,8 @@ export default function DeliveryBoysPage() {
 
     const loadPendingRequests = async () => {
         try {
-            const response = await usersAPI.getPendingRequests();
-            setPendingRequests(response.data.pending_requests || []);
+            const response = await deliveryBoysAPI.list({ status: 'pending' });
+            setPendingRequests(response.data?.data || []);
         } catch (error) {
             console.error('Error loading pending requests:', error);
         }
@@ -39,9 +40,9 @@ export default function DeliveryBoysPage() {
         if (!confirm('Approve this delivery boy?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'active');
-            loadDeliveryBoys();
-            loadPendingRequests();
+            await deliveryBoysAPI.approve(userId);
+            await loadDeliveryBoys();
+            await loadPendingRequests();
             alert('Delivery boy approved successfully');
         } catch (error) {
             alert('Error approving delivery boy');
@@ -52,9 +53,10 @@ export default function DeliveryBoysPage() {
         if (!confirm('Reject this delivery boy request?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'rejected');
-            loadDeliveryBoys();
-            loadPendingRequests();
+            // No explicit "reject" endpoint in spec; delete pending record instead
+            await deliveryBoysAPI.delete(userId);
+            await loadDeliveryBoys();
+            await loadPendingRequests();
             alert('Request rejected');
         } catch (error) {
             alert('Error rejecting request');
@@ -65,8 +67,8 @@ export default function DeliveryBoysPage() {
         if (!confirm('Are you sure you want to delete this delivery boy?')) return;
 
         try {
-            await usersAPI.delete(userId);
-            loadDeliveryBoys();
+            await deliveryBoysAPI.delete(userId);
+            await loadDeliveryBoys();
             alert('Delivery boy deleted successfully');
         } catch (error) {
             alert('Error deleting delivery boy');
@@ -77,8 +79,8 @@ export default function DeliveryBoysPage() {
         if (!confirm('Deactivate this delivery boy?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'inactive');
-            loadDeliveryBoys();
+            await deliveryBoysAPI.toggleActive(userId, false);
+            await loadDeliveryBoys();
             alert('Delivery boy deactivated');
         } catch (error) {
             alert('Error deactivating delivery boy');
@@ -86,7 +88,7 @@ export default function DeliveryBoysPage() {
     };
 
     const filteredDeliveryBoys = deliveryBoys.filter((boy) => {
-        if (activeTab === 'active') return boy.status === 'active';
+        if (activeTab === 'active') return boy.status === 'approved' && boy.isActive;
         if (activeTab === 'pending') return boy.status === 'pending';
         return true;
     });
@@ -109,16 +111,6 @@ export default function DeliveryBoysPage() {
                 </div>
             </div>
 
-            {/* Pending Requests Alert */}
-            {pendingRequests.length > 0 && (
-                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-yellow-600" />
-                    <span className="text-yellow-800">
-                        You have {pendingRequests.length} pending approval request(s)
-                    </span>
-                </div>
-            )}
-
             {/* Tabs */}
             <div className="mb-6 flex gap-4 border-b">
                 <button
@@ -139,7 +131,7 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({deliveryBoys.filter((b) => b.status === 'active').length})
+                    Active ({deliveryBoys.filter((b) => b.status === 'approved' && b.isActive).length})
                 </button>
                 <button
                     onClick={() => setActiveTab('pending')}
@@ -170,9 +162,6 @@ export default function DeliveryBoysPage() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Registered
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -187,63 +176,18 @@ export default function DeliveryBoysPage() {
                                 <tr key={boy.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{boy.full_name}</div>
+                                        <div className="text-sm font-medium text-gray-900">{boy.name}</div>
                                             <div className="text-sm text-gray-500">{boy.email}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{boy.mobile_number}</div>
+                                        <div className="text-sm text-gray-900">{boy.mobile}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={boy.status} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(boy.created_at).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        {boy.status === 'pending' ? (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleApprove(boy.id)}
-                                                    className="text-green-600 hover:text-green-900"
-                                                    title="Approve"
-                                                >
-                                                    <CheckCircle className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReject(boy.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Reject"
-                                                >
-                                                    <XCircle className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        ) : boy.status === 'active' ? (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleDeactivate(boy.id)}
-                                                    className="text-orange-600 hover:text-orange-900"
-                                                    title="Deactivate"
-                                                >
-                                                    <UserX className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(boy.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleDelete(boy.id)}
-                                                className="text-red-600 hover:text-red-900"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        )}
+                                        {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
                                     </td>
                                 </tr>
                             ))
@@ -257,7 +201,7 @@ export default function DeliveryBoysPage() {
 
 function StatusBadge({ status }) {
     const statusConfig = {
-        active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
+        approved: { bg: 'bg-green-100', text: 'text-green-800', label: 'Approved' },
         pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
         inactive: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' },
         rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' },

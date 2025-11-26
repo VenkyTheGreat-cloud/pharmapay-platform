@@ -4,12 +4,12 @@ import { X } from 'lucide-react';
 
 export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
     const [formData, setFormData] = useState({
-        full_name: '',
-        mobile_number: '',
+        name: '',
+        mobile: '',
         address: '',
         landmark: '',
-        latitude: '',
-        longitude: ''
+        customerLat: '',
+        customerLng: ''
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,14 +25,14 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.full_name.trim()) {
-            newErrors.full_name = 'Full name is required';
+        if (!formData.name.trim()) {
+            newErrors.name = 'Full name is required';
         }
 
-        if (!formData.mobile_number.trim()) {
-            newErrors.mobile_number = 'Mobile number is required';
-        } else if (!/^\d{10}$/.test(formData.mobile_number.trim())) {
-            newErrors.mobile_number = 'Mobile number must be 10 digits';
+        if (!formData.mobile.trim()) {
+            newErrors.mobile = 'Mobile number is required';
+        } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
+            newErrors.mobile = 'Mobile number must be 10 digits';
         }
 
         if (!formData.address.trim()) {
@@ -53,14 +53,14 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
         setIsSubmitting(true);
         try {
-            // Clean up the data
+            // Clean up the data to match backend spec
             const submitData = {
-                full_name: formData.full_name.trim(),
-                mobile_number: formData.mobile_number.trim(),
+                name: formData.name.trim(),
+                mobile: formData.mobile.trim(),
                 address: formData.address.trim(),
                 landmark: formData.landmark.trim() || null,
-                latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-                longitude: formData.longitude ? parseFloat(formData.longitude) : null
+                customerLat: formData.customerLat ? parseFloat(formData.customerLat) : null,
+                customerLng: formData.customerLng ? parseFloat(formData.customerLng) : null
             };
 
             await customersAPI.create(submitData);
@@ -68,12 +68,12 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
             // Reset form
             setFormData({
-                full_name: '',
-                mobile_number: '',
+                name: '',
+                mobile: '',
                 address: '',
                 landmark: '',
-                latitude: '',
-                longitude: ''
+                customerLat: '',
+                customerLng: ''
             });
             setErrors({});
 
@@ -111,17 +111,17 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                             </label>
                             <input
                                 type="text"
-                                name="full_name"
-                                value={formData.full_name}
+                                name="name"
+                                value={formData.name}
                                 onChange={handleChange}
                                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.full_name ? 'border-red-500' : 'border-gray-300'
+                                    errors.name ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter customer full name"
                                 disabled={isSubmitting}
                             />
-                            {errors.full_name && (
-                                <p className="text-red-500 text-sm mt-1">{errors.full_name}</p>
+                            {errors.name && (
+                                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                             )}
                         </div>
 
@@ -131,18 +131,18 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                             </label>
                             <input
                                 type="text"
-                                name="mobile_number"
-                                value={formData.mobile_number}
+                                name="mobile"
+                                value={formData.mobile}
                                 onChange={handleChange}
                                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.mobile_number ? 'border-red-500' : 'border-gray-300'
+                                    errors.mobile ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="10-digit mobile number"
                                 maxLength="10"
                                 disabled={isSubmitting}
                             />
-                            {errors.mobile_number && (
-                                <p className="text-red-500 text-sm mt-1">{errors.mobile_number}</p>
+                            {errors.mobile && (
+                                <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
                             )}
                         </div>
 
@@ -189,8 +189,8 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 <input
                                     type="number"
                                     step="any"
-                                    name="latitude"
-                                    value={formData.latitude}
+                                    name="customerLat"
+                                    value={formData.customerLat}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="e.g., 12.9716"
@@ -204,8 +204,8 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 <input
                                     type="number"
                                     step="any"
-                                    name="longitude"
-                                    value={formData.longitude}
+                                    name="customerLng"
+                                    value={formData.customerLng}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="e.g., 77.5946"

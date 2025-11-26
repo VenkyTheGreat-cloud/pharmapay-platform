@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ordersAPI, usersAPI } from '../services/api';
+import { ordersAPI, deliveryBoysAPI } from '../services/api';
 import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
 
@@ -8,8 +8,7 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: '',
-        date_from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        date_to: new Date().toISOString().split('T')[0],
+        date: '',
     });
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
@@ -25,8 +24,16 @@ export default function OrdersPage() {
     const loadOrders = async () => {
         try {
             setLoading(true);
-            const response = await ordersAPI.getAll(filters);
-            setOrders(response.data.orders || []);
+            const params = {
+                status: filters.status || undefined,
+                date: filters.date || undefined,
+                page: 1,
+                limit: 20,
+            };
+            const response = await ordersAPI.getAll(params);
+            // Backend: { success, data: { orders: [...], pagination: {...} } }
+            const list = response.data?.data?.orders || [];
+            setOrders(list);
         } catch (error) {
             console.error('Error loading orders:', error);
         } finally {
@@ -37,7 +44,8 @@ export default function OrdersPage() {
     const viewOrderDetails = async (orderId) => {
         try {
             const response = await ordersAPI.getById(orderId);
-            setSelectedOrder(response.data.order);
+            // Backend: { success, data: {...order} }
+            setSelectedOrder(response.data?.data);
             setShowViewModal(true);
         } catch (error) {
             console.error('Error loading order details:', error);
@@ -46,11 +54,10 @@ export default function OrdersPage() {
 
     const loadDeliveryBoys = async () => {
         try {
-            const response = await usersAPI.getDeliveryBoys();
-            const activeDeliveryBoys = (response.data.delivery_boys || []).filter(
-                boy => boy.status === 'active'
-            );
-            setDeliveryBoys(activeDeliveryBoys);
+            const response = await deliveryBoysAPI.list({ status: 'approved', isActive: true });
+            // Backend: { success, data: [...] }
+            const list = response.data?.data || [];
+            setDeliveryBoys(list);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
         }
@@ -98,15 +105,17 @@ export default function OrdersPage() {
     };
 
     const getStatusColor = (status) => {
+        if (!status) return 'bg-gray-100 text-gray-800';
+        const normalized = status.toUpperCase();
         const colors = {
-            new: 'bg-blue-100 text-blue-800',
-            assigned: 'bg-purple-100 text-purple-800',
-            picked_up: 'bg-yellow-100 text-yellow-800',
-            in_transit: 'bg-orange-100 text-orange-800',
-            delivered: 'bg-green-100 text-green-800',
-            cancelled: 'bg-red-100 text-red-800',
+            ASSIGNED: 'bg-purple-100 text-purple-800',
+            PICKED_UP: 'bg-yellow-100 text-yellow-800',
+            IN_TRANSIT: 'bg-orange-100 text-orange-800',
+            PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
+            DELIVERED: 'bg-green-100 text-green-800',
+            CANCELLED: 'bg-red-100 text-red-800',
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[normalized] || 'bg-gray-100 text-gray-800';
     };
 
     return (
@@ -210,20 +219,20 @@ export default function OrdersPage() {
                                     <tr key={order.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {order.order_number}
+                                                {order.orderNumber}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.customer_name}</div>
-                                            <div className="text-sm text-gray-500">{order.customer_mobile}</div>
+                                            <div className="text-sm text-gray-900">{order.customerName}</div>
+                                            <div className="text-sm text-gray-500">{order.customerMobile}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
-                                                {order.delivery_boy_name || 'Not assigned'}
+                                                {order.deliveryBoyName || 'Not assigned'}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">₹{order.total_amount}</div>
+                                            <div className="text-sm text-gray-900">₹{order.amount}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -231,11 +240,11 @@ export default function OrdersPage() {
                                                     order.status
                                                 )}`}
                                             >
-                                                {order.status.replace('_', ' ').toUpperCase()}
+                                                {order.status.replace('_', ' ')}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(order.created_at).toLocaleDateString()}
+                                            {order.createdTime ? new Date(order.createdTime).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <div className="flex gap-2">
@@ -246,7 +255,7 @@ export default function OrdersPage() {
                                                 >
                                                     <Eye className="w-5 h-5" />
                                                 </button>
-                                                {(order.status === 'new' || !order.delivery_boy_id) && (
+                                                {(order.status === 'ASSIGNED' || !order.deliveryBoyId) && (
                                                     <button
                                                         onClick={() => openAssignModal(order)}
                                                         className="text-green-600 hover:text-green-900"
@@ -255,9 +264,9 @@ export default function OrdersPage() {
                                                         <UserPlus className="w-5 h-5" />
                                                     </button>
                                                 )}
-                                                {order.status === 'new' && (
+                                                {order.status === 'ASSIGNED' && (
                                                     <button
-                                                        onClick={() => handleDelete(order.id, order.order_number)}
+                                                        onClick={() => handleDelete(order.id, order.orderNumber)}
                                                         className="text-red-600 hover:text-red-900"
                                                         title="Delete"
                                                     >

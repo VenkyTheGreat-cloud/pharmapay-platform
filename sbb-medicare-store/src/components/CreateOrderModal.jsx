@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { ordersAPI, customersAPI, usersAPI } from '../services/api';
+import { ordersAPI, customersAPI, deliveryBoysAPI } from '../services/api';
 import { X, Plus, Trash2 } from 'lucide-react';
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [formData, setFormData] = useState({
-        customer_id: '',
-        delivery_boy_id: '',
+        customerId: '',
+        deliveryBoyId: '',
         items: [{ name: '', quantity: 1, price: 0 }],
-        notes: ''
+        customerComments: ''
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +24,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const loadCustomers = async () => {
         try {
             const response = await customersAPI.getAll();
-            setCustomers(response.data.customers || []);
+            const list = response.data?.data?.data || [];
+            setCustomers(list);
         } catch (error) {
             console.error('Error loading customers:', error);
         }
@@ -32,12 +33,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const loadDeliveryBoys = async () => {
         try {
-            const response = await usersAPI.getDeliveryBoys();
-            // Filter only active delivery boys
-            const activeDeliveryBoys = (response.data.delivery_boys || []).filter(
-                boy => boy.status === 'active'
-            );
-            setDeliveryBoys(activeDeliveryBoys);
+            const response = await deliveryBoysAPI.listApproved();
+            const list = response.data?.data || [];
+            setDeliveryBoys(list);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
         }
@@ -84,8 +82,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.customer_id) {
-            newErrors.customer_id = 'Customer is required';
+        if (!formData.customerId) {
+            newErrors.customerId = 'Customer is required';
         }
 
         // Check if at least one item has values
@@ -117,15 +115,14 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             );
 
             const submitData = {
-                customer_id: formData.customer_id,
+                customerId: formData.customerId,
                 items: validItems,
-                total_amount: calculateTotal(),
-                notes: formData.notes.trim() || null
+                customerComments: formData.customerComments.trim() || undefined,
             };
 
             // If delivery boy is selected, assign it
-            if (formData.delivery_boy_id) {
-                submitData.delivery_boy_id = formData.delivery_boy_id;
+            if (formData.deliveryBoyId) {
+                submitData.deliveryBoyId = formData.deliveryBoyId;
             }
 
             await ordersAPI.create(submitData);
@@ -133,10 +130,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
             // Reset form
             setFormData({
-                customer_id: '',
-                delivery_boy_id: '',
+                customerId: '',
+                deliveryBoyId: '',
                 items: [{ name: '', quantity: 1, price: 0 }],
-                notes: ''
+                customerComments: ''
             });
             setErrors({});
 
@@ -174,23 +171,23 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 Customer <span className="text-red-500">*</span>
                             </label>
                             <select
-                                name="customer_id"
-                                value={formData.customer_id}
+                                name="customerId"
+                                value={formData.customerId}
                                 onChange={handleChange}
                                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.customer_id ? 'border-red-500' : 'border-gray-300'
+                                    errors.customerId ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 disabled={isSubmitting}
                             >
                                 <option value="">Select a customer</option>
                                 {customers.map(customer => (
                                     <option key={customer.id} value={customer.id}>
-                                        {customer.full_name} - {customer.mobile_number}
+                                        {customer.name} - {customer.mobile}
                                     </option>
                                 ))}
                             </select>
-                            {errors.customer_id && (
-                                <p className="text-red-500 text-sm mt-1">{errors.customer_id}</p>
+                            {errors.customerId && (
+                                <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
                             )}
                         </div>
 
@@ -200,8 +197,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 Assign Delivery Boy (Optional)
                             </label>
                             <select
-                                name="delivery_boy_id"
-                                value={formData.delivery_boy_id}
+                                name="deliveryBoyId"
+                                value={formData.deliveryBoyId}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 disabled={isSubmitting}
@@ -209,7 +206,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 <option value="">Assign later</option>
                                 {deliveryBoys.map(boy => (
                                     <option key={boy.id} value={boy.id}>
-                                        {boy.full_name} - {boy.mobile_number}
+                                        {boy.name} - {boy.mobile}
                                     </option>
                                 ))}
                             </select>
@@ -292,11 +289,11 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                         {/* Notes */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Notes (Optional)
+                                Customer Comments (Optional)
                             </label>
                             <textarea
-                                name="notes"
-                                value={formData.notes}
+                                name="customerComments"
+                                value={formData.customerComments}
                                 onChange={handleChange}
                                 rows="3"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
