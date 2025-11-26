@@ -1,38 +1,105 @@
 const Order = require('../models/Order');
+const OrderItem = require('../models/OrderItem');
 const Customer = require('../models/Customer');
+const DeliveryBoy = require('../models/DeliveryBoy');
+const LocationUpdate = require('../models/LocationUpdate');
 const logger = require('../config/logger');
+const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
+const { query, transaction } = require('../config/database');
 
-// Get all orders
+// Get all orders with pagination
 exports.getAllOrders = async (req, res, next) => {
     try {
-        const { status, delivery_boy_id, date_from, date_to, limit } = req.query;
+        const { status, date, page = 1, limit = 20 } = req.query;
+        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
 
-        const filters = {};
+        const filters = {
+            limit: Math.min(parseInt(limit), 50),
+            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 50)
+        };
+
         if (status) filters.status = status;
-        if (delivery_boy_id) filters.delivery_boy_id = delivery_boy_id;
-        if (date_from) filters.date_from = date_from;
-        if (date_to) filters.date_to = date_to;
-        if (limit) filters.limit = parseInt(limit);
+        if (date) filters.date = date;
+        if (storeId) filters.store_id = storeId;
 
         const orders = await Order.findAll(filters);
+        const total = await Order.count(filters);
 
-        res.json({ orders, count: orders.length });
+        // Get order items for each order
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const items = await OrderItem.findByOrderId(order.id);
+            return {
+                ...order,
+                items: items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: parseFloat(item.price),
+                    total: parseFloat(item.total)
+                }))
+            };
+        }));
+
+        const pagination = {
+            total,
+            page: parseInt(page),
+            limit: filters.limit,
+            totalPages: Math.ceil(total / filters.limit)
+        };
+
+        res.json(paginatedResponse({ orders: ordersWithItems }, pagination));
     } catch (error) {
         next(error);
     }
 };
 
-// Get orders for current delivery boy
-exports.getMyOrders = async (req, res, next) => {
+// Get today's orders
+exports.getTodayOrders = async (req, res, next) => {
     try {
-        const { status } = req.query;
+        const { page = 1, limit = 20 } = req.query;
+        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
 
-        const filters = { delivery_boy_id: req.user.id };
-        if (status) filters.status = status;
+        const filters = {
+            date: new Date().toISOString().split('T')[0],
+            limit: Math.min(parseInt(limit), 50),
+            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 50)
+        };
+
+        if (storeId) filters.store_id = storeId;
 
         const orders = await Order.findAll(filters);
+        const total = await Order.count(filters);
 
-        res.json({ orders, count: orders.length });
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const items = await OrderItem.findByOrderId(order.id);
+            return { ...order, items };
+        }));
+
+        const pagination = {
+            total,
+            page: parseInt(page),
+            limit: filters.limit,
+            totalPages: Math.ceil(total / filters.limit)
+        };
+
+        res.json(paginatedResponse({ orders: ordersWithItems }, pagination));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Get ongoing orders
+exports.getOngoingOrders = async (req, res, next) => {
+    try {
+        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
+        const orders = await Order.getOngoingOrders(storeId);
+
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const items = await OrderItem.findByOrderId(order.id);
+            return { ...order, items };
+        }));
+
+        res.json(successResponse({ orders: ordersWithItems, count: ordersWithItems.length }));
     } catch (error) {
         next(error);
     }
@@ -43,10 +110,26 @@ exports.getOrderById = async (req, res, next) => {
     try {
         const order = await Order.findById(req.params.id);
         if (!order) {
-            return res.status(404).json({ error: 'Order not found' });
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
         }
 
-        res.json({ order });
+        // Check access control
+        if (req.user.role === 'store_manager' && order.store_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
+        }
+
+        const items = await OrderItem.findByOrderId(order.id);
+
+        res.json(successResponse({
+            ...order,
+            items: items.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: parseFloat(item.price),
+                total: parseFloat(item.total)
+            }))
+        }));
     } catch (error) {
         next(error);
     }
@@ -55,28 +138,102 @@ exports.getOrderById = async (req, res, next) => {
 // Create order
 exports.createOrder = async (req, res, next) => {
     try {
-        const { customer_id, items, total_amount, notes } = req.body;
+        const { customerId, deliveryBoyId, items, customerComments } = req.body;
+        const storeId = req.user.userId;
 
-        // Verify customer exists
-        const customer = await Customer.findById(customer_id);
-        if (!customer) {
-            return res.status(404).json({ error: 'Customer not found' });
+        // Validate items
+        if (!items || items.length === 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'At least one item is required'));
         }
 
-        const order = await Order.create({
-            customer_id,
-            items,
-            total_amount,
-            created_by: req.user.id,
-            notes
+        // Get customer
+        const customer = await Customer.findById(customerId);
+        if (!customer) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Customer not found'));
+        }
+
+        // Check if customer belongs to store
+        if (customer.store_id !== storeId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Customer does not belong to your store'));
+        }
+
+        // Get delivery boy
+        const deliveryBoy = await DeliveryBoy.findById(deliveryBoyId);
+        if (!deliveryBoy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+        }
+
+        if (deliveryBoy.status !== 'approved') {
+            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
+        }
+
+        if (!deliveryBoy.is_active) {
+            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_AVAILABLE', 'Delivery boy is not active'));
+        }
+
+        // Calculate total amount
+        const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+        // Create order with items
+        const order = await transaction(async (client) => {
+            // Generate order number
+            const orderNumberResult = await client.query(
+                'SELECT generate_order_number($1) as order_number',
+                [storeId]
+            );
+            const orderNumber = orderNumberResult.rows[0].order_number;
+
+            // Create order
+            const orderResult = await client.query(
+                `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
+                                    customer_name, customer_phone, customer_address, customer_lat, customer_lng,
+                                    total_amount, status, customer_comments, assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, CURRENT_TIMESTAMP)
+                 RETURNING *`,
+                [orderNumber, customerId, deliveryBoyId, storeId,
+                 customer.name, customer.mobile, customer.address, customer.customer_lat, customer.customer_lng,
+                 totalAmount, customerComments]
+            );
+
+            const order = orderResult.rows[0];
+
+            // Create order items
+            const itemValues = [];
+            const itemPlaceholders = [];
+            let paramCount = 1;
+
+            items.forEach((item) => {
+                const { name, quantity, price } = item;
+                const total = quantity * price;
+                itemPlaceholders.push(`($${paramCount}, $${paramCount + 1}, $${paramCount + 2}, $${paramCount + 3}, $${paramCount + 4})`);
+                itemValues.push(order.id, name, quantity, price, total);
+                paramCount += 5;
+            });
+
+            await client.query(
+                `INSERT INTO order_items (order_id, name, quantity, price, total)
+                 VALUES ${itemPlaceholders.join(', ')}`,
+                itemValues
+            );
+
+            // Create status history
+            await client.query(
+                `INSERT INTO order_status_history (order_id, status, changed_by, notes)
+                 VALUES ($1, $2, $3, $4)`,
+                [order.id, 'ASSIGNED', storeId, 'Order created and assigned']
+            );
+
+            return order;
         });
 
-        logger.info('Order created', { orderId: order.id, createdBy: req.user.id });
+        const orderItems = await OrderItem.findByOrderId(order.id);
 
-        res.status(201).json({
-            message: 'Order created successfully',
-            order
-        });
+        logger.info('Order created', { orderId: order.id, createdBy: storeId });
+
+        res.status(201).json(successResponse({
+            ...order,
+            items: orderItems
+        }, 'Order created successfully'));
     } catch (error) {
         next(error);
     }
@@ -85,20 +242,40 @@ exports.createOrder = async (req, res, next) => {
 // Assign order to delivery boy
 exports.assignOrder = async (req, res, next) => {
     try {
-        const { delivery_boy_id } = req.body;
+        const { deliveryBoyId } = req.body;
+        const orderId = req.params.id;
 
-        const order = await Order.assign(req.params.id, delivery_boy_id, req.user.id);
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
 
-        logger.info('Order assigned', {
-            orderId: req.params.id,
-            deliveryBoyId: delivery_boy_id,
-            assignedBy: req.user.id
-        });
+        // Check access
+        if (req.user.role === 'store_manager' && order.store_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
+        }
 
-        res.json({
-            message: 'Order assigned successfully',
-            order
-        });
+        // Get delivery boy
+        const deliveryBoy = await DeliveryBoy.findById(deliveryBoyId);
+        if (!deliveryBoy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+        }
+
+        if (deliveryBoy.status !== 'approved') {
+            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
+        }
+
+        // Assign order
+        const updatedOrder = await Order.assign(orderId, deliveryBoyId, req.user.userId);
+
+        logger.info('Order assigned', { orderId, deliveryBoyId, assignedBy: req.user.userId });
+
+        res.json(successResponse({
+            assignedBy: req.user.userId,
+            assignedByName: req.user.name || 'User',
+            assignedTime: updatedOrder.assigned_at
+        }, 'Order assigned successfully'));
     } catch (error) {
         next(error);
     }
@@ -107,74 +284,90 @@ exports.assignOrder = async (req, res, next) => {
 // Update order status
 exports.updateOrderStatus = async (req, res, next) => {
     try {
-        const { status, notes, latitude, longitude } = req.body;
+        const { status, notes } = req.body;
+        const orderId = req.params.id;
 
-        const validStatuses = ['new', 'assigned', 'picked_up', 'in_transit', 'delivered', 'cancelled'];
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({ error: 'Invalid status value' });
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
         }
 
-        const location = latitude && longitude ? { latitude, longitude } : null;
+        // Check access for delivery boy
+        if (req.user.role === 'delivery_boy' && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
 
-        const order = await Order.updateStatus(req.params.id, status, req.user.id, notes, location);
+        // Update status
+        const updatedOrder = await Order.updateStatus(orderId, status, req.user.userId, notes);
 
-        logger.info('Order status updated', {
-            orderId: req.params.id,
-            status,
-            updatedBy: req.user.id
+        logger.info('Order status updated', { orderId, status, updatedBy: req.user.userId });
+
+        const items = await OrderItem.findByOrderId(updatedOrder.id);
+
+        res.json(successResponse({
+            ...updatedOrder,
+            items
+        }));
+    } catch (error) {
+        if (error.message === 'INVALID_STATUS_TRANSITION') {
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Invalid order status transition'));
+        }
+        if (error.message === 'CONFLICT') {
+            return res.status(409).json(errorResponse('CONFLICT', 'Another order is already in transit for this delivery boy'));
+        }
+        next(error);
+    }
+};
+
+// Update order location
+exports.updateLocation = async (req, res, next) => {
+    try {
+        const { latitude, longitude, source } = req.body;
+        const orderId = req.params.id;
+
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check if delivery boy is assigned
+        if (req.user.role === 'delivery_boy' && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+
+        // Create location update
+        await LocationUpdate.create({
+            order_id: orderId,
+            latitude,
+            longitude,
+            recorded_by: req.user.userId,
+            source: source || 'MANUAL'
         });
 
-        res.json({
-            message: 'Order status updated successfully',
-            order
-        });
+        logger.info('Location updated', { orderId, latitude, longitude });
+
+        res.json(successResponse(null, 'Location updated successfully'));
     } catch (error) {
         next(error);
     }
 };
 
-// Get order history
-exports.getOrderHistory = async (req, res, next) => {
+// Get orders by customer mobile
+exports.getOrdersByCustomerMobile = async (req, res, next) => {
     try {
-        const history = await Order.getHistory(req.params.id);
+        const { mobile } = req.params;
+        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
 
-        res.json({ history, count: history.length });
-    } catch (error) {
-        next(error);
-    }
-};
+        const orders = await Order.getByCustomerMobile(mobile, storeId);
 
-// Get orders by date range with statistics
-exports.getOrdersByDateRange = async (req, res, next) => {
-    try {
-        const { date_from, date_to } = req.query;
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const items = await OrderItem.findByOrderId(order.id);
+            return { ...order, items };
+        }));
 
-        if (!date_from || !date_to) {
-            return res.status(400).json({ error: 'date_from and date_to are required' });
-        }
-
-        const statistics = await Order.getOrdersByDateRange(date_from, date_to);
-
-        res.json({ statistics });
-    } catch (error) {
-        next(error);
-    }
-};
-
-// Delete order (only if status is 'new')
-exports.deleteOrder = async (req, res, next) => {
-    try {
-        const deleted = await Order.delete(req.params.id);
-
-        if (!deleted) {
-            return res.status(404).json({
-                error: 'Order not found or cannot be deleted (only new orders can be deleted)'
-            });
-        }
-
-        logger.info('Order deleted', { orderId: req.params.id, deletedBy: req.user.id });
-
-        res.json({ message: 'Order deleted successfully' });
+        res.json(successResponse(ordersWithItems));
     } catch (error) {
         next(error);
     }

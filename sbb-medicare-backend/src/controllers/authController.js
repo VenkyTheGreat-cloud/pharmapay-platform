@@ -1,46 +1,27 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const AuthService = require('../services/authService');
 const User = require('../models/User');
 const logger = require('../config/logger');
+const { successResponse, errorResponse } = require('../utils/apiResponse');
 
-// Register new user (mainly for delivery boys)
+// Register delivery boy (public endpoint)
 exports.register = async (req, res, next) => {
     try {
-        const { email, password, full_name, mobile_number, role, profile_image, address } = req.body;
+        const { name, mobile, email, password, address } = req.body;
 
-        // Check if user already exists
-        const existingUser = await User.findByEmail(email);
-        if (existingUser) {
-            return res.status(409).json({ error: 'Email already registered' });
-        }
-
-        // Hash password
-        const password_hash = await bcrypt.hash(password, 10);
-
-        // Create user (status will be 'pending' by default for delivery boys)
-        const user = await User.create({
+        const result = await AuthService.registerDeliveryBoy({
+            name,
+            mobile,
             email,
-            password_hash,
-            full_name,
-            mobile_number,
-            role: role || 'delivery_boy',
-            profile_image,
             address
         });
 
-        logger.info('User registered', { userId: user.id, role: user.role });
+        logger.info('Delivery boy registered', { deliveryBoyId: result.id });
 
-        res.status(201).json({
-            message: 'Registration successful. Your account is pending approval.',
-            user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                role: user.role,
-                status: user.status
-            }
-        });
+        res.status(201).json(successResponse(result, 'Registration successful. Pending approval.'));
     } catch (error) {
+        if (error.message === 'DUPLICATE_MOBILE') {
+            return res.status(409).json(errorResponse('DUPLICATE_MOBILE', 'Mobile number already registered'));
+        }
         next(error);
     }
 };
@@ -48,63 +29,83 @@ exports.register = async (req, res, next) => {
 // Login
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { mobileEmail, password } = req.body;
 
-        // Find user
-        const user = await User.findByEmail(email);
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
+        const result = await AuthService.login(mobileEmail, password);
 
-        // Check if user is active
-        if (user.status !== 'active') {
-            return res.status(403).json({
-                error: 'Your account is not active. Please contact administrator.',
-                status: user.status
-            });
-        }
+        logger.info('User logged in', { userId: result.user.id, role: result.user.role });
 
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.password_hash);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-
-        // Generate JWT token
-        const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-        );
-
-        logger.info('User logged in', { userId: user.id, role: user.role });
-
-        res.json({
-            message: 'Login successful',
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                mobile_number: user.mobile_number,
-                role: user.role,
-                profile_image: user.profile_image
-            }
-        });
+        res.json(successResponse(result));
     } catch (error) {
+        if (error.message === 'INVALID_CREDENTIALS') {
+            return res.status(401).json(errorResponse('INVALID_CREDENTIALS', 'Invalid email/mobile or password'));
+        }
+        if (error.message === 'INACTIVE_USER') {
+            return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive'));
+        }
         next(error);
     }
 };
 
-// Get current user profile
+// Send OTP
+exports.sendOTP = async (req, res, next) => {
+    try {
+        const { mobile } = req.body;
+
+        const result = await AuthService.sendOTP(mobile);
+
+        res.json(successResponse(result, 'OTP sent successfully'));
+    } catch (error) {
+        if (error.message === 'NOT_FOUND') {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found for mobile number'));
+        }
+        next(error);
+    }
+};
+
+// Verify OTP
+exports.verifyOTP = async (req, res, next) => {
+    try {
+        const { mobile, otp } = req.body;
+
+        const result = await AuthService.verifyOTP(mobile, otp);
+
+        logger.info('OTP verified and user logged in', { mobile });
+
+        res.json(successResponse(result));
+    } catch (error) {
+        if (error.message === 'INVALID_OTP') {
+            return res.status(400).json(errorResponse('INVALID_OTP', 'OTP is invalid or expired'));
+        }
+        if (error.message === 'NOT_FOUND') {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found for mobile number'));
+        }
+        if (error.message === 'INACTIVE_USER') {
+            return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive'));
+        }
+        next(error);
+    }
+};
+
+// Get profile
 exports.getProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findById(req.user.userId);
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
         }
 
-        res.json({ user });
+        const userData = {
+            id: user.id,
+            name: user.name,
+            storeName: user.store_name,
+            mobile: user.mobile,
+            email: user.email,
+            address: user.address,
+            role: user.role
+        };
+
+        res.json(successResponse(userData));
     } catch (error) {
         next(error);
     }
@@ -113,22 +114,41 @@ exports.getProfile = async (req, res, next) => {
 // Update profile
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { full_name, mobile_number, address, profile_image } = req.body;
+        const { name, email, address, storeName } = req.body;
+        const updates = {};
 
-        const user = await User.update(req.user.id, {
-            full_name,
-            mobile_number,
-            address,
-            profile_image
-        });
+        if (name !== undefined) updates.name = name;
+        if (email !== undefined) updates.email = email;
+        if (address !== undefined) updates.address = address;
+        if (storeName !== undefined) updates.store_name = storeName;
 
-        logger.info('Profile updated', { userId: req.user.id });
+        // Check if email already exists (if changing email)
+        if (email) {
+            const existingUser = await User.findByEmail(email);
+            if (existingUser && existingUser.id !== req.user.userId) {
+                return res.status(409).json(errorResponse('DUPLICATE_EMAIL', 'Email already exists'));
+            }
+        }
 
-        res.json({
-            message: 'Profile updated successfully',
-            user
-        });
+        const user = await User.update(req.user.userId, updates);
+
+        const userData = {
+            id: user.id,
+            name: user.name,
+            storeName: user.store_name,
+            mobile: user.mobile,
+            email: user.email,
+            address: user.address,
+            role: user.role
+        };
+
+        logger.info('Profile updated', { userId: req.user.userId });
+
+        res.json(successResponse(userData));
     } catch (error) {
+        if (error.message.includes('duplicate') || error.message.includes('unique')) {
+            return res.status(409).json(errorResponse('DUPLICATE_EMAIL', 'Email already exists'));
+        }
         next(error);
     }
 };
@@ -136,28 +156,91 @@ exports.updateProfile = async (req, res, next) => {
 // Change password
 exports.changePassword = async (req, res, next) => {
     try {
-        const { current_password, new_password } = req.body;
+        const { oldPassword, newPassword } = req.body;
 
-        const user = await User.findByEmail(req.user.email);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'New password must be at least 6 characters'));
         }
 
-        // Verify current password
-        const isValidPassword = await bcrypt.compare(current_password, user.password_hash);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: 'Current password is incorrect' });
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
+        }
+
+        // Verify old password
+        const isPasswordValid = await AuthService.comparePassword(oldPassword, user.password_hash);
+        if (!isPasswordValid) {
+            return res.status(401).json(errorResponse('INVALID_PASSWORD', 'Old password is incorrect'));
         }
 
         // Hash new password
-        const password_hash = await bcrypt.hash(new_password, 10);
+        const password_hash = await AuthService.hashPassword(newPassword);
+        await User.update(req.user.userId, { password_hash });
 
-        await User.update(req.user.id, { password_hash });
+        logger.info('Password changed', { userId: req.user.userId });
 
-        logger.info('Password changed', { userId: req.user.id });
-
-        res.json({ message: 'Password changed successfully' });
+        res.json(successResponse(null, 'Password changed successfully'));
     } catch (error) {
+        next(error);
+    }
+};
+
+// Verify token
+exports.verify = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
+        }
+
+        const userData = {
+            id: user.id,
+            name: user.name,
+            storeName: user.store_name,
+            mobile: user.mobile,
+            email: user.email,
+            address: user.address,
+            role: user.role
+        };
+
+        res.json(successResponse(userData));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Logout
+exports.logout = async (req, res, next) => {
+    try {
+        const refreshToken = req.body.refreshToken || req.headers['x-refresh-token'];
+        if (refreshToken) {
+            await AuthService.logout(req.user.userId, refreshToken);
+        }
+
+        logger.info('User logged out', { userId: req.user.userId });
+
+        res.json(successResponse(null, 'Logged out successfully'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Refresh token
+exports.refreshToken = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Refresh token is required'));
+        }
+
+        const result = await AuthService.refreshToken(refreshToken);
+
+        res.json(successResponse(result));
+    } catch (error) {
+        if (error.message === 'INVALID_TOKEN') {
+            return res.status(401).json(errorResponse('INVALID_TOKEN', 'Invalid or expired refresh token'));
+        }
         next(error);
     }
 };

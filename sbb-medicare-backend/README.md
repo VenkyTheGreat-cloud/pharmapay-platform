@@ -1,297 +1,235 @@
-# SBB Medicare Order & Delivery Management - Backend API
+# SBB Medicare Backend
 
-This is the backend API for SBB Medicare's order and delivery management system. It provides RESTful endpoints for managing customers, orders, delivery personnel, and payments.
+A RESTful API system for managing medical order deliveries built with Node.js, Express.js, and PostgreSQL.
 
 ## Features
 
-- **User Management**: Admin, Store Staff, and Delivery Boy roles
-- **Customer Management**: CRUD operations for customer data
-- **Order Management**: Create, assign, and track orders
-- **Delivery Tracking**: Real-time order status updates with location
-- **Payment Processing**: Multiple payment modes (Cash, Bank, Split Bill)
-- **Receipt Management**: File upload for payment receipts
-- **Authentication**: JWT-based authentication
-- **Role-Based Access Control**: Different permissions for different user roles
+- JWT-based authentication with refresh tokens
+- Role-based access control (Admin, Store Manager, Delivery Boy)
+- Order management with status tracking
+- Payment collection (cash, bank transfer, split payment)
+- Customer management
+- Delivery boy management and approval workflow
+- Location tracking for orders
+- OTP-based authentication
 
-## Tech Stack
+## Technology Stack
 
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Database**: PostgreSQL
 - **Authentication**: JWT (jsonwebtoken)
-- **File Upload**: Multer
-- **Security**: Helmet, bcryptjs, CORS
-- **Logging**: Winston, Morgan
+- **Password Hashing**: BCrypt
 - **Validation**: express-validator
 
 ## Prerequisites
 
-- Node.js 14+ and npm
-- PostgreSQL 12+
-- Git
+- Node.js (v14 or higher)
+- PostgreSQL (v12 or higher)
+- npm or yarn
 
 ## Installation
 
-1. **Clone the repository** (if not already done):
-   ```bash
-   git clone <repository-url>
-   cd tourpay-monorepo/sbb-medicare-backend
-   ```
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd sbb-medicare-backend
+```
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+2. Install dependencies:
+```bash
+npm install
+```
 
-3. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   ```
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
 
-   Edit `.env` and configure:
-   - `DATABASE_URL`: PostgreSQL connection string
-   - `JWT_SECRET`: Secret key for JWT tokens
-   - `PORT`: Server port (default: 5000)
-   - `ALLOWED_ORIGINS`: CORS allowed origins
+Edit `.env` file with your configuration:
+```env
+PORT=5000
+NODE_ENV=development
+DATABASE_URL=postgresql://postgres:password@localhost:5432/sbb_medicare
+JWT_SECRET=your-strong-secret-key-minimum-256-bits
+```
 
-4. **Set up the database**:
-   ```bash
-   # Create database
-   createdb sbb_medicare
+4. Create PostgreSQL database:
+```bash
+createdb sbb_medicare
+```
 
-   # Run schema
-   psql -d sbb_medicare -f database/schema.sql
-   ```
+Or using psql:
+```sql
+CREATE DATABASE sbb_medicare;
+```
 
-5. **Start the server**:
-   ```bash
-   # Development mode (with auto-reload)
-   npm run dev
+5. Initialize database schema:
+```bash
+npm run init-db
+```
 
-   # Production mode
-   npm start
-   ```
+This will create all necessary tables, indexes, and functions.
 
-The API will be available at `http://localhost:5000`
+## Running the Application
+
+### Development Mode
+```bash
+npm run dev
+```
+
+### Production Mode
+```bash
+npm start
+```
+
+The server will start on `http://localhost:5000` (or the port specified in `.env`).
 
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/register` - Register new delivery boy
-- `POST /api/auth/login` - User login
-- `GET /api/auth/profile` - Get current user profile
+### Base URL
+- Development: `http://localhost:5000/api`
+- Production: `https://api.sbbmedicare.com/api`
+
+### Authentication Endpoints
+
+- `POST /api/auth/register` - Register delivery boy
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/otp/send` - Send OTP
+- `POST /api/auth/otp/verify` - Verify OTP and login
+- `POST /api/auth/refresh` - Refresh access token
+- `GET /api/auth/profile` - Get user profile
 - `PUT /api/auth/profile` - Update profile
-- `PUT /api/auth/change-password` - Change password
+- `POST /api/auth/change-password` - Change password
+- `GET /api/auth/verify` - Verify token
+- `POST /api/auth/logout` - Logout
 
-### Users (Admin/Store Staff)
-- `GET /api/users` - Get all users
-- `GET /api/users/delivery-boys` - Get all delivery boys
-- `GET /api/users/pending-requests` - Get pending delivery boy requests (Admin)
-- `POST /api/users` - Create user (Admin)
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user (Admin)
-- `DELETE /api/users/:id` - Delete user (Admin)
-- `PATCH /api/users/:id/status` - Approve/reject delivery boy (Admin)
+### Order Endpoints
 
-### Customers
+- `GET /api/orders` - Get all orders (with pagination)
+- `GET /api/orders/today` - Get today's orders
+- `GET /api/orders/ongoing` - Get ongoing orders
+- `GET /api/orders/:id` - Get order by ID
+- `POST /api/orders` - Create order
+- `POST /api/orders/:id/assign` - Assign order to delivery boy
+- `PUT /api/orders/:id/status` - Update order status
+- `POST /api/orders/:id/location` - Update order location
+- `GET /api/orders/customer/:mobile` - Get orders by customer mobile
+
+### Customer Endpoints
+
 - `GET /api/customers` - Get all customers
-- `GET /api/customers/search?query=<term>` - Search customers
 - `GET /api/customers/:id` - Get customer by ID
+- `GET /api/customers/mobile/:mobile` - Get customer by mobile
 - `POST /api/customers` - Create customer
 - `PUT /api/customers/:id` - Update customer
-- `DELETE /api/customers/:id` - Delete customer (Store Staff)
+- `DELETE /api/customers/:id` - Delete customer
+- `GET /api/customers/:id/orders` - Get customer orders
 
-### Orders
-- `GET /api/orders` - Get all orders
-- `GET /api/orders/my-orders` - Get orders for current delivery boy
-- `GET /api/orders/statistics?date_from=<date>&date_to=<date>` - Get order statistics
-- `GET /api/orders/:id` - Get order by ID
-- `POST /api/orders` - Create order (Store Staff)
-- `PATCH /api/orders/:id/assign` - Assign order to delivery boy (Store Staff)
-- `PATCH /api/orders/:id/status` - Update order status
-- `GET /api/orders/:id/history` - Get order status history
-- `DELETE /api/orders/:id` - Delete order (Store Staff, only new orders)
+### Payment Endpoints
 
-### Payments
-- `GET /api/payments` - Get all payments (Admin/Store Staff)
-- `GET /api/payments/my-payments` - Get payments for current delivery boy
-- `GET /api/payments/statistics?date_from=<date>&date_to=<date>` - Get payment statistics
-- `GET /api/payments/order/:orderId` - Get payment by order ID
-- `POST /api/payments` - Create payment with receipt (Delivery Boy)
+- `POST /api/payments/collect` - Collect payment
+- `POST /api/payments/split` - Split payment
+- `GET /api/payments/order/:orderId` - Get payment by order
 
-## User Roles & Permissions
+### Delivery Boy Endpoints
 
-### Admin
-- Full access to all features
-- Manage users (create, update, delete)
-- Approve/reject delivery boy requests
-- View all orders and payments
-- Access statistics and reports
+- `GET /api/delivery-boys` - Get all delivery boys
+- `GET /api/delivery-boys/approved` - Get approved delivery boys
+- `GET /api/delivery-boys/:id` - Get delivery boy by ID
+- `POST /api/delivery-boys` - Create delivery boy
+- `PUT /api/delivery-boys/:id` - Update delivery boy
+- `DELETE /api/delivery-boys/:id` - Delete delivery boy
+- `PATCH /api/delivery-boys/:id/approve` - Approve delivery boy
+- `PATCH /api/delivery-boys/:id/toggle-active` - Toggle active status
 
-### Store Staff
-- Manage customers (CRUD)
-- Create and manage orders
-- Assign orders to delivery boys
-- View delivery boys (read-only)
-- View payment reports
+### Access Control Endpoints (Admin Only)
 
-### Delivery Boy
-- Register and manage own profile
-- View assigned orders
-- Update order status
-- Collect payments
-- Upload payment receipts
-- Update customer details
+- `GET /api/access-control` - Get all store managers
+- `POST /api/access-control` - Create store manager
+- `PUT /api/access-control/:id` - Update store manager
+- `DELETE /api/access-control/:id` - Delete store manager
+- `PATCH /api/access-control/:id/toggle-active` - Toggle active status
+
+## Response Format
+
+### Success Response
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Optional message"
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error message"
+  }
+}
+```
+
+## Authentication
+
+Most endpoints require JWT authentication. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <access_token>
+```
+
+## Role-Based Access Control
+
+- **Admin**: Full access to all resources
+- **Store Manager**: Can manage customers, orders, and delivery boys for their store only
+- **Delivery Boy**: Can update order status and location for assigned orders only
 
 ## Database Schema
 
-### Tables
-1. **users** - All system users (admin, store_staff, delivery_boy)
-2. **customers** - Customer information
-3. **orders** - Order details with status tracking
-4. **payments** - Payment records with receipts
-5. **order_status_history** - Audit trail for order status changes
-
-## Order Status Flow
-
-1. `new` - Order created by store staff
-2. `assigned` - Order assigned to delivery boy
-3. `picked_up` - Delivery boy picked up the order
-4. `in_transit` - Order is being delivered
-5. `delivered` - Order delivered to customer
-6. `cancelled` - Order cancelled
-
-## Payment Modes
-
-1. **Cash** - Full payment in cash
-2. **Bank** - Full payment via UPI/Card (requires receipt upload)
-3. **Split Bill** - Partial cash + partial bank payment
-
-## File Uploads
-
-Receipt images are uploaded to `/uploads` directory and served via `/uploads/:filename`.
-
-Supported formats: JPEG, PNG, PDF
-Max file size: 5MB (configurable)
-
-## Error Handling
-
-All API errors follow this format:
-```json
-{
-  "error": "Error message description"
-}
-```
-
-HTTP Status Codes:
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `409` - Conflict (duplicate resource)
-- `500` - Internal Server Error
-
-## Security Features
-
-- JWT authentication with token expiration
-- Password hashing with bcrypt
-- Role-based access control
-- CORS protection
-- Helmet security headers
-- Input validation
-- SQL injection prevention (parameterized queries)
-
-## Logging
-
-Logs are stored in:
-- `logs/error.log` - Error logs only
-- `logs/combined.log` - All logs
-
-In development mode, logs also output to console.
+The database includes the following main tables:
+- `users` - Admin and Store Managers
+- `delivery_boys` - Delivery boys
+- `customers` - Customers
+- `orders` - Orders
+- `order_items` - Order items
+- `payments` - Payments
+- `location_updates` - Location tracking
+- `otp_verifications` - OTP records
+- `refresh_tokens` - Refresh tokens
+- `order_status_history` - Order status audit trail
 
 ## Development
 
-### Running Tests
-```bash
-npm test
+### Project Structure
+```
+src/
+├── config/          # Configuration files
+├── controllers/     # Request handlers
+├── middleware/      # Middleware functions
+├── models/          # Database models
+├── routes/          # Route definitions
+├── services/        # Business logic
+└── utils/           # Utility functions
 ```
 
-### Database Migrations
-To reset the database:
-```bash
-psql -d sbb_medicare -f database/schema.sql
-```
+### Scripts
 
-## Default Admin Account
+- `npm start` - Start production server
+- `npm run dev` - Start development server with nodemon
+- `npm run init-db` - Initialize database schema
+- `npm test` - Run tests
 
-After running the schema, a default admin account is created:
+## Security Considerations
 
-- **Email**: admin@sbbmedicare.com
-- **Password**: admin123 (⚠️ **CHANGE THIS IMMEDIATELY**)
-
-```bash
-POST /api/auth/login
-{
-  "email": "admin@sbbmedicare.com",
-  "password": "admin123"
-}
-```
-
-## Production Deployment
-
-1. Set `NODE_ENV=production`
-2. Use strong `JWT_SECRET`
-3. Enable HTTPS
-4. Set up database backups
-5. Configure proper CORS origins
-6. Set up reverse proxy (nginx)
-7. Use process manager (PM2)
-8. Configure log rotation
-
-## API Testing with cURL
-
-### Register Delivery Boy
-```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "delivery@example.com",
-    "password": "password123",
-    "full_name": "John Doe",
-    "mobile_number": "+1234567890",
-    "address": "123 Main St"
-  }'
-```
-
-### Login
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@sbbmedicare.com",
-    "password": "admin123"
-  }'
-```
-
-### Create Customer (requires auth token)
-```bash
-curl -X POST http://localhost:5000/api/customers \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-jwt-token>" \
-  -d '{
-    "full_name": "Jane Smith",
-    "mobile_number": "+1234567891",
-    "address": "456 Oak Ave",
-    "latitude": 40.7128,
-    "longitude": -74.0060
-  }'
-```
-
-## Support
-
-For issues or questions, please contact the development team or create an issue in the repository.
+1. Change `JWT_SECRET` in production
+2. Use strong passwords for database
+3. Enable SSL for database connections in production
+4. Implement rate limiting
+5. Validate and sanitize all inputs
+6. Use HTTPS in production
 
 ## License
 

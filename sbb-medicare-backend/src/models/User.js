@@ -3,12 +3,12 @@ const { query } = require('../config/database');
 class User {
     // Create a new user
     static async create(userData) {
-        const { email, password_hash, full_name, mobile_number, role, profile_image, address } = userData;
+        const { name, store_name, mobile, email, password_hash, address, role } = userData;
         const result = await query(
-            `INSERT INTO users (email, password_hash, full_name, mobile_number, role, profile_image, address)
+            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
-             RETURNING id, email, full_name, mobile_number, role, status, profile_image, address, created_at`,
-            [email, password_hash, full_name, mobile_number, role, profile_image, address]
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at`,
+            [name, store_name, mobile, email, password_hash, address, role || 'store_manager']
         );
         return result.rows[0];
     }
@@ -22,28 +22,45 @@ class User {
         return result.rows[0];
     }
 
+    // Find user by mobile
+    static async findByMobile(mobile) {
+        const result = await query(
+            'SELECT * FROM users WHERE mobile = $1',
+            [mobile]
+        );
+        return result.rows[0];
+    }
+
+    // Find user by email or mobile
+    static async findByEmailOrMobile(mobileEmail) {
+        const result = await query(
+            'SELECT * FROM users WHERE email = $1 OR mobile = $1',
+            [mobileEmail]
+        );
+        return result.rows[0];
+    }
+
     // Find user by ID
     static async findById(id) {
         const result = await query(
-            'SELECT id, email, full_name, mobile_number, role, status, profile_image, address, created_at, updated_at FROM users WHERE id = $1',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at FROM users WHERE id = $1',
             [id]
         );
         return result.rows[0];
     }
 
     // Get all users by role
-    static async findByRole(role, status = null) {
-        let queryText = 'SELECT id, email, full_name, mobile_number, role, status, profile_image, address, created_at FROM users WHERE role = $1';
-        const params = [role];
-
-        if (status) {
-            queryText += ' AND status = $2';
-            params.push(status);
-        }
-
-        queryText += ' ORDER BY created_at DESC';
-        const result = await query(queryText, params);
+    static async findByRole(role) {
+        const result = await query(
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
+            [role]
+        );
         return result.rows;
+    }
+
+    // Get all store managers (for admin)
+    static async getAllStoreManagers() {
+        return this.findByRole('store_manager');
     }
 
     // Update user
@@ -67,7 +84,7 @@ class User {
         values.push(id);
         const result = await query(
             `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramCount}
-             RETURNING id, email, full_name, mobile_number, role, status, profile_image, address, updated_at`,
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, updated_at`,
             values
         );
         return result.rows[0];
@@ -82,23 +99,13 @@ class User {
         return result.rowCount > 0;
     }
 
-    // Update user status (for approval/rejection)
-    static async updateStatus(id, status) {
+    // Toggle active status
+    static async toggleActive(id, isActive) {
         const result = await query(
-            'UPDATE users SET status = $1 WHERE id = $2 RETURNING id, email, full_name, status',
-            [status, id]
+            'UPDATE users SET is_active = $1 WHERE id = $2 RETURNING id, name, is_active',
+            [isActive, id]
         );
         return result.rows[0];
-    }
-
-    // Get all delivery boys
-    static async getDeliveryBoys(status = null) {
-        return this.findByRole('delivery_boy', status);
-    }
-
-    // Get pending delivery boy requests
-    static async getPendingDeliveryBoys() {
-        return this.findByRole('delivery_boy', 'pending');
     }
 }
 

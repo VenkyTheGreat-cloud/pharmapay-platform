@@ -2,43 +2,72 @@ const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
 const orderController = require('../controllers/orderController');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { authenticateToken, authorizeRoles, checkStoreAccess } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(authenticateToken);
 
-// Validation middleware
-const orderValidation = [
-    body('customer_id').isUUID(),
-    body('items').isArray(),
-    body('total_amount').isNumeric(),
-];
+// Get all orders
+router.get('/', checkStoreAccess, orderController.getAllOrders);
 
-// Get all orders (admin and store staff get all, delivery boys get their own)
-router.get('/', orderController.getAllOrders);
+// Get today's orders
+router.get('/today', checkStoreAccess, orderController.getTodayOrders);
 
-// Get my orders (delivery boy only)
-router.get('/my-orders', authorizeRoles('delivery_boy'), orderController.getMyOrders);
-
-// Get orders by date range with statistics (admin and store staff only)
-router.get('/statistics', authorizeRoles('admin', 'store_staff'), orderController.getOrdersByDateRange);
+// Get ongoing orders
+router.get('/ongoing', checkStoreAccess, orderController.getOngoingOrders);
 
 // Get order by ID
-router.get('/:id', orderController.getOrderById);
+router.get('/:id', checkStoreAccess, orderController.getOrderById);
 
-// Create order (store staff only)
-router.post('/', authorizeRoles('store_staff'), orderValidation, orderController.createOrder);
+// Create order
+router.post(
+    '/',
+    checkStoreAccess,
+    authorizeRoles('admin', 'store_manager'),
+    [
+        body('customerId').notEmpty().withMessage('Customer ID is required'),
+        body('deliveryBoyId').notEmpty().withMessage('Delivery boy ID is required'),
+        body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
+        body('items.*.name').notEmpty().withMessage('Item name is required'),
+        body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+        body('items.*.price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    ],
+    orderController.createOrder
+);
 
-// Assign order to delivery boy (store staff only)
-router.patch('/:id/assign', authorizeRoles('store_staff'), orderController.assignOrder);
+// Assign order to delivery boy
+router.post(
+    '/:id/assign',
+    checkStoreAccess,
+    authorizeRoles('admin', 'store_manager'),
+    [
+        body('deliveryBoyId').notEmpty().withMessage('Delivery boy ID is required'),
+    ],
+    orderController.assignOrder
+);
 
-// Update order status (delivery boys and store staff)
-router.patch('/:id/status', authorizeRoles('store_staff', 'delivery_boy'), orderController.updateOrderStatus);
+// Update order status
+router.put(
+    '/:id/status',
+    [
+        body('status').isIn(['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'])
+            .withMessage('Invalid status'),
+    ],
+    orderController.updateOrderStatus
+);
 
-// Get order history
-router.get('/:id/history', orderController.getOrderHistory);
+// Update order location
+router.post(
+    '/:id/location',
+    [
+        body('latitude').isFloat().withMessage('Valid latitude is required'),
+        body('longitude').isFloat().withMessage('Valid longitude is required'),
+        body('source').optional().isIn(['AUTO', 'MANUAL']).withMessage('Source must be AUTO or MANUAL'),
+    ],
+    orderController.updateLocation
+);
 
-// Delete order (store staff only, only if status is 'new')
-router.delete('/:id', authorizeRoles('store_staff'), orderController.deleteOrder);
+// Get orders by customer mobile
+router.get('/customer/:mobile', checkStoreAccess, orderController.getOrdersByCustomerMobile);
 
 module.exports = router;
