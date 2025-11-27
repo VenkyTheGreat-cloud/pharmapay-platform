@@ -47,69 +47,69 @@ api.interceptors.response.use(
 const realAuthAPI = {
     login: ({ mobileEmail, password }) =>
         api.post('/auth/login', { mobileEmail, password }),
-    getProfile: () => api.get('/api/auth/profile'),
-    updateProfile: (data) => api.put('/api/auth/profile', data),
-    changePassword: (data) => api.post('/api/auth/change-password', data),
-    logout: () => api.post('/api/auth/logout'),
-    verifyToken: () => api.get('/api/auth/verify'),
+    getProfile: () => api.get('/auth/profile'),
+    updateProfile: (data) => api.put('/auth/profile', data),
+    changePassword: (data) => api.post('/auth/change-password', data),
+    logout: () => api.post('/auth/logout'),
+    verifyToken: () => api.get('/auth/verify'),
 };
 
 const realCustomersAPI = {
-    getAll: (params) => api.get('/api/customers', { params }),
+    getAll: (params) => api.get('/customers', { params }),
     search: (search, extraParams = {}) =>
-        api.get('/api/customers', { params: { search, ...extraParams } }),
-    getById: (id) => api.get(`/api/customers/${id}`),
-    getByMobile: (mobile) => api.get(`/api/customers/mobile/${mobile}`),
-    create: (data) => api.post('/api/customers', data),
-    update: (id, data) => api.put(`/api/customers/${id}`, data),
-    delete: (id) => api.delete(`/api/customers/${id}`),
-    getOrdersForCustomer: (id) => api.get(`/api/customers/${id}/orders`),
+        api.get('/customers', { params: { search, ...extraParams } }),
+    getById: (id) => api.get(`/customers/${id}`),
+    getByMobile: (mobile) => api.get(`/customers/mobile/${mobile}`),
+    create: (data) => api.post('/customers', data),
+    update: (id, data) => api.put(`/customers/${id}`, data),
+    delete: (id) => api.delete(`/customers/${id}`),
+    getOrdersForCustomer: (id) => api.get(`/customers/${id}/orders`),
 };
 
 const realOrdersAPI = {
-    getAll: (params) => api.get('/api/orders', { params }),
-    getToday: (params) => api.get('/api/orders/today', { params }),
-    getOngoing: (params) => api.get('/api/orders/ongoing', { params }),
-    getById: (id) => api.get(`/api/orders/${id}`),
-    create: (data) => api.post('/api/orders', data),
+    getAll: (params) => api.get('/orders', { params }),
+    getToday: (params) => api.get('/orders/today', { params }),
+    getOngoing: (params) => api.get('/orders/ongoing', { params }),
+    getById: (id) => api.get(`/orders/${id}`),
+    create: (data) => api.post('/orders', data),
     assign: (id, deliveryBoyId) =>
-        api.post(`/api/orders/${id}/assign`, { deliveryBoyId }),
-    updateStatus: (id, data) => api.put(`/api/orders/${id}/status`, data),
-    updateLocation: (id, data) => api.post(`/api/orders/${id}/location`, data),
+        api.post(`/orders/${id}/assign`, { deliveryBoyId }),
+    updateStatus: (id, data) => api.put(`/orders/${id}/status`, data),
+    updateLocation: (id, data) => api.post(`/orders/${id}/location`, data),
     getByCustomerMobile: (mobile) =>
-        api.get(`/api/orders/customer/${mobile}`),
+        api.get(`/orders/customer/${mobile}`),
 };
 
 const realPaymentsAPI = {
-    collect: (data) => api.post('/api/payments/collect', data),
-    split: (data) => api.post('/api/payments/split', data),
-    getByOrderId: (orderId) => api.get(`/api/payments/order/${orderId}`),
+    collect: (data) => api.post('/payments/collect', data),
+    split: (data) => api.post('/payments/split', data),
+    getByOrderId: (orderId) => api.get(`/payments/order/${orderId}`),
 };
 
 const realDeliveryBoysAPI = {
-    getAll: (params) => api.get('/api/delivery-boys', { params }),
-    getById: (id) => api.get(`/api/delivery-boys/${id}`),
-    create: (data) => api.post('/api/delivery-boys', data),
-    update: (id, data) => api.put(`/api/delivery-boys/${id}`, data),
-    delete: (id) => api.delete(`/api/delivery-boys/${id}`),
-    approve: (id) => api.patch(`/api/delivery-boys/${id}/approve`),
+    getAll: (params) => api.get('/delivery-boys', { params }),
+    getById: (id) => api.get(`/delivery-boys/${id}`),
+    create: (data) => api.post('/delivery-boys', data),
+    update: (id, data) => api.put(`/delivery-boys/${id}`, data),
+    delete: (id) => api.delete(`/delivery-boys/${id}`),
+    approve: (id) => api.patch(`/delivery-boys/${id}/approve`),
     toggleActive: (id, isActive) =>
-        api.patch(`/api/delivery-boys/${id}/toggle-active`, { isActive }),
+        api.patch(`/delivery-boys/${id}/toggle-active`, { isActive }),
     updateAvailability: (id, isAvailable) =>
-        api.patch(`/api/delivery-boys/${id}/availability`, { isAvailable }),
+        api.patch(`/delivery-boys/${id}/availability`, { isAvailable }),
 };
 
 const realAccessControlAPI = {
-    getAll: () => api.get('/api/access-control'),
-    create: (data) => api.post('/api/access-control', data),
-    update: (id, data) => api.put(`/api/access-control/${id}`, data),
-    delete: (id) => api.delete(`/api/access-control/${id}`),
+    getAll: () => api.get('/access-control'),
+    create: (data) => api.post('/access-control', data),
+    update: (id, data) => api.put(`/access-control/${id}`, data),
+    delete: (id) => api.delete(`/access-control/${id}`),
     toggleActive: (id, isActive) =>
-        api.patch(`/api/access-control/${id}/toggle-active`, { isActive }),
+        api.patch(`/access-control/${id}/toggle-active`, { isActive }),
 };
 
 const realConfigAPI = {
-    get: () => api.get('/api/config'),
+    get: () => api.get('/config'),
 };
 
 // --------------------
