@@ -15,13 +15,18 @@ const Stack = createNativeStackNavigator();
 const AppNavigator = () => {
   const { isAuthenticated, loading } = useAuth();
 
+  console.log('🧭 AppNavigator - loading:', loading, 'isAuthenticated:', isAuthenticated);
+
   if (loading) {
+    console.log('⏳ Showing loading screen...');
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' }}>
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
+
+  console.log('✅ Loading complete, rendering navigation');
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

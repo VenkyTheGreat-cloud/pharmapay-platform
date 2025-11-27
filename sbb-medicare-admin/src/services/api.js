@@ -46,7 +46,7 @@ api.interceptors.response.use(
 
 const realAuthAPI = {
     login: ({ mobileEmail, password }) =>
-        api.post('/api/auth/login', { mobileEmail, password }),
+        api.post('/auth/login', { mobileEmail, password }),
     getProfile: () => api.get('/api/auth/profile'),
     updateProfile: (data) => api.put('/api/auth/profile', data),
     changePassword: (data) => api.post('/api/auth/change-password', data),

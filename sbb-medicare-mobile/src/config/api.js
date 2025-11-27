@@ -32,20 +32,21 @@ export default {
     CUSTOMER_BY_ID: (id) => `/customers/${id}`,
   },
 
-  // Order Status
+  // Order Status (matching backend API)
   ORDER_STATUS: {
-    NEW: 'new',
-    ASSIGNED: 'assigned',
-    PICKED_UP: 'picked_up',
-    IN_TRANSIT: 'in_transit',
-    DELIVERED: 'delivered',
-    CANCELLED: 'cancelled',
+    NEW: 'NEW',
+    ASSIGNED: 'ASSIGNED',
+    PICKED_UP: 'PICKED_UP',
+    IN_TRANSIT: 'IN_TRANSIT',
+    PAYMENT_COLLECTION: 'PAYMENT_COLLECTION',
+    DELIVERED: 'DELIVERED',
+    CANCELLED: 'CANCELLED',
   },
 
-  // Payment Modes
+  // Payment Modes (matching backend API)
   PAYMENT_MODES: {
-    CASH: 'cash',
-    BANK: 'bank',
-    SPLIT: 'split',
+    CASH: 'CASH',
+    BANK: 'BANK_TRANSFER',
+    SPLIT: 'SPLIT',
   },
 };
