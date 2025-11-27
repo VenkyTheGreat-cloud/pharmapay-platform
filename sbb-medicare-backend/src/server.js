@@ -70,6 +70,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/config', require('./routes/configRoutes'));
 
 // 404 handler
 app.use(notFoundHandler);

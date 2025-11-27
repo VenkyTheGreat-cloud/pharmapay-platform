@@ -5,7 +5,6 @@ import {
     Users,
     UserCog,
     Truck,
-    Package,
     LogOut,
     Menu,
     X
@@ -27,7 +26,6 @@ export default function Layout({ children }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Store Staff', href: '/store-staff', icon: UserCog },
-        { name: 'Orders', href: '/orders', icon: Package },
         { name: 'Customers', href: '/customers', icon: Users },
     ];
 

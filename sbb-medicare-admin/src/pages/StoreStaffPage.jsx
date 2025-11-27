@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { usersAPI } from '../services/api';
-import { UserCheck, UserX, Users, Clock, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { accessControlAPI } from '../services/api';
+import { UserCheck, UserX, Plus, Edit, Trash2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
 
@@ -18,10 +18,8 @@ export default function StoreStaffPage() {
 
     const loadStoreStaff = async () => {
         try {
-            const response = await usersAPI.getAll();
-            // Filter only store_staff role users
-            const staffUsers = response.data.users?.filter(user => user.role === 'store_staff') || [];
-            setStoreStaff(staffUsers);
+            const response = await accessControlAPI.getAll();
+            setStoreStaff(response.data?.data || []);
         } catch (error) {
             console.error('Error loading store staff:', error);
         } finally {
@@ -33,7 +31,7 @@ export default function StoreStaffPage() {
         if (!confirm('Activate this store staff member?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'active');
+            await accessControlAPI.toggleActive(userId, true);
             loadStoreStaff();
             alert('Store staff activated successfully');
         } catch (error) {
@@ -45,7 +43,7 @@ export default function StoreStaffPage() {
         if (!confirm('Deactivate this store staff member?')) return;
 
         try {
-            await usersAPI.updateStatus(userId, 'inactive');
+            await accessControlAPI.toggleActive(userId, false);
             loadStoreStaff();
             alert('Store staff deactivated');
         } catch (error) {
@@ -57,7 +55,7 @@ export default function StoreStaffPage() {
         if (!confirm('Are you sure you want to delete this store staff member?')) return;
 
         try {
-            await usersAPI.delete(userId);
+            await accessControlAPI.delete(userId);
             loadStoreStaff();
             alert('Store staff deleted successfully');
         } catch (error) {
@@ -66,8 +64,8 @@ export default function StoreStaffPage() {
     };
 
     const filteredStoreStaff = storeStaff.filter((staff) => {
-        if (activeTab === 'active') return staff.status === 'active';
-        if (activeTab === 'inactive') return staff.status === 'inactive';
+        if (activeTab === 'active') return staff.isActive;
+        if (activeTab === 'inactive') return !staff.isActive;
         return true;
     });
 
@@ -116,7 +114,7 @@ export default function StoreStaffPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({storeStaff.filter((s) => s.status === 'active').length})
+                    Active ({storeStaff.filter((s) => s.isActive).length})
                 </button>
                 <button
                     onClick={() => setActiveTab('inactive')}
@@ -126,7 +124,7 @@ export default function StoreStaffPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Inactive ({storeStaff.filter((s) => s.status === 'inactive').length})
+                    Inactive ({storeStaff.filter((s) => !s.isActive).length})
                 </button>
             </div>
 
@@ -164,18 +162,18 @@ export default function StoreStaffPage() {
                                 <tr key={staff.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{staff.full_name}</div>
+                                            <div className="text-sm font-medium text-gray-900">{staff.name}</div>
                                             <div className="text-sm text-gray-500">{staff.email}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{staff.mobile_number}</div>
+                                        <div className="text-sm text-gray-900">{staff.mobile}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge status={staff.status} />
+                                        <StatusBadge isActive={staff.isActive} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(staff.created_at).toLocaleDateString()}
+                                        {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex gap-2">
@@ -189,7 +187,7 @@ export default function StoreStaffPage() {
                                             >
                                                 <Edit className="w-5 h-5" />
                                             </button>
-                                            {staff.status === 'active' ? (
+                                            {staff.isActive ? (
                                                 <button
                                                     onClick={() => handleDeactivate(staff.id)}
                                                     className="text-orange-600 hover:text-orange-900"
@@ -243,20 +241,16 @@ export default function StoreStaffPage() {
                     loadStoreStaff();
                 }}
                 user={selectedUser}
+                userType="store_staff"
             />
         </div>
     );
 }
 
-function StatusBadge({ status }) {
-    const statusConfig = {
-        active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
-        inactive: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' },
-        pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
-        rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' },
-    };
-
-    const config = statusConfig[status] || statusConfig.pending;
+function StatusBadge({ isActive }) {
+    const config = isActive
+        ? { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' }
+        : { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' };
 
     return (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${config.bg} ${config.text}`}>

@@ -1,4 +1,4 @@
-const { query } = require('../config/database');
+const { query, transaction } = require('../config/database');
 
 class Payment {
     // Create a new payment
@@ -8,30 +8,41 @@ class Payment {
             payment_mode,
             cash_amount,
             bank_amount,
-            total_amount,
-            receipt_image,
             transaction_reference,
-            collected_by
+            receipt_photo_url,
+            created_by
         } = paymentData;
 
-        const result = await query(
-            `INSERT INTO payments (order_id, payment_mode, cash_amount, bank_amount, total_amount,
-                                   receipt_image, transaction_reference, collected_by, payment_status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'completed')
-             RETURNING *`,
-            [order_id, payment_mode, cash_amount || 0, bank_amount || 0, total_amount,
-             receipt_image, transaction_reference, collected_by]
-        );
-        return result.rows[0];
+        return transaction(async (client) => {
+            // Create payment
+            const result = await client.query(
+                `INSERT INTO payments (order_id, payment_mode, cash_amount, bank_amount,
+                                      transaction_reference, receipt_photo_url, status, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'CONFIRMED', $7)
+                 RETURNING *`,
+                [order_id, payment_mode, cash_amount || 0, bank_amount || 0,
+                 transaction_reference, receipt_photo_url, created_by]
+            );
+
+            // Update order payment status
+            await client.query(
+                `UPDATE orders SET payment_status = 'PAID', payment_mode = $1 WHERE id = $2`,
+                [payment_mode, order_id]
+            );
+
+            return result.rows[0];
+        });
     }
 
     // Find payment by order ID
     static async findByOrderId(orderId) {
         const result = await query(
-            `SELECT p.*, u.full_name as collected_by_name
+            `SELECT p.*, db.name as created_by_name
              FROM payments p
-             LEFT JOIN users u ON p.collected_by = u.id
-             WHERE p.order_id = $1`,
+             LEFT JOIN delivery_boys db ON p.created_by = db.id
+             WHERE p.order_id = $1
+             ORDER BY p.created_at DESC
+             LIMIT 1`,
             [orderId]
         );
         return result.rows[0];
@@ -40,81 +51,91 @@ class Payment {
     // Find payment by ID
     static async findById(id) {
         const result = await query(
-            'SELECT * FROM payments WHERE id = $1',
+            `SELECT p.*, db.name as created_by_name
+             FROM payments p
+             LEFT JOIN delivery_boys db ON p.created_by = db.id
+             WHERE p.id = $1`,
             [id]
         );
         return result.rows[0];
     }
 
-    // Get all payments
+    // Get all payments with filters
     static async findAll(filters = {}) {
         let queryText = `
-            SELECT p.*, o.order_number, c.full_name as customer_name,
-                   u.full_name as collected_by_name
+            SELECT p.*, o.order_number, db.name as created_by_name
             FROM payments p
             LEFT JOIN orders o ON p.order_id = o.id
-            LEFT JOIN customers c ON o.customer_id = c.id
-            LEFT JOIN users u ON p.collected_by = u.id
+            LEFT JOIN delivery_boys db ON p.created_by = db.id
             WHERE 1=1
         `;
         const params = [];
         let paramCount = 1;
 
-        if (filters.payment_mode) {
-            queryText += ` AND p.payment_mode = $${paramCount}`;
-            params.push(filters.payment_mode);
+        if (filters.order_id) {
+            queryText += ` AND p.order_id = $${paramCount}`;
+            params.push(filters.order_id);
             paramCount++;
         }
 
-        if (filters.collected_by) {
-            queryText += ` AND p.collected_by = $${paramCount}`;
-            params.push(filters.collected_by);
+        if (filters.status) {
+            queryText += ` AND p.status = $${paramCount}`;
+            params.push(filters.status);
             paramCount++;
         }
 
-        if (filters.date_from) {
-            queryText += ` AND DATE(p.payment_date) >= $${paramCount}`;
-            params.push(filters.date_from);
-            paramCount++;
-        }
-
-        if (filters.date_to) {
-            queryText += ` AND DATE(p.payment_date) <= $${paramCount}`;
-            params.push(filters.date_to);
-            paramCount++;
-        }
-
-        queryText += ' ORDER BY p.payment_date DESC';
+        queryText += ' ORDER BY p.created_at DESC';
 
         const result = await query(queryText, params);
         return result.rows;
     }
 
-    // Get payment statistics
-    static async getStatistics(dateFrom, dateTo) {
+    // Update payment
+    static async update(id, updates) {
+        const fields = [];
+        const values = [];
+        let paramCount = 1;
+
+        Object.keys(updates).forEach(key => {
+            if (updates[key] !== undefined) {
+                fields.push(`${key} = $${paramCount}`);
+                values.push(updates[key]);
+                paramCount++;
+            }
+        });
+
+        if (fields.length === 0) {
+            throw new Error('No fields to update');
+        }
+
+        values.push(id);
         const result = await query(
-            `SELECT
-                COUNT(*) as total_payments,
-                SUM(total_amount) as total_amount,
-                SUM(cash_amount) as total_cash,
-                SUM(bank_amount) as total_bank,
-                COUNT(CASE WHEN payment_mode = 'cash' THEN 1 END) as cash_payments,
-                COUNT(CASE WHEN payment_mode = 'bank' THEN 1 END) as bank_payments,
-                COUNT(CASE WHEN payment_mode = 'split' THEN 1 END) as split_payments
-             FROM payments
-             WHERE DATE(payment_date) BETWEEN $1 AND $2`,
-            [dateFrom, dateTo]
+            `UPDATE payments SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+            values
         );
         return result.rows[0];
     }
 
-    // Update payment status
-    static async updateStatus(id, status) {
-        const result = await query(
-            'UPDATE payments SET payment_status = $1 WHERE id = $2 RETURNING *',
-            [status, id]
-        );
-        return result.rows[0];
+    // Get total collected amount for orders in a date range (based on order.created_at)
+    static async getCollectedAmountByDateRange(fromDate, toDate, storeId = null) {
+        let queryText = `
+            SELECT COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as total_collected
+            FROM payments p
+            INNER JOIN orders o ON p.order_id = o.id
+            WHERE p.status = 'CONFIRMED'
+              AND o.created_at >= $1::date
+              AND o.created_at < ($2::date + INTERVAL '1 day')
+        `;
+        const params = [fromDate, toDate || fromDate];
+        let paramCount = 3;
+
+        if (storeId) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(storeId);
+        }
+
+        const result = await query(queryText, params);
+        return parseFloat(result.rows[0].total_collected || 0);
     }
 }
 

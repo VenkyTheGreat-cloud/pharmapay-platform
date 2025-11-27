@@ -81,8 +81,11 @@ export default function Layout({ children }) {
                     {/* User info */}
                     <div className="p-4 border-t">
                         <div className="mb-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
+                            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
                             <p className="text-xs text-gray-500">{user?.email}</p>
+                            {user?.storeName && (
+                                <p className="text-xs text-gray-500 mt-0.5">{user.storeName}</p>
+                            )}
                             <p className="text-xs text-blue-600 mt-1 capitalize">{user?.role}</p>
                         </div>
                         <button

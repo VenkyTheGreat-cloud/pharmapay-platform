@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Toggle for UI-only mode (no real API calls)
+// Set VITE_API_DISABLED=true in .env to run with mock data
+const API_DISABLED = import.meta.env.VITE_API_DISABLED === 'true';
+
+// Backend base URL (Play Framework API)
+// Default: http://localhost:9000/api
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -23,7 +29,7 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor to handle errors
+// Response interceptor to handle 401 and normalize errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -36,54 +42,396 @@ api.interceptors.response.use(
     }
 );
 
-// Auth API
+// Simple helpers for mock responses
+const mockResolve = (data) => Promise.resolve({ data });
+
+// Auth API (Play backend spec)
 export const authAPI = {
-    login: (credentials) => api.post('/auth/login', credentials),
-    getProfile: () => api.get('/auth/profile'),
-    updateProfile: (data) => api.put('/auth/profile', data),
-    changePassword: (data) => api.put('/auth/change-password', data),
+    // credentials: { mobileEmail, password }
+    login: (credentials) => {
+        if (API_DISABLED) {
+            // Accept any credentials in mock mode
+            return mockResolve({
+                success: true,
+                data: {
+                    token: 'mock-token',
+                    refreshToken: 'mock-refresh-token',
+                    user: {
+                        id: 1,
+                        name: 'Mock Store Manager',
+                        storeName: 'Mock Store',
+                        mobile: credentials.mobileEmail,
+                        email: 'store@sbbmedicare.com',
+                        address: '123 Mock Street',
+                        role: 'store_manager',
+                    },
+                },
+            });
+        }
+        return api.post('/auth/login', credentials);
+    },
+    getProfile: () => {
+        if (API_DISABLED) {
+            const savedUser = localStorage.getItem('user');
+            return mockResolve({
+                success: true,
+                data: savedUser ? JSON.parse(savedUser) : null,
+            });
+        }
+        return api.get('/auth/profile');
+    },
+    updateProfile: (data) => {
+        if (API_DISABLED) {
+            const savedUser = localStorage.getItem('user');
+            const user = savedUser ? { ...JSON.parse(savedUser), ...data } : data;
+            localStorage.setItem('user', JSON.stringify(user));
+            return mockResolve({ success: true, data: user });
+        }
+        return api.put('/auth/profile', data);
+    },
+    changePassword: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Password changed (mock)' });
+        }
+        return api.post('/auth/change-password', data);
+    },
 };
 
-// Users API
-export const usersAPI = {
-    getAll: (params) => api.get('/users', { params }),
-    getDeliveryBoys: (params) => api.get('/users/delivery-boys', { params }),
-    getPendingRequests: () => api.get('/users/pending-requests'),
-    create: (data) => api.post('/users', data),
-    getById: (id) => api.get(`/users/${id}`),
-    update: (id, data) => api.put(`/users/${id}`, data),
-    delete: (id) => api.delete(`/users/${id}`),
-    updateStatus: (id, status) => api.patch(`/users/${id}/status`, { status }),
+// Delivery Boys API
+export const deliveryBoysAPI = {
+    // List delivery boys with optional filters: status, isActive
+    list: (params) => {
+        if (API_DISABLED) {
+            const all = [
+                {
+                    id: 1,
+                    name: 'Raj Kumar',
+                    mobile: '9876543211',
+                    email: 'raj@example.com',
+                    status: 'approved',
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                },
+                {
+                    id: 2,
+                    name: 'Pending Boy',
+                    mobile: '9876543212',
+                    email: 'pending@example.com',
+                    status: 'pending',
+                    isActive: false,
+                    createdAt: new Date().toISOString(),
+                },
+            ];
+            let filtered = all;
+            if (params?.status) {
+                filtered = filtered.filter((b) => b.status === params.status);
+            }
+            if (typeof params?.isActive === 'boolean') {
+                filtered = filtered.filter((b) => b.isActive === params.isActive);
+            }
+            return mockResolve({ success: true, data: filtered });
+        }
+        return api.get('/delivery-boys', { params });
+    },
+    // Approved + active list for assignment dropdown
+    listApproved: () => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: [
+                    {
+                        id: 1,
+                        name: 'Raj Kumar',
+                        mobile: '9876543211',
+                        email: 'raj@example.com',
+                        status: 'approved',
+                        isActive: true,
+                        createdAt: new Date().toISOString(),
+                    },
+                ],
+            });
+        }
+        return api.get('/delivery-boys/approved');
+    },
+    getById: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id,
+                    name: 'Mock Delivery Boy',
+                    mobile: '9876543211',
+                    email: 'dboy@example.com',
+                    status: 'approved',
+                    isActive: true,
+                },
+            });
+        }
+        return api.get(`/delivery-boys/${id}`);
+    },
+    create: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { id: Date.now(), ...data, status: 'pending', isActive: false } });
+        }
+        return api.post('/delivery-boys', data);
+    },
+    update: (id, data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { id, ...data } });
+        }
+        return api.put(`/delivery-boys/${id}`, data);
+    },
+    delete: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Deleted (mock)' });
+        }
+        return api.delete(`/delivery-boys/${id}`);
+    },
+    approve: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Approved (mock)' });
+        }
+        return api.patch(`/delivery-boys/${id}/approve`);
+    },
+    toggleActive: (id, isActive) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Status updated (mock)', data: { id, isActive } });
+        }
+        return api.patch(`/delivery-boys/${id}/toggle-active`, { isActive });
+    },
 };
 
 // Customers API
 export const customersAPI = {
-    getAll: (params) => api.get('/customers', { params }),
-    search: (query) => api.get('/customers/search', { params: { query } }),
-    getById: (id) => api.get(`/customers/${id}`),
-    create: (data) => api.post('/customers', data),
-    update: (id, data) => api.put(`/customers/${id}`, data),
-    delete: (id) => api.delete(`/customers/${id}`),
+    // GET /customers?search=&page=&limit=
+    getAll: (params) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    data: [
+                        {
+                            id: 1,
+                            name: 'John Customer',
+                            mobile: '9876543210',
+                            address: '123 Main St',
+                            landmark: 'Near Park',
+                            createdAt: new Date().toISOString(),
+                        },
+                    ],
+                    pagination: { total: 1, page: 1, limit: 50, totalPages: 1 },
+                },
+            });
+        }
+        return api.get('/customers', { params });
+    },
+    // Convenience search wrapper using ?search=
+    search: (search) => {
+        if (API_DISABLED) {
+            return customersAPI.getAll({ search });
+        }
+        return api.get('/customers', { params: { search } });
+    },
+    getById: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id,
+                    name: 'John Customer',
+                    mobile: '9876543210',
+                    address: '123 Main St',
+                    landmark: 'Near Park',
+                    createdAt: new Date().toISOString(),
+                },
+            });
+        }
+        return api.get(`/customers/${id}`);
+    },
+    create: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { id: Date.now(), ...data } });
+        }
+        return api.post('/customers', data);
+    },
+    update: (id, data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { id, ...data } });
+        }
+        return api.put(`/customers/${id}`, data);
+    },
+    delete: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Customer deleted (mock)' });
+        }
+        return api.delete(`/customers/${id}`);
+    },
 };
 
 // Orders API
 export const ordersAPI = {
-    getAll: (params) => api.get('/orders', { params }),
-    getStatistics: (params) => api.get('/orders/statistics', { params }),
-    getById: (id) => api.get(`/orders/${id}`),
-    create: (data) => api.post('/orders', data),
-    assign: (id, deliveryBoyId) => api.patch(`/orders/${id}/assign`, { delivery_boy_id: deliveryBoyId }),
-    updateStatus: (id, data) => api.patch(`/orders/${id}/status`, data),
-    getHistory: (id) => api.get(`/orders/${id}/history`),
-    delete: (id) => api.delete(`/orders/${id}`),
+    // GET /orders with filters: status, date, page, limit
+    getAll: (params) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    orders: [
+                        {
+                            id: 1,
+                            orderNumber: 'ORD-1-001',
+                            customerId: 1,
+                            customerName: 'John Customer',
+                            customerMobile: '9876543210',
+                            deliveryBoyId: 1,
+                            deliveryBoyName: 'Raj Kumar',
+                            deliveryBoyMobile: '9876543211',
+                            status: 'ASSIGNED',
+                            amount: 1500.0,
+                            paymentMode: 'CASH',
+                            paymentStatus: 'PENDING',
+                            customerComments: 'Handle with care',
+                            address: '123 Main St',
+                            createdTime: new Date().toISOString(),
+                            items: [
+                                { id: 1, name: 'Medicine A', quantity: 2, price: 500.0, total: 1000.0 },
+                            ],
+                        },
+                    ],
+                    pagination: { total: 1, page: 1, limit: 20, totalPages: 1 },
+                },
+            });
+        }
+        return api.get('/orders', { params });
+    },
+    getToday: (params) => {
+        if (API_DISABLED) {
+            return ordersAPI.getAll(params);
+        }
+        return api.get('/orders/today', { params });
+    },
+    getOngoing: (params) => {
+        if (API_DISABLED) {
+            return ordersAPI.getAll(params);
+        }
+        return api.get('/orders/ongoing', { params });
+    },
+    getById: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id,
+                    orderNumber: 'ORD-1-001',
+                    customerId: 1,
+                    customerName: 'John Customer',
+                    customerMobile: '9876543210',
+                    deliveryBoyId: 1,
+                    deliveryBoyName: 'Raj Kumar',
+                    deliveryBoyMobile: '9876543211',
+                    status: 'ASSIGNED',
+                    amount: 1500.0,
+                    paymentMode: 'CASH',
+                    paymentStatus: 'PENDING',
+                    customerComments: 'Handle with care',
+                    address: '123 Main St',
+                    createdTime: new Date().toISOString(),
+                    items: [
+                        { id: 1, name: 'Medicine A', quantity: 2, price: 500.0, total: 1000.0 },
+                    ],
+                },
+            });
+        }
+        return api.get(`/orders/${id}`);
+    },
+    create: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Order created (mock)',
+                data: {
+                    id: Date.now(),
+                    ...data,
+                    orderNumber: 'ORD-1-XXX',
+                    status: 'ASSIGNED',
+                    amount: data.items?.reduce((s, i) => s + i.quantity * i.price, 0) || 0,
+                },
+            });
+        }
+        return api.post('/orders', data);
+    },
+    assign: (id, deliveryBoyId) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Order assigned (mock)',
+                data: { assignedBy: 1, assignedByName: 'Mock Manager', assignedTime: new Date().toISOString() },
+            });
+        }
+        return api.post(`/orders/${id}/assign`, { deliveryBoyId });
+    },
+    updateStatus: (id, data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Status updated (mock)', data: { id, ...data } });
+        }
+        return api.put(`/orders/${id}/status`, data);
+    },
+    delete: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Order deleted (mock)' });
+        }
+        return api.delete(`/orders/${id}`);
+    },
+    getByCustomerMobile: (mobile, storeId) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: [],
+            });
+        }
+        return api.get(`/orders/customer/${mobile}`, { params: storeId ? { storeId } : undefined });
+    },
 };
 
 // Payments API
 export const paymentsAPI = {
-    getAll: (params) => api.get('/payments', { params }),
-    getStatistics: (params) => api.get('/payments/statistics', { params }),
-    getByOrderId: (orderId) => api.get(`/payments/order/${orderId}`),
-    create: (data) => api.post('/payments', data),
+    collect: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Payment collected (mock)',
+                data: { id: Date.now(), ...data, status: 'CONFIRMED', createdAt: new Date().toISOString() },
+            });
+        }
+        return api.post('/payments/collect', data);
+    },
+    split: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Split payment collected (mock)',
+                data: { id: Date.now(), ...data, status: 'CONFIRMED', createdAt: new Date().toISOString() },
+            });
+        }
+        return api.post('/payments/split', data);
+    },
+    getByOrderId: (orderId) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id: 1,
+                    orderId,
+                    paymentMode: 'CASH',
+                    cashAmount: 1500.0,
+                    bankAmount: 0,
+                    status: 'CONFIRMED',
+                    createdAt: new Date().toISOString(),
+                },
+            });
+        }
+        return api.get(`/payments/order/${orderId}`);
+    },
 };
 
 export default api;

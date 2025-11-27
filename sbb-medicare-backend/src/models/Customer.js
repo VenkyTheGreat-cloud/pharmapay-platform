@@ -3,12 +3,12 @@ const { query } = require('../config/database');
 class Customer {
     // Create a new customer
     static async create(customerData) {
-        const { full_name, mobile_number, address, latitude, longitude, landmark, created_by } = customerData;
+        const { name, mobile, address, landmark, customer_lat, customer_lng, store_id } = customerData;
         const result = await query(
-            `INSERT INTO customers (full_name, mobile_number, address, latitude, longitude, landmark, created_by)
+            `INSERT INTO customers (name, mobile, address, landmark, customer_lat, customer_lng, store_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
-            [full_name, mobile_number, address, latitude, longitude, landmark, created_by]
+            [name, mobile, address, landmark, customer_lat, customer_lng, store_id]
         );
         return result.rows[0];
     }
@@ -16,39 +16,108 @@ class Customer {
     // Find customer by ID
     static async findById(id) {
         const result = await query(
-            'SELECT * FROM customers WHERE id = $1',
+            `SELECT c.*, u.name as store_name, u.store_name as store_store_name,
+                    (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count
+             FROM customers c
+             LEFT JOIN users u ON c.store_id = u.id
+             WHERE c.id = $1`,
             [id]
         );
         return result.rows[0];
     }
 
-    // Find customer by mobile number
-    static async findByMobile(mobile_number) {
+    // Find customer by mobile and store
+    static async findByMobileAndStore(mobile, store_id) {
         const result = await query(
-            'SELECT * FROM customers WHERE mobile_number = $1',
-            [mobile_number]
+            'SELECT * FROM customers WHERE mobile = $1 AND store_id = $2',
+            [mobile, store_id]
         );
         return result.rows[0];
     }
 
-    // Get all customers
-    static async findAll(limit = 100, offset = 0) {
-        const result = await query(
-            'SELECT * FROM customers ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-            [limit, offset]
-        );
+    // Find customer by mobile (all stores)
+    static async findByMobile(mobile, store_id = null) {
+        let queryText = `
+            SELECT c.*, u.name as store_name, u.store_name as store_store_name,
+                   (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count
+            FROM customers c
+            LEFT JOIN users u ON c.store_id = u.id
+            WHERE c.mobile = $1
+        `;
+        const params = [mobile];
+
+        if (store_id) {
+            queryText += ' AND c.store_id = $2';
+            params.push(store_id);
+        }
+
+        queryText += ' ORDER BY c.created_at DESC';
+        const result = await query(queryText, params);
         return result.rows;
     }
 
-    // Search customers
-    static async search(searchTerm) {
-        const result = await query(
-            `SELECT * FROM customers
-             WHERE full_name ILIKE $1 OR mobile_number ILIKE $1 OR address ILIKE $1
-             ORDER BY created_at DESC`,
-            [`%${searchTerm}%`]
-        );
+    // Get all customers with pagination and filters
+    static async findAll(filters = {}) {
+        let queryText = `
+            SELECT c.*, u.name as store_name, u.store_name as store_store_name,
+                   (SELECT COUNT(*) FROM orders WHERE customer_id = c.id) as order_count
+            FROM customers c
+            LEFT JOIN users u ON c.store_id = u.id
+            WHERE 1=1
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        if (filters.store_id) {
+            queryText += ` AND c.store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        if (filters.search) {
+            queryText += ` AND (c.name ILIKE $${paramCount} OR c.mobile ILIKE $${paramCount})`;
+            params.push(`%${filters.search}%`);
+            paramCount++;
+        }
+
+        queryText += ' ORDER BY c.created_at DESC';
+
+        if (filters.limit) {
+            queryText += ` LIMIT $${paramCount}`;
+            params.push(filters.limit);
+            paramCount++;
+        }
+
+        if (filters.offset) {
+            queryText += ` OFFSET $${paramCount}`;
+            params.push(filters.offset);
+            paramCount++;
+        }
+
+        const result = await query(queryText, params);
         return result.rows;
+    }
+
+    // Get total count for pagination
+    static async count(filters = {}) {
+        let queryText = 'SELECT COUNT(*) as total FROM customers WHERE 1=1';
+        const params = [];
+        let paramCount = 1;
+
+        if (filters.store_id) {
+            queryText += ` AND store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        if (filters.search) {
+            queryText += ` AND (name ILIKE $${paramCount} OR mobile ILIKE $${paramCount})`;
+            params.push(`%${filters.search}%`);
+            paramCount++;
+        }
+
+        const result = await query(queryText, params);
+        return parseInt(result.rows[0].total);
     }
 
     // Update customer
@@ -79,6 +148,16 @@ class Customer {
 
     // Delete customer
     static async delete(id) {
+        // Check if customer has orders
+        const orderCheck = await query(
+            'SELECT COUNT(*) as count FROM orders WHERE customer_id = $1',
+            [id]
+        );
+
+        if (parseInt(orderCheck.rows[0].count) > 0) {
+            throw new Error('CUSTOMER_HAS_ORDERS');
+        }
+
         const result = await query(
             'DELETE FROM customers WHERE id = $1 RETURNING id',
             [id]
@@ -86,17 +165,17 @@ class Customer {
         return result.rowCount > 0;
     }
 
-    // Get customer with order count
-    static async getWithOrderCount(id) {
+    // Get customer orders
+    static async getOrders(customerId) {
         const result = await query(
-            `SELECT c.*, COUNT(o.id) as order_count
-             FROM customers c
-             LEFT JOIN orders o ON c.id = o.customer_id
-             WHERE c.id = $1
-             GROUP BY c.id`,
-            [id]
+            `SELECT o.id, o.order_number, o.total_amount, o.status, o.payment_mode,
+                    o.created_at as order_date
+             FROM orders o
+             WHERE o.customer_id = $1
+             ORDER BY o.created_at DESC`,
+            [customerId]
         );
-        return result.rows[0];
+        return result.rows;
     }
 }
 

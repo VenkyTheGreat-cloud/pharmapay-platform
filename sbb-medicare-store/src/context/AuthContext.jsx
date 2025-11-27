@@ -18,12 +18,24 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (identifier, password) => {
         try {
-            const response = await authAPI.login({ email, password });
-            const { token, user } = response.data;
+            // Backend expects "mobileEmail" which can be mobile or email
+            const response = await authAPI.login({ mobileEmail: identifier, password });
+
+            if (!response.data?.success) {
+                return {
+                    success: false,
+                    error: response.data?.error?.message || 'Login failed',
+                };
+            }
+
+            const { token, refreshToken, user } = response.data.data || {};
 
             localStorage.setItem('token', token);
+            if (refreshToken) {
+                localStorage.setItem('refreshToken', refreshToken);
+            }
             localStorage.setItem('user', JSON.stringify(user));
             setUser(user);
 
@@ -31,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return {
                 success: false,
-                error: error.response?.data?.error || 'Login failed',
+                error: error.response?.data?.error?.message || 'Invalid credentials',
             };
         }
     };
