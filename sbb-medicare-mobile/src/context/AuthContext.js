@@ -12,30 +12,54 @@ export const AuthProvider = ({ children }) => {
 
   // Load user from storage on app start
   useEffect(() => {
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('⚠️ Loading timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
     loadUser();
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const loadUser = async () => {
     try {
       setLoading(true);
-      const token = await storage.getToken();
-      const savedUser = await storage.getUser();
+      console.log('🔄 Loading user from storage...');
+      
+      // Use Promise.race with timeout to prevent hanging
+      const loadPromise = Promise.all([
+        storage.getToken().catch(() => null),
+        storage.getUser().catch(() => null),
+      ]);
+      
+      const timeoutPromise = new Promise((resolve) => 
+        setTimeout(() => resolve([null, null]), 2000)
+      );
+      
+      const [token, savedUser] = await Promise.race([loadPromise, timeoutPromise]);
+
+      console.log('📦 Token found:', !!token);
+      console.log('👤 User found:', !!savedUser);
 
       if (token && savedUser) {
+        console.log('✅ User found in storage, setting authenticated');
         setUser(savedUser);
         setIsAuthenticated(true);
-        // Optionally refresh user data from API
-        try {
-          const response = await apiService.getProfile();
-          setUser(response.data);
-          await storage.saveUser(response.data);
-        } catch (error) {
-          console.log('Error refreshing user data:', error);
-        }
+      } else {
+        console.log('ℹ️ No saved user, showing login screen');
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      console.error('❌ Error loading user:', error);
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
+      console.log('✅ Loading complete, setting loading to false');
       setLoading(false);
     }
   };
