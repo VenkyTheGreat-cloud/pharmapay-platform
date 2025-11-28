@@ -15,12 +15,14 @@ export default function StoreStaffPage() {
 
     useEffect(() => {
         loadStoreStaff();
-    }, []);
+    }, [activeTab]);
 
     const loadStoreStaff = async () => {
         try {
             setLoading(true);
             setError(null);
+            
+            // Always fetch all records, then filter client-side
             const response = await accessControlAPI.getAll();
             
             // Handle API response structure: { success: true, data: { store_managers: [...] } }
@@ -28,19 +30,31 @@ export default function StoreStaffPage() {
             const storeManagersArray = responseData.store_managers || [];
             
             // Map snake_case to camelCase for consistency
-            const mappedData = storeManagersArray.map(manager => ({
-                id: manager.id,
-                name: manager.name,
-                email: manager.email,
-                mobile: manager.mobile,
-                address: manager.address,
-                storeName: manager.store_name || manager.storeName,
-                role: manager.role,
-                isActive: manager.is_active !== undefined ? manager.is_active : manager.isActive,
-                status: manager.status || (manager.is_active ? 'active' : 'inactive'),
-                createdAt: manager.created_at || manager.createdAt,
-                updatedAt: manager.updated_at || manager.updatedAt,
-            }));
+            // Handle is_active as string ("true", "false", "pending") or boolean
+            const mappedData = storeManagersArray.map(manager => {
+                // Convert is_active string to boolean for internal use
+                let isActiveValue = manager.is_active;
+                if (typeof isActiveValue === 'string') {
+                    isActiveValue = isActiveValue === 'true';
+                } else if (isActiveValue === undefined || isActiveValue === null) {
+                    isActiveValue = false;
+                }
+                
+                return {
+                    id: manager.id,
+                    name: manager.name,
+                    email: manager.email,
+                    mobile: manager.mobile,
+                    address: manager.address,
+                    storeName: manager.store_name || manager.storeName,
+                    role: manager.role,
+                    isActive: isActiveValue,
+                    isActiveRaw: manager.is_active, // Keep raw value for filtering
+                    status: manager.status || (isActiveValue ? 'active' : 'inactive'),
+                    createdAt: manager.created_at || manager.createdAt,
+                    updatedAt: manager.updated_at || manager.updatedAt,
+                };
+            });
             
             setStoreStaff(mappedData);
         } catch (error) {
@@ -83,11 +97,20 @@ export default function StoreStaffPage() {
         }
     };
 
+    // Filter based on is_active raw value (string: "true", "false", "pending")
     const filteredStoreStaff = storeStaff.filter((staff) => {
-        if (activeTab === 'active') return staff.isActive;
-        if (activeTab === 'inactive') return !staff.isActive;
-        return true;
+        if (activeTab === 'active') {
+            return staff.isActiveRaw === 'true' || staff.isActiveRaw === true;
+        }
+        if (activeTab === 'inactive') {
+            return staff.isActiveRaw === 'false' || staff.isActiveRaw === false;
+        }
+        return true; // 'all' tab shows everything
     });
+    
+    // Calculate tab counts based on raw is_active values
+    const activeCount = storeStaff.filter(s => s.isActiveRaw === 'true' || s.isActiveRaw === true).length;
+    const inactiveCount = storeStaff.filter(s => s.isActiveRaw === 'false' || s.isActiveRaw === false).length;
 
     if (loading) {
         return (
@@ -147,7 +170,7 @@ export default function StoreStaffPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({storeStaff.filter((s) => s.isActive).length})
+                    Active ({activeCount})
                 </button>
                 <button
                     onClick={() => setActiveTab('inactive')}
@@ -157,7 +180,7 @@ export default function StoreStaffPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Inactive ({storeStaff.filter((s) => !s.isActive).length})
+                    Inactive ({inactiveCount})
                 </button>
             </div>
 
