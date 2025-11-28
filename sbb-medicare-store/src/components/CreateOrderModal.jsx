@@ -5,6 +5,7 @@ import { X, Plus, Trash2 } from 'lucide-react';
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
     const [deliveryBoys, setDeliveryBoys] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         customerId: '',
         deliveryBoyId: '',
@@ -16,28 +17,33 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     useEffect(() => {
         if (isOpen) {
-            loadCustomers();
-            loadDeliveryBoys();
+            setLoading(true);
+            Promise.all([loadCustomers(), loadDeliveryBoys()])
+                .finally(() => setLoading(false));
         }
     }, [isOpen]);
 
     const loadCustomers = async () => {
         try {
             const response = await customersAPI.getAll();
-            const list = response.data?.data?.data || [];
-            setCustomers(list);
+            // Backend format: { success, data: { customers: [...], count: ... } }
+            const list = response.data?.data?.customers || response.data?.data?.data || [];
+            setCustomers(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading customers:', error);
+            setCustomers([]);
         }
     };
 
     const loadDeliveryBoys = async () => {
         try {
             const response = await deliveryBoysAPI.listApproved();
+            // Backend format: { success, data: [...] }
             const list = response.data?.data || [];
-            setDeliveryBoys(list);
+            setDeliveryBoys(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
+            setDeliveryBoys([]);
         }
     };
 
@@ -150,7 +156,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-6">
@@ -164,28 +170,34 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                         </button>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Customer Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Customer <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="customerId"
-                                value={formData.customerId}
-                                onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.customerId ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                disabled={isSubmitting}
-                            >
-                                <option value="">Select a customer</option>
-                                {customers.map(customer => (
-                                    <option key={customer.id} value={customer.id}>
-                                        {customer.name} - {customer.mobile}
-                                    </option>
-                                ))}
-                            </select>
+                    {loading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <p className="text-gray-600 mt-4">Loading form data...</p>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Customer Selection */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Customer <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    name="customerId"
+                                    value={formData.customerId}
+                                    onChange={handleChange}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                        errors.customerId ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    disabled={isSubmitting}
+                                >
+                                    <option value="">Select a customer</option>
+                                    {customers.map(customer => (
+                                        <option key={customer.id} value={customer.id}>
+                                            {customer.name} - {customer.mobile}
+                                        </option>
+                                    ))}
+                                </select>
                             {errors.customerId && (
                                 <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
                             )}
@@ -321,6 +333,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             </button>
                         </div>
                     </form>
+                    )}
                 </div>
             </div>
         </div>
