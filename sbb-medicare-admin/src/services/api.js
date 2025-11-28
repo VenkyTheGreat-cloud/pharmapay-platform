@@ -55,15 +55,15 @@ const realAuthAPI = {
 };
 
 const realCustomersAPI = {
-    getAll: (params) => api.get('/customers', { params }),
+    getAll: (params) => api.get('/customer', { params }), // Changed from /customers to /customer
     search: (search, extraParams = {}) =>
-        api.get('/customers', { params: { search, ...extraParams } }),
-    getById: (id) => api.get(`/customers/${id}`),
-    getByMobile: (mobile) => api.get(`/customers/mobile/${mobile}`),
-    create: (data) => api.post('/customers', data),
-    update: (id, data) => api.put(`/customers/${id}`, data),
-    delete: (id) => api.delete(`/customers/${id}`),
-    getOrdersForCustomer: (id) => api.get(`/customers/${id}/orders`),
+        api.get('/customer', { params: { search, ...extraParams } }), // Changed from /customers to /customer
+    getById: (id) => api.get(`/customer/${id}`), // Changed from /customers to /customer
+    getByMobile: (mobile) => api.get(`/customer/mobile/${mobile}`), // Changed from /customers to /customer
+    create: (data) => api.post('/customer', data), // Changed from /customers to /customer
+    update: (id, data) => api.put(`/customer/${id}`, data), // Changed from /customers to /customer
+    delete: (id) => api.delete(`/customer/${id}`), // Changed from /customers to /customer
+    getOrdersForCustomer: (id) => api.get(`/customer/${id}/orders`), // Changed from /customers to /customer
 };
 
 const realOrdersAPI = {

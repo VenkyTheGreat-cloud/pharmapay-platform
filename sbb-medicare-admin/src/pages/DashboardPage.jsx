@@ -17,24 +17,85 @@ export default function DashboardPage() {
 
     useEffect(() => {
         loadDashboardData();
-    }, []);
+    }, [filters.fromDate, filters.toDate]); // Reload when date filters change
 
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            const allRes = await ordersAPI.getAll({ page: 1, limit: 500 });
-            const allList = allRes.data?.data?.orders || [];
-            setAllOrders(allList);
+            // Build params with date filters if API supports them
+            const params = {
+                page: 1,
+                limit: 500,
+                date_from: filters.fromDate,
+                date_to: filters.toDate,
+            };
+            const allRes = await ordersAPI.getAll(params);
+            console.log('Dashboard Orders API Response:', allRes.data); // Debug log
+            
+            // Handle different possible response structures
+            let allList = [];
+            if (allRes.data?.data?.orders) {
+                // Structure: { success: true, data: { orders: [...] } }
+                allList = allRes.data.data.orders;
+            } else if (allRes.data?.data && Array.isArray(allRes.data.data)) {
+                // Structure: { success: true, data: [...] }
+                allList = allRes.data.data;
+            } else if (allRes.data?.orders) {
+                // Structure: { success: true, orders: [...] }
+                allList = allRes.data.orders;
+            } else if (Array.isArray(allRes.data)) {
+                // Direct array
+                allList = allRes.data;
+            }
+            
+            // Normalize order data (handle snake_case to camelCase)
+            const normalizedOrders = allList.map(order => ({
+                id: order.id,
+                orderNumber: order.order_number || order.orderNumber,
+                customerName: order.customer_name || order.customerName,
+                customerMobile: order.customer_mobile || order.customerMobile,
+                deliveryBoyName: order.delivery_boy_name || order.deliveryBoyName,
+                deliveryBoyMobile: order.delivery_boy_mobile || order.deliveryBoyMobile,
+                status: order.status,
+                amount: parseFloat(order.amount || order.total_amount || 0),
+                paymentMode: order.payment_mode || order.paymentMode,
+                paymentStatus: order.payment_status || order.paymentStatus,
+                customerComments: order.customer_comments || order.customerComments || order.comments,
+                address: order.address || order.delivery_address,
+                createdTime: order.created_time || order.createdTime || order.created_at || order.order_date,
+                deliveredAt: order.delivered_at || order.deliveredAt || order.delivered_time,
+                items: order.items || order.medicines || [],
+            }));
+            
+            console.log('Normalized Orders:', normalizedOrders); // Debug log
+            setAllOrders(normalizedOrders);
         } catch (error) {
             console.error('Error loading dashboard data:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to load orders';
+            alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }
     };
 
     const filteredOrders = allOrders.filter((order) => {
-        if (!order.createdTime) return true;
-        const orderDate = order.createdTime.split('T')[0];
+        if (!order.createdTime) {
+            // If no createdTime, include it (might be a data issue)
+            return true;
+        }
+        
+        // Handle different date formats
+        let orderDate;
+        if (typeof order.createdTime === 'string') {
+            orderDate = order.createdTime.split('T')[0];
+        } else if (order.createdTime instanceof Date) {
+            orderDate = order.createdTime.toISOString().split('T')[0];
+        } else {
+            return true; // Include if date format is unknown
+        }
+        
         if (filters.fromDate && orderDate < filters.fromDate) return false;
         if (filters.toDate && orderDate > filters.toDate) return false;
         return true;
@@ -166,21 +227,28 @@ export default function DashboardPage() {
                                         filteredOrders.map((order) => (
                                             <tr key={order.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {order.orderNumber}
+                                                    {order.orderNumber || order.id || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <div>{order.customerName}</div>
-                                                    <div className="text-gray-500 text-xs">{order.customerMobile}</div>
+                                                    <div>{order.customerName || 'N/A'}</div>
+                                                    <div className="text-gray-500 text-xs">{order.customerMobile || ''}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div>{order.deliveryBoyName || 'Not assigned'}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    ₹{order.amount}
+                                                    ₹{parseFloat(order.amount || 0).toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-700">
-                                                        {order.status}
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                        order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                                                        order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                        order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
+                                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {order.status || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, DollarSign, CheckCircle, Truck, Calendar } from 'lucide-react';
+import { Package, DollarSign, CheckCircle, Truck, Calendar, IndianRupee } from 'lucide-react';
 
 export default function DashboardPage() {
     const [orders, setOrders] = useState([]);
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                             color="blue"
                         />
                         <StatCard
-                            icon={<DollarSign className="w-6 h-6" />}
+                            icon={<IndianRupee className="w-6 h-6" />}
                             label="Total Collected Amount"
                             value={`₹${summary.totalCollectedAmount.toFixed(2)}`}
                             color="green"
