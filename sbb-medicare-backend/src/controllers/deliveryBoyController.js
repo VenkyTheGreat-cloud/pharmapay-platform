@@ -14,9 +14,15 @@ exports.getAllDeliveryBoys = async (req, res, next) => {
 
         const deliveryBoys = await DeliveryBoy.findAll(filters);
 
+        // Count active and inactive for UI tabs
+        const activeCount = deliveryBoys.filter(db => db.is_active === true).length;
+        const inactiveCount = deliveryBoys.filter(db => db.is_active === false).length;
+
         res.json(successResponse({
             delivery_boys: deliveryBoys,
-            count: deliveryBoys.length
+            count: deliveryBoys.length,
+            active_count: activeCount,
+            inactive_count: inactiveCount
         }));
     } catch (error) {
         next(error);
