@@ -21,11 +21,12 @@ export default function CustomersPage() {
         try {
             setLoading(true);
             const response = await customersAPI.getAll();
-            // Backend format: { success, data: { data: [...], pagination: {...} } }
-            const list = response.data?.data?.data || [];
-            setCustomers(list);
+            // Backend format: { success, data: { customers: [...], count: ... } }
+            const list = response.data?.data?.customers || response.data?.data?.data || [];
+            setCustomers(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading customers:', error);
+            setCustomers([]);
         } finally {
             setLoading(false);
         }
@@ -39,10 +40,12 @@ export default function CustomersPage() {
 
         try {
             const response = await customersAPI.search(searchQuery);
-            const list = response.data?.data?.data || [];
-            setCustomers(list);
+            // Backend format: { success, data: { customers: [...], count: ... } }
+            const list = response.data?.data?.customers || response.data?.data?.data || [];
+            setCustomers(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error searching customers:', error);
+            setCustomers([]);
         }
     };
 
@@ -172,7 +175,7 @@ export default function CustomersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '-'}
+                                            {customer.created_at || customer.createdAt ? new Date(customer.created_at || customer.createdAt).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <div className="flex gap-2">
@@ -247,12 +250,12 @@ export default function CustomersPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Full Name</h3>
-                                    <p className="text-gray-900">{selectedCustomer.full_name}</p>
+                                    <p className="text-gray-900">{selectedCustomer.name || selectedCustomer.full_name}</p>
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Mobile Number</h3>
-                                    <p className="text-gray-900">{selectedCustomer.mobile_number}</p>
+                                    <p className="text-gray-900">{selectedCustomer.mobile || selectedCustomer.mobile_number}</p>
                                 </div>
 
                                 <div>
@@ -267,12 +270,13 @@ export default function CustomersPage() {
                                     </div>
                                 )}
 
-                                {selectedCustomer.latitude && selectedCustomer.longitude && (
+                                {(selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude) && 
+                                 (selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude) && (
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Location</h3>
                                         <p className="text-gray-900">
                                             <MapPin className="inline w-4 h-4 mr-1" />
-                                            {selectedCustomer.latitude}, {selectedCustomer.longitude}
+                                            {selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude}, {selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude}
                                         </p>
                                     </div>
                                 )}
