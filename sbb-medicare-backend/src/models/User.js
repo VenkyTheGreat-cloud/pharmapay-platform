@@ -29,12 +29,32 @@ class User {
         // Default is_active to true if not provided
         const activeStatus = is_active !== undefined ? is_active : true;
         
+        // Log exactly what we're inserting (for debugging)
+        const logger = require('../config/logger');
+        logger.info('User.create - Inserting user', {
+            email: email,
+            role: validRole,
+            roleType: typeof validRole,
+            roleLength: validRole ? validRole.length : 0,
+            roleBytes: validRole ? Buffer.from(validRole).toString('hex') : 'null',
+            roleJSON: JSON.stringify(validRole),
+            exactMatch: validRole === 'store_manager'
+        });
+        
         const result = await query(
             `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at`,
             [name, store_name, mobile, email, password_hash, address, validRole, activeStatus]
         );
+        
+        // Log what was actually inserted
+        logger.info('User.create - User created successfully', {
+            userId: result.rows[0]?.id,
+            insertedRole: result.rows[0]?.role,
+            insertedRoleType: typeof result.rows[0]?.role
+        });
+        
         return result.rows[0];
     }
 

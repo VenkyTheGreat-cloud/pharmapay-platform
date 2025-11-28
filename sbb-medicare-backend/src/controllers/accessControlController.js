@@ -39,6 +39,7 @@ exports.getStoreManagerById = async (req, res, next) => {
 
 // Create store manager (admin only)
 exports.createStoreManager = async (req, res, next) => {
+    let userData = null; // Declare outside try for error logging
     try {
         const { name, store_name, mobile, email, password, address } = req.body;
 
@@ -64,7 +65,7 @@ exports.createStoreManager = async (req, res, next) => {
 
         // Create store manager
         // Use exact string literal for role to match database constraint
-        const userData = {
+        userData = {
             name: name.trim(),
             store_name: store_name ? store_name.trim() : null,
             mobile: mobile.trim(),
@@ -101,24 +102,37 @@ exports.createStoreManager = async (req, res, next) => {
     } catch (error) {
         // Log detailed error for debugging
         const requestEmail = req.body?.email || 'unknown';
-        logger.error('Error creating store manager', {
-            error: error.message,
+        // Log COMPLETE error details
+        logger.error('Error creating store manager - FULL DETAILS', {
+            errorMessage: error.message,
             errorCode: error.code,
             constraint: error.constraint,
+            detail: error.detail,
+            hint: error.hint,
+            table: error.table,
+            column: error.column,
+            where: error.where,
             stack: error.stack,
+            fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
             requestBody: {
                 email: requestEmail,
                 name: req.body?.name,
                 role: 'store_manager'
-            }
+            },
+            userDataRole: userData?.role
         });
         
+        // Check if it's a role constraint error
         if (error.message && error.message.includes('users_role_check')) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid role value. Role must be "admin" or "store_manager".'));
         }
         
         if (error.code === '23514') { // PostgreSQL check constraint violation
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Database constraint violation. Please check role value.'));
+            // Return more details in development
+            const errorMsg = process.env.NODE_ENV === 'production' 
+                ? 'Database constraint violation. Please check role value.'
+                : `Database constraint violation: ${error.constraint || 'unknown'}. Detail: ${error.detail || error.message}`;
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', errorMsg));
         }
         
         next(error);
