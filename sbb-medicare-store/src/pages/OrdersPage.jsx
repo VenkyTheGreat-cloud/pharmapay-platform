@@ -222,20 +222,23 @@ export default function OrdersPage() {
                                     <tr key={order.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
-                                                {order.orderNumber}
+                                                {order.orderNumber || order.order_number}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.customerName}</div>
-                                            <div className="text-sm text-gray-500">{order.customerMobile}</div>
+                                            <div className="text-sm text-gray-900">{order.customerName || order.customer_name}</div>
+                                            <div className="text-sm text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
-                                                {order.deliveryBoyName || 'Not assigned'}
+                                                {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
                                             </div>
+                                            {order.deliveryBoyMobile || order.delivery_boy_mobile ? (
+                                                <div className="text-sm text-gray-500">{order.deliveryBoyMobile || order.delivery_boy_mobile}</div>
+                                            ) : null}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">₹{order.amount}</div>
+                                            <div className="text-sm text-gray-900">₹{order.amount || order.total_amount || '0.00'}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -243,11 +246,11 @@ export default function OrdersPage() {
                                                     order.status
                                                 )}`}
                                             >
-                                                {order.status.replace('_', ' ')}
+                                                {order.status ? order.status.replace(/_/g, ' ') : '-'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {order.createdTime ? new Date(order.createdTime).toLocaleDateString() : '-'}
+                                            {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <div className="flex gap-2">
@@ -258,7 +261,7 @@ export default function OrdersPage() {
                                                 >
                                                     <Eye className="w-5 h-5" />
                                                 </button>
-                                                {(order.status === 'ASSIGNED' || !order.deliveryBoyId) && (
+                                                {((order.status === 'ASSIGNED' || order.status === 'assigned') || !(order.deliveryBoyId || order.assigned_delivery_boy_id)) && (
                                                     <button
                                                         onClick={() => openAssignModal(order)}
                                                         className="text-green-600 hover:text-green-900"
@@ -267,9 +270,9 @@ export default function OrdersPage() {
                                                         <UserPlus className="w-5 h-5" />
                                                     </button>
                                                 )}
-                                                {order.status === 'ASSIGNED' && (
+                                                {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
                                                     <button
-                                                        onClick={() => handleDelete(order.id, order.orderNumber)}
+                                                        onClick={() => handleDelete(order.id, order.orderNumber || order.order_number)}
                                                         className="text-red-600 hover:text-red-900"
                                                         title="Delete"
                                                     >
@@ -304,7 +307,7 @@ export default function OrdersPage() {
                                 Assign Delivery Boy
                             </h2>
                             <p className="text-sm text-gray-600 mb-4">
-                                Order: <span className="font-semibold">{selectedOrder.orderNumber || selectedOrder.order_number}</span>
+                                Order: <span className="font-semibold">{selectedOrder.orderNumber || selectedOrder.order_number || 'N/A'}</span>
                             </p>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -316,11 +319,15 @@ export default function OrdersPage() {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Select a delivery boy</option>
-                                    {deliveryBoys.map(boy => (
-                                        <option key={boy.id} value={boy.id}>
-                                            {boy.name} - {boy.mobile}
-                                        </option>
-                                    ))}
+                                    {deliveryBoys.length === 0 ? (
+                                        <option value="" disabled>No approved delivery boys available</option>
+                                    ) : (
+                                        deliveryBoys.map(boy => (
+                                            <option key={boy.id} value={boy.id}>
+                                                {boy.name} - {boy.mobile}
+                                            </option>
+                                        ))
+                                    )}
                                 </select>
                             </div>
                             <div className="flex gap-3">
@@ -364,26 +371,49 @@ export default function OrdersPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Order Number</h3>
-                                    <p className="text-gray-900">{selectedOrder.orderNumber || selectedOrder.order_number}</p>
+                                    <p className="text-gray-900">{selectedOrder.orderNumber || selectedOrder.order_number || 'N/A'}</p>
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Customer</h3>
-                                    <p className="text-gray-900">{selectedOrder.customerName || selectedOrder.customer_name}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile || selectedOrder.customer_mobile}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address}</p>
+                                    <p className="text-gray-900">{selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address || 'N/A'}</p>
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Items</h3>
-                                    <pre className="text-sm bg-gray-50 p-3 rounded">
-                                        {JSON.stringify(selectedOrder.items, null, 2)}
-                                    </pre>
+                                    {selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                                        <div className="bg-gray-50 p-3 rounded">
+                                            <table className="min-w-full">
+                                                <thead>
+                                                    <tr className="border-b">
+                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Name</th>
+                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Quantity</th>
+                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Price</th>
+                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {selectedOrder.items.map((item, idx) => (
+                                                        <tr key={idx} className="border-b">
+                                                            <td className="text-sm text-gray-900 py-1">{item.name}</td>
+                                                            <td className="text-sm text-gray-900 py-1">{item.quantity}</td>
+                                                            <td className="text-sm text-gray-900 py-1">₹{item.price}</td>
+                                                            <td className="text-sm text-gray-900 py-1">₹{item.total || (item.quantity * item.price)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">No items found</p>
+                                    )}
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Total Amount</h3>
-                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount || selectedOrder.total_amount}</p>
+                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount || selectedOrder.total_amount || '0.00'}</p>
                                 </div>
 
                                 <div>
@@ -401,11 +431,18 @@ export default function OrdersPage() {
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Delivery Boy</h3>
                                         <p className="text-gray-900">{selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}</p>
-                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile}</p>
+                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile || 'N/A'}</p>
                                     </div>
                                 )}
 
-                                {selectedOrder.notes && (
+                                {(selectedOrder.customerComments || selectedOrder.customer_comments) && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700">Customer Comments</h3>
+                                        <p className="text-gray-900">{selectedOrder.customerComments || selectedOrder.customer_comments}</p>
+                                    </div>
+                                )}
+
+                                {(selectedOrder.notes) && (
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Notes</h3>
                                         <p className="text-gray-900">{selectedOrder.notes}</p>
