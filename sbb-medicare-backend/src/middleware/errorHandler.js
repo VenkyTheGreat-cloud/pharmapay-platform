@@ -2,6 +2,16 @@ const logger = require('../config/logger');
 const { errorResponse } = require('../utils/apiResponse');
 
 const errorHandler = (err, req, res, next) => {
+    // Handle CORS errors
+    if (err.message === 'Not allowed by CORS') {
+        logger.warn('CORS error', {
+            origin: req.headers.origin,
+            path: req.path,
+            method: req.method,
+        });
+        return res.status(403).json(errorResponse('CORS_ERROR', 'Not allowed by CORS'));
+    }
+
     logger.error('Error occurred', {
         error: err.message,
         stack: err.stack,
