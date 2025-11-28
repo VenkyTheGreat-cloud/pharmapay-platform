@@ -5,14 +5,37 @@ class User {
     static async create(userData) {
         const { name, store_name, mobile, email, password_hash, address, role, is_active } = userData;
         
-        // Ensure role is valid (default to 'store_manager' if not provided or invalid)
-        let validRole = (role || 'store_manager').trim().toLowerCase();
-        if (!['admin', 'store_manager'].includes(validRole)) {
+        // Ensure role is valid (must be exactly 'admin' or 'store_manager' for database constraint)
+        // Database constraint: CHECK (role IN ('admin', 'store_manager'))
+        let validRole = 'store_manager'; // Default value
+        
+        if (role && typeof role === 'string') {
+            const normalizedRole = role.trim().toLowerCase();
+            // Only accept exact matches to database constraint values
+            if (normalizedRole === 'admin') {
+                validRole = 'admin';
+            } else if (normalizedRole === 'store_manager') {
+                validRole = 'store_manager';
+            }
+            // If role doesn't match, keep default 'store_manager'
+        }
+        
+        // Final validation - ensure it's exactly one of the allowed values
+        if (validRole !== 'admin' && validRole !== 'store_manager') {
             validRole = 'store_manager';
         }
         
         // Default is_active to true if not provided
         const activeStatus = is_active !== undefined ? is_active : true;
+        
+        // Log the exact role value being inserted (for debugging)
+        const logger = require('../config/logger');
+        logger.debug('Creating user with role', { 
+            role: validRole, 
+            roleType: typeof validRole,
+            roleLength: validRole.length,
+            roleBytes: Buffer.from(validRole).toString('hex')
+        });
         
         const result = await query(
             `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active)

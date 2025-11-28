@@ -94,14 +94,21 @@ exports.createStoreManager = async (req, res, next) => {
         res.status(201).json(successResponse(storeManager, 'Store manager created successfully'));
     } catch (error) {
         // Log detailed error for debugging
+        logger.error('Error creating store manager', {
+            error: error.message,
+            errorCode: error.code,
+            stack: error.stack,
+            userData: { email, role: 'store_manager' }
+        });
+        
         if (error.message && error.message.includes('users_role_check')) {
-            logger.error('Role constraint violation', {
-                error: error.message,
-                requestedRole: 'store_manager',
-                stack: error.stack
-            });
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid role value. Role must be "admin" or "store_manager".'));
         }
+        
+        if (error.code === '23514') { // PostgreSQL check constraint violation
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Database constraint violation. Please check role value.'));
+        }
+        
         next(error);
     }
 };
