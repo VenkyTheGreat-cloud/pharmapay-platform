@@ -165,12 +165,42 @@ class Customer {
         return result.rowCount > 0;
     }
 
-    // Get customer orders
+    // Get customer orders with full details
     static async getOrders(customerId) {
         const result = await query(
-            `SELECT o.id, o.order_number, o.total_amount, o.status, o.payment_mode,
-                    o.created_at as order_date
+            `SELECT 
+                o.id,
+                o.order_number,
+                o.customer_id,
+                o.customer_name,
+                o.customer_phone,
+                o.customer_address,
+                o.customer_lat,
+                o.customer_lng,
+                o.total_amount,
+                o.status,
+                o.payment_status,
+                o.payment_mode,
+                o.notes,
+                o.customer_comments,
+                o.assigned_delivery_boy_id,
+                o.store_id,
+                o.assigned_at,
+                o.picked_up_at,
+                o.in_transit_at,
+                o.payment_collection_at,
+                o.delivered_at,
+                o.cancelled_at,
+                o.created_at,
+                o.updated_at,
+                db.name as delivery_boy_name,
+                db.mobile as delivery_boy_mobile,
+                u.name as store_name,
+                u.store_name as store_store_name,
+                (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
              FROM orders o
+             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+             LEFT JOIN users u ON o.store_id = u.id
              WHERE o.customer_id = $1
              ORDER BY o.created_at DESC`,
             [customerId]

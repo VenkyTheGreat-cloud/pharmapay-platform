@@ -1,4 +1,5 @@
 const Customer = require('../models/Customer');
+const OrderItem = require('../models/OrderItem');
 const logger = require('../config/logger');
 
 // Get all customers
@@ -35,7 +36,7 @@ exports.getAllCustomers = async (req, res, next) => {
     }
 };
 
-// Get customer by ID
+// Get customer by ID with complete order history
 exports.getCustomerById = async (req, res, next) => {
     try {
         const customer = await Customer.findById(req.params.id);
@@ -49,11 +50,34 @@ exports.getCustomerById = async (req, res, next) => {
             });
         }
 
+        // Get complete order history for this customer
+        const orders = await Customer.getOrders(req.params.id);
+
+        // Get order items for each order
+        const ordersWithItems = await Promise.all(
+            orders.map(async (order) => {
+                const items = await OrderItem.findByOrderId(order.id);
+                return {
+                    ...order,
+                    items: items || []
+                };
+            })
+        );
+
         res.json({ 
             success: true,
-            data: { customer }
+            data: { 
+                customer,
+                orders: ordersWithItems,
+                order_count: ordersWithItems.length
+            }
         });
     } catch (error) {
+        logger.error('Error getting customer by ID', {
+            error: error.message,
+            customerId: req.params.id,
+            stack: error.stack
+        });
         next(error);
     }
 };
