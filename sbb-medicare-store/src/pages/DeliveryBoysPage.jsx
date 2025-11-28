@@ -17,11 +17,14 @@ export default function DeliveryBoysPage() {
 
     const loadDeliveryBoys = async () => {
         try {
+            setLoading(true);
             const response = await deliveryBoysAPI.list();
             // Backend: { success, data: [...] }
-            setDeliveryBoys(response.data?.data || []);
+            const data = response.data?.data || response.data || [];
+            setDeliveryBoys(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
+            setDeliveryBoys([]);
         } finally {
             setLoading(false);
         }
@@ -30,9 +33,11 @@ export default function DeliveryBoysPage() {
     const loadPendingRequests = async () => {
         try {
             const response = await deliveryBoysAPI.list({ status: 'pending' });
-            setPendingRequests(response.data?.data || []);
+            const data = response.data?.data || response.data || [];
+            setPendingRequests(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error loading pending requests:', error);
+            setPendingRequests([]);
         }
     };
 
@@ -167,7 +172,7 @@ export default function DeliveryBoysPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredDeliveryBoys.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
                                     No delivery boys found
                                 </td>
                             </tr>

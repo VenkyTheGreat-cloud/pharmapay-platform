@@ -81,7 +81,10 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             onClose();
         } catch (error) {
             console.error('Error adding customer:', error);
-            alert(error.response?.data?.message || 'Error adding customer');
+            const errorMessage = error.response?.data?.error?.message || 
+                                error.response?.data?.message || 
+                                (error.response?.status === 403 ? 'Access denied. Please check your authentication.' : 'Error adding customer');
+            alert(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

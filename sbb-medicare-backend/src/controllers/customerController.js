@@ -6,14 +6,30 @@ exports.getAllCustomers = async (req, res, next) => {
     try {
         const { limit = 100, offset = 0, search } = req.query;
 
-        let customers;
+        // Get store_id from authenticated user (store managers see only their store's customers)
+        const storeId = req.user.userId;
+        const userRole = req.user.role;
+
+        // Build filters - admin sees all stores, store managers see only their store
+        const filters = {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            store_id: userRole === 'admin' ? null : storeId
+        };
+
         if (search) {
-            customers = await Customer.search(search);
-        } else {
-            customers = await Customer.findAll(parseInt(limit), parseInt(offset));
+            filters.search = search;
         }
 
-        res.json({ customers, count: customers.length });
+        const customers = await Customer.findAll(filters);
+
+        res.json({ 
+            success: true,
+            data: {
+                customers, 
+                count: customers.length 
+            }
+        });
     } catch (error) {
         next(error);
     }
@@ -36,34 +52,71 @@ exports.getCustomerById = async (req, res, next) => {
 // Create customer
 exports.createCustomer = async (req, res, next) => {
     try {
-        const { full_name, mobile_number, address, latitude, longitude, landmark } = req.body;
+        // Support both field name formats: name/full_name, mobile/mobile_number
+        const name = req.body.name || req.body.full_name;
+        const mobile = req.body.mobile || req.body.mobile_number;
+        const { address, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
 
-        // Check if customer with mobile already exists
-        const existingCustomer = await Customer.findByMobile(mobile_number);
+        // Validation
+        if (!name || !mobile || !address) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Name, mobile, and address are required'
+                }
+            });
+        }
+
+        // Get store_id from authenticated user
+        const storeId = req.user.userId; // Store manager's user ID is their store ID
+
+        // Use coordinates from any of the possible field names
+        const lat = customerLat || latitude || customer_lat || null;
+        const lng = customerLng || longitude || customer_lng || null;
+
+        // Check if customer with mobile already exists for this store
+        const existingCustomer = await Customer.findByMobileAndStore(mobile, storeId);
         if (existingCustomer) {
             return res.status(409).json({
-                error: 'Customer with this mobile number already exists',
-                customer: existingCustomer
+                success: false,
+                error: {
+                    code: 'DUPLICATE_MOBILE',
+                    message: 'Customer with this mobile number already exists'
+                },
+                data: { customer: existingCustomer }
             });
         }
 
         const customer = await Customer.create({
-            full_name,
-            mobile_number,
-            address,
-            latitude,
-            longitude,
-            landmark,
-            created_by: req.user.id
+            name: name.trim(),
+            mobile: mobile.trim(),
+            address: address.trim(),
+            landmark: landmark ? landmark.trim() : null,
+            customer_lat: lat,
+            customer_lng: lng,
+            store_id: storeId
         });
 
-        logger.info('Customer created', { customerId: customer.id, createdBy: req.user.id });
+        logger.info('Customer created', { 
+            customerId: customer.id, 
+            createdBy: req.user.userId,
+            storeId: storeId 
+        });
 
         res.status(201).json({
-            message: 'Customer created successfully',
-            customer
+            success: true,
+            data: {
+                customer,
+                message: 'Customer created successfully'
+            }
         });
     } catch (error) {
+        logger.error('Error creating customer', {
+            error: error.message,
+            stack: error.stack,
+            body: req.body
+        });
         next(error);
     }
 };
@@ -71,26 +124,53 @@ exports.createCustomer = async (req, res, next) => {
 // Update customer
 exports.updateCustomer = async (req, res, next) => {
     try {
-        const { full_name, mobile_number, address, latitude, longitude, landmark } = req.body;
+        // Support both field name formats
+        const name = req.body.name || req.body.full_name;
+        const mobile = req.body.mobile || req.body.mobile_number;
+        const { address, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
 
-        const customer = await Customer.update(req.params.id, {
-            full_name,
-            mobile_number,
-            address,
-            latitude,
-            longitude,
-            landmark
-        });
+        const updates = {};
+        if (name) updates.name = name.trim();
+        if (mobile) updates.mobile = mobile.trim();
+        if (address) updates.address = address.trim();
+        if (landmark !== undefined) updates.landmark = landmark ? landmark.trim() : null;
+        
+        // Handle coordinates from any field name
+        const lat = customerLat || latitude || customer_lat;
+        const lng = customerLng || longitude || customer_lng;
+        if (lat !== undefined) updates.customer_lat = lat;
+        if (lng !== undefined) updates.customer_lng = lng;
 
-        if (!customer) {
-            return res.status(404).json({ error: 'Customer not found' });
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'No fields to update'
+                }
+            });
         }
 
-        logger.info('Customer updated', { customerId: req.params.id, updatedBy: req.user.id });
+        const customer = await Customer.update(req.params.id, updates);
+
+        if (!customer) {
+            return res.status(404).json({ 
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: 'Customer not found'
+                }
+            });
+        }
+
+        logger.info('Customer updated', { customerId: req.params.id, updatedBy: req.user.userId });
 
         res.json({
-            message: 'Customer updated successfully',
-            customer
+            success: true,
+            data: {
+                customer,
+                message: 'Customer updated successfully'
+            }
         });
     } catch (error) {
         next(error);
@@ -117,15 +197,34 @@ exports.deleteCustomer = async (req, res, next) => {
 // Search customers
 exports.searchCustomers = async (req, res, next) => {
     try {
-        const { query } = req.query;
+        const { query: searchQuery } = req.query;
 
-        if (!query || query.trim().length < 2) {
-            return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+        if (!searchQuery || searchQuery.trim().length < 2) {
+            return res.status(400).json({ 
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Search query must be at least 2 characters'
+                }
+            });
         }
 
-        const customers = await Customer.search(query);
+        // Get store_id from authenticated user
+        const storeId = req.user.userId;
+        const userRole = req.user.role;
 
-        res.json({ customers, count: customers.length });
+        const customers = await Customer.findAll({
+            search: searchQuery.trim(),
+            store_id: userRole === 'admin' ? null : storeId
+        });
+
+        res.json({ 
+            success: true,
+            data: {
+                customers, 
+                count: customers.length 
+            }
+        });
     } catch (error) {
         next(error);
     }

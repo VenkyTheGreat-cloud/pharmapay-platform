@@ -109,7 +109,29 @@ class User {
             'SELECT id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
             [role]
         );
-        return result.rows;
+        
+        // Normalize data types - ensure is_active is boolean and status is set
+        return result.rows.map(user => {
+            // Convert is_active to boolean if it's a string
+            let isActive = user.is_active;
+            if (typeof isActive === 'string') {
+                isActive = isActive === 'true' || isActive === 't' || isActive === '1';
+            } else if (isActive === null || isActive === undefined || isActive === 'pending') {
+                isActive = false;
+            }
+            
+            // Ensure status is set correctly
+            let status = user.status;
+            if (!status || status === 'pending') {
+                status = isActive ? 'active' : 'inactive';
+            }
+            
+            return {
+                ...user,
+                is_active: isActive,
+                status: status
+            };
+        });
     }
 
     // Get all store managers (for admin)

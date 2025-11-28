@@ -30,14 +30,20 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor to handle 401 and normalize errors
+// Response interceptor to handle 401/403 and normalize errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
+            // Unauthorized - token missing or invalid
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             window.location.href = '/login';
+        } else if (error.response?.status === 403) {
+            // Forbidden - token valid but insufficient permissions
+            // Log the error but don't auto-redirect (let the component handle it)
+            console.error('403 Forbidden - Access denied:', error.response?.data);
         }
         return Promise.reject(error);
     }

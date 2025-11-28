@@ -31,17 +31,37 @@ exports.login = async (req, res, next) => {
     try {
         const { mobileEmail, password } = req.body;
 
+        // Validation
+        if (!mobileEmail || !password) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Email/mobile and password are required'));
+        }
+
+        logger.info('Login attempt', { 
+            mobileEmail: mobileEmail?.substring(0, 3) + '***',
+            hasPassword: !!password 
+        });
+
         const result = await AuthService.login(mobileEmail, password);
 
-        logger.info('User logged in', { userId: result.user.id, role: result.user.role });
+        logger.info('User logged in successfully', { 
+            userId: result.user.id, 
+            role: result.user.role,
+            email: result.user.email 
+        });
 
         res.json(successResponse(result));
     } catch (error) {
+        logger.error('Login error', {
+            error: error.message,
+            mobileEmail: req.body?.mobileEmail?.substring(0, 3) + '***',
+            stack: error.stack
+        });
+
         if (error.message === 'INVALID_CREDENTIALS') {
             return res.status(401).json(errorResponse('INVALID_CREDENTIALS', 'Invalid email/mobile or password'));
         }
         if (error.message === 'INACTIVE_USER') {
-            return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive'));
+            return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive. Please contact administrator.'));
         }
         next(error);
     }
