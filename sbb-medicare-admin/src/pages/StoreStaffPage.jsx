@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { accessControlAPI } from '../services/api';
-import { UserCheck, UserX, Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
 
@@ -220,23 +220,6 @@ export default function StoreStaffPage() {
                                             >
                                                 <Edit className="w-5 h-5" />
                                             </button>
-                                            {staff.isActive ? (
-                                                <button
-                                                    onClick={() => handleToggleActive(staff.id, false)}
-                                                    className="text-orange-600 hover:text-orange-900"
-                                                    title="Deactivate"
-                                                >
-                                                    <UserX className="w-5 h-5" />
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleToggleActive(staff.id, true)}
-                                                    className="text-green-600 hover:text-green-900"
-                                                    title="Activate"
-                                                >
-                                                    <UserCheck className="w-5 h-5" />
-                                                </button>
-                                            )}
                                             <button
                                                 onClick={() => handleDelete(staff.id)}
                                                 className="text-red-600 hover:text-red-900"
