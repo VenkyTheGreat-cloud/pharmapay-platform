@@ -7,35 +7,27 @@ class User {
         
         // Ensure role is valid (must be exactly 'admin' or 'store_manager' for database constraint)
         // Database constraint: CHECK (role IN ('admin', 'store_manager'))
+        // Use exact string literal - no modifications
         let validRole = 'store_manager'; // Default value
         
-        if (role && typeof role === 'string') {
-            const normalizedRole = role.trim().toLowerCase();
-            // Only accept exact matches to database constraint values
+        if (role) {
+            // Normalize for comparison only
+            const normalizedRole = String(role).trim().toLowerCase();
             if (normalizedRole === 'admin') {
-                validRole = 'admin';
-            } else if (normalizedRole === 'store_manager') {
-                validRole = 'store_manager';
+                validRole = 'admin'; // Exact match
+            } else if (normalizedRole === 'store_manager' || normalizedRole === 'store manager') {
+                validRole = 'store_manager'; // Exact match
             }
-            // If role doesn't match, keep default 'store_manager'
         }
         
-        // Final validation - ensure it's exactly one of the allowed values
+        // Final safety check - ensure it's exactly one of the allowed values
+        // Use strict comparison to ensure exact match
         if (validRole !== 'admin' && validRole !== 'store_manager') {
             validRole = 'store_manager';
         }
         
         // Default is_active to true if not provided
         const activeStatus = is_active !== undefined ? is_active : true;
-        
-        // Log the exact role value being inserted (for debugging)
-        const logger = require('../config/logger');
-        logger.debug('Creating user with role', { 
-            role: validRole, 
-            roleType: typeof validRole,
-            roleLength: validRole.length,
-            roleBytes: Buffer.from(validRole).toString('hex')
-        });
         
         const result = await query(
             `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active)

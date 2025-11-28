@@ -63,7 +63,7 @@ exports.createStoreManager = async (req, res, next) => {
         const password_hash = await bcrypt.hash(password, 10);
 
         // Create store manager
-        // Explicitly set role to ensure it matches the database constraint
+        // Use exact string literal for role to match database constraint
         const userData = {
             name: name.trim(),
             store_name: store_name ? store_name.trim() : null,
@@ -71,9 +71,15 @@ exports.createStoreManager = async (req, res, next) => {
             email: email.trim().toLowerCase(),
             password_hash,
             address: address ? address.trim() : null,
-            role: 'store_manager', // Must be exactly 'store_manager' or 'admin' (matches CHECK constraint)
+            role: 'store_manager', // Exact string - matches CHECK (role IN ('admin', 'store_manager'))
             is_active: true
         };
+        
+        // Double-check role value before sending to database
+        if (userData.role !== 'store_manager' && userData.role !== 'admin') {
+            logger.error('Invalid role value detected', { role: userData.role });
+            userData.role = 'store_manager'; // Force to valid value
+        }
 
         logger.info('Creating store manager', { 
             email: userData.email,
