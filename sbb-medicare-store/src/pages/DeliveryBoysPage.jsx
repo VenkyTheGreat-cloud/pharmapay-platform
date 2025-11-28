@@ -19,8 +19,8 @@ export default function DeliveryBoysPage() {
         try {
             setLoading(true);
             const response = await deliveryBoysAPI.list();
-            // Backend: { success, data: [...] }
-            const data = response.data?.data || response.data || [];
+            // Backend: { success, data: { delivery_boys: [...], count: ... } }
+            const data = response.data?.data?.delivery_boys || response.data?.data || [];
             setDeliveryBoys(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
@@ -33,7 +33,8 @@ export default function DeliveryBoysPage() {
     const loadPendingRequests = async () => {
         try {
             const response = await deliveryBoysAPI.list({ status: 'pending' });
-            const data = response.data?.data || response.data || [];
+            // Backend: { success, data: { delivery_boys: [...], count: ... } }
+            const data = response.data?.data?.delivery_boys || response.data?.data || [];
             setPendingRequests(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error loading pending requests:', error);
@@ -93,7 +94,7 @@ export default function DeliveryBoysPage() {
     };
 
     const filteredDeliveryBoys = deliveryBoys.filter((boy) => {
-        if (activeTab === 'active') return boy.status === 'approved' && boy.isActive;
+        if (activeTab === 'active') return boy.status === 'approved' && (boy.isActive || boy.is_active);
         if (activeTab === 'pending') return boy.status === 'pending';
         return true;
     });
@@ -136,7 +137,7 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({deliveryBoys.filter((b) => b.status === 'approved' && b.isActive).length})
+                    Active ({deliveryBoys.filter((b) => b.status === 'approved' && (b.isActive || b.is_active)).length})
                 </button>
                 <button
                     onClick={() => setActiveTab('pending')}
@@ -192,7 +193,7 @@ export default function DeliveryBoysPage() {
                                         <StatusBadge status={boy.status} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
+                                        {(boy.createdAt || boy.created_at) ? new Date(boy.createdAt || boy.created_at).toLocaleDateString() : '-'}
                                     </td>
                                 </tr>
                             ))
