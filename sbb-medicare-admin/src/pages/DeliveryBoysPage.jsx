@@ -7,6 +7,7 @@ import EditUserModal from '../components/EditUserModal';
 export default function DeliveryBoysPage() {
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('all'); // all, active, inactive
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -18,10 +19,20 @@ export default function DeliveryBoysPage() {
 
     const loadDeliveryBoys = async () => {
         try {
+            setLoading(true);
+            setError(null);
             const response = await deliveryBoysAPI.getAll();
-            setDeliveryBoys(response.data?.data || []);
+            // Handle different response structures
+            const data = response.data?.data || response.data || [];
+            setDeliveryBoys(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to load delivery boys';
+            setError(errorMsg);
+            // Set empty array on error to prevent blank screen
+            setDeliveryBoys([]);
         } finally {
             setLoading(false);
         }
@@ -68,6 +79,19 @@ export default function DeliveryBoysPage() {
 
     return (
         <div className="p-6">
+            {error && (
+                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-800 text-sm">
+                        <strong>Error:</strong> {error}
+                    </p>
+                    <button
+                        onClick={loadDeliveryBoys}
+                        className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
             <div className="mb-6 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Delivery Boys</h1>
@@ -147,15 +171,15 @@ export default function DeliveryBoysPage() {
                             </tr>
                         ) : (
                             filteredDeliveryBoys.map((boy) => (
-                                <tr key={boy.id} className="hover:bg-gray-50">
+                                <tr key={boy.id || Math.random()} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
-                                            <div className="text-sm font-medium text-gray-900">{boy.name}</div>
-                                            <div className="text-sm text-gray-500">{boy.email}</div>
+                                            <div className="text-sm font-medium text-gray-900">{boy.name || 'N/A'}</div>
+                                            <div className="text-sm text-gray-500">{boy.email || ''}</div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{boy.mobile}</div>
+                                        <div className="text-sm text-gray-900">{boy.mobile || 'N/A'}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge isActive={boy.isActive} status={boy.status} />
