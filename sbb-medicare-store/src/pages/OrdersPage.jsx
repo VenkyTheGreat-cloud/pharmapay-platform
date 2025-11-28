@@ -57,12 +57,13 @@ export default function OrdersPage() {
 
     const loadDeliveryBoys = async () => {
         try {
-            const response = await deliveryBoysAPI.list({ status: 'approved', isActive: true });
-            // Backend: { success, data: [...] }
-            const list = response.data?.data || [];
-            setDeliveryBoys(list);
+            const response = await deliveryBoysAPI.listApproved();
+            // Backend: { success, data: { delivery_boys: [...], count: ... } }
+            const list = response.data?.data?.delivery_boys || response.data?.data || [];
+            setDeliveryBoys(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
+            setDeliveryBoys([]);
         }
     };
 
@@ -160,8 +161,8 @@ export default function OrdersPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
                         <input
                             type="date"
-                            value={filters.date_from}
-                            onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
+                            value={filters.dateFrom}
+                            onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
@@ -169,8 +170,8 @@ export default function OrdersPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
                         <input
                             type="date"
-                            value={filters.date_to}
-                            onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
+                            value={filters.dateTo}
+                            onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
@@ -218,13 +219,40 @@ export default function OrdersPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {order.orderNumber || order.order_number}
-                                            </div>
-                                        </td>
+                                orders.map((order) => {
+                                    const orderNumber = order.orderNumber || order.order_number || '';
+                                    // Format order number to break into 2 lines if it's long
+                                    const formatOrderNumber = (orderNum) => {
+                                        if (!orderNum) return '-';
+                                        // If it contains a hyphen, break after the first part
+                                        if (orderNum.includes('-')) {
+                                            const parts = orderNum.split('-');
+                                            if (parts.length >= 2) {
+                                                return (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm">{parts[0]}-{parts[1]}</span>
+                                                        <span className="text-gray-600 text-xs">{parts.slice(2).join('-')}</span>
+                                                    </div>
+                                                );
+                                            }
+                                        }
+                                        // Otherwise, break at a reasonable length
+                                        if (orderNum.length > 20) {
+                                            return (
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">{orderNum.substring(0, 20)}</span>
+                                                    <span className="text-gray-600 text-xs">{orderNum.substring(20)}</span>
+                                                </div>
+                                            );
+                                        }
+                                        return <span className="font-medium text-sm">{orderNum}</span>;
+                                    };
+                                    
+                                    return (
+                                        <tr key={order.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 text-sm text-gray-900 max-w-[200px]">
+                                                {formatOrderNumber(orderNumber)}
+                                            </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">{order.customerName || order.customer_name}</div>
                                             <div className="text-sm text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
@@ -253,10 +281,10 @@ export default function OrdersPage() {
                                             {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <div className="flex gap-2">
+                                            <div className="flex items-center justify-start gap-3">
                                                 <button
                                                     onClick={() => viewOrderDetails(order.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
                                                     title="View Details"
                                                 >
                                                     <Eye className="w-5 h-5" />
@@ -264,7 +292,7 @@ export default function OrdersPage() {
                                                 {((order.status === 'ASSIGNED' || order.status === 'assigned') || !(order.deliveryBoyId || order.assigned_delivery_boy_id)) && (
                                                     <button
                                                         onClick={() => openAssignModal(order)}
-                                                        className="text-green-600 hover:text-green-900"
+                                                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
                                                         title="Assign Delivery Boy"
                                                     >
                                                         <UserPlus className="w-5 h-5" />
@@ -273,7 +301,7 @@ export default function OrdersPage() {
                                                 {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
                                                     <button
                                                         onClick={() => handleDelete(order.id, order.orderNumber || order.order_number)}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                                                         title="Delete"
                                                     >
                                                         <Trash2 className="w-5 h-5" />
@@ -282,7 +310,8 @@ export default function OrdersPage() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
