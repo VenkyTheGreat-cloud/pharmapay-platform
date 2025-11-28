@@ -94,11 +94,17 @@ exports.createStoreManager = async (req, res, next) => {
         res.status(201).json(successResponse(storeManager, 'Store manager created successfully'));
     } catch (error) {
         // Log detailed error for debugging
+        const requestEmail = req.body?.email || 'unknown';
         logger.error('Error creating store manager', {
             error: error.message,
             errorCode: error.code,
+            constraint: error.constraint,
             stack: error.stack,
-            userData: { email, role: 'store_manager' }
+            requestBody: {
+                email: requestEmail,
+                name: req.body?.name,
+                role: 'store_manager'
+            }
         });
         
         if (error.message && error.message.includes('users_role_check')) {
