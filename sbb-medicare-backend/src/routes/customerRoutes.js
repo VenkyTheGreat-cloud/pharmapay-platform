@@ -20,8 +20,14 @@ router.get('/', customerController.getAllCustomers);
 // Search customers
 router.get('/search', customerController.searchCustomers);
 
+// Get customer orders (must be before /:id to avoid route conflict)
+router.get('/:id/orders', customerController.getCustomerOrders);
+
 // Get customer by ID
 router.get('/:id', customerController.getCustomerById);
+
+// Get customer orders
+router.get('/:id/orders', customerController.getCustomerOrders);
 
 // Create customer (admin and store managers can create)
 router.post('/', authorizeRoles('admin', 'store_manager'), customerController.createCustomer);

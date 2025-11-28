@@ -82,6 +82,55 @@ exports.getCustomerById = async (req, res, next) => {
     }
 };
 
+// Get customer orders only
+exports.getCustomerOrders = async (req, res, next) => {
+    try {
+        // Verify customer exists
+        const customer = await Customer.findById(req.params.id);
+        if (!customer) {
+            return res.status(404).json({ 
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: 'Customer not found'
+                }
+            });
+        }
+
+        // Get complete order history for this customer
+        const orders = await Customer.getOrders(req.params.id);
+
+        // Get order items for each order
+        const ordersWithItems = await Promise.all(
+            orders.map(async (order) => {
+                const items = await OrderItem.findByOrderId(order.id);
+                return {
+                    ...order,
+                    items: items || []
+                };
+            })
+        );
+
+        res.json({ 
+            success: true,
+            data: { 
+                orders: ordersWithItems,
+                order_count: ordersWithItems.length,
+                customer_id: req.params.id,
+                customer_name: customer.name,
+                customer_mobile: customer.mobile
+            }
+        });
+    } catch (error) {
+        logger.error('Error getting customer orders', {
+            error: error.message,
+            customerId: req.params.id,
+            stack: error.stack
+        });
+        next(error);
+    }
+};
+
 // Create customer
 exports.createCustomer = async (req, res, next) => {
     try {
