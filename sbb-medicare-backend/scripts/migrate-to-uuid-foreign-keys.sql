@@ -1,34 +1,29 @@
--- SBB Medicare Backend - Complete Database Schema
--- PostgreSQL Database
+-- Migration: Update all foreign keys to UUID to match users.id
+-- Use this if users.id is already UUID and has data
 
--- Enable UUID extension (required for UUID primary keys)
-CREATE EXTENSION IF NOT EXISTS "pgcrypto"; -- For gen_random_uuid()
--- Alternative: CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- For uuid_generate_v4()
+-- Step 1: Check users.id type
+SELECT 'Current users.id type:' as info, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'users' AND column_name = 'id';
 
--- Users table (Admin & Store Managers)
--- Note: This schema uses UUID for users.id to match existing database
--- If you need BIGINT instead, change UUID to BIGSERIAL and update foreign keys
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(255) NOT NULL,
-    store_name VARCHAR(255),
-    mobile VARCHAR(20) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    address TEXT,
-    role VARCHAR(50) NOT NULL DEFAULT 'store_manager' CHECK (role IN ('admin', 'store_manager')),
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Step 2: Create tables with UUID foreign keys (if they don't exist)
+
+-- Refresh Tokens table
+DROP TABLE IF EXISTS refresh_tokens CASCADE;
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    is_revoked BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
+CREATE INDEX idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 
--- Create indexes for users
-CREATE INDEX IF NOT EXISTS idx_users_mobile ON users(mobile);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
-
--- Delivery Boys table
-CREATE TABLE IF NOT EXISTS delivery_boys (
+-- Delivery Boys table (drop if exists, recreate with UUID)
+DROP TABLE IF EXISTS delivery_boys CASCADE;
+CREATE TABLE delivery_boys (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     mobile VARCHAR(20) UNIQUE NOT NULL,
@@ -41,14 +36,13 @@ CREATE TABLE IF NOT EXISTS delivery_boys (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create indexes for delivery_boys
-CREATE INDEX IF NOT EXISTS idx_delivery_boys_mobile ON delivery_boys(mobile);
-CREATE INDEX IF NOT EXISTS idx_delivery_boys_store_id ON delivery_boys(store_id);
-CREATE INDEX IF NOT EXISTS idx_delivery_boys_status ON delivery_boys(status);
+CREATE INDEX idx_delivery_boys_mobile ON delivery_boys(mobile);
+CREATE INDEX idx_delivery_boys_store_id ON delivery_boys(store_id);
+CREATE INDEX idx_delivery_boys_status ON delivery_boys(status);
 
 -- Customers table
-CREATE TABLE IF NOT EXISTS customers (
+DROP TABLE IF EXISTS customers CASCADE;
+CREATE TABLE customers (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     mobile VARCHAR(20) NOT NULL,
@@ -61,14 +55,13 @@ CREATE TABLE IF NOT EXISTS customers (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(mobile, store_id)
 );
-
--- Create indexes for customers
-CREATE INDEX IF NOT EXISTS idx_customers_mobile ON customers(mobile);
-CREATE INDEX IF NOT EXISTS idx_customers_store_id ON customers(store_id);
-CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
+CREATE INDEX idx_customers_mobile ON customers(mobile);
+CREATE INDEX idx_customers_store_id ON customers(store_id);
+CREATE INDEX idx_customers_name ON customers(name);
 
 -- Orders table
-CREATE TABLE IF NOT EXISTS orders (
+DROP TABLE IF EXISTS orders CASCADE;
+CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     order_number VARCHAR(50) UNIQUE NOT NULL,
     customer_id BIGINT REFERENCES customers(id) ON DELETE SET NULL,
@@ -94,19 +87,18 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create indexes for orders
-CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
-CREATE INDEX IF NOT EXISTS idx_orders_delivery_boy_id ON orders(assigned_delivery_boy_id);
-CREATE INDEX IF NOT EXISTS idx_orders_store_id ON orders(store_id);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_orders_payment_status ON orders(payment_status);
-CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
-CREATE INDEX IF NOT EXISTS idx_orders_order_number ON orders(order_number);
-CREATE INDEX IF NOT EXISTS idx_orders_status_delivery_boy ON orders(status, assigned_delivery_boy_id, assigned_at);
+CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX idx_orders_delivery_boy_id ON orders(assigned_delivery_boy_id);
+CREATE INDEX idx_orders_store_id ON orders(store_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+CREATE INDEX idx_orders_order_number ON orders(order_number);
+CREATE INDEX idx_orders_status_delivery_boy ON orders(status, assigned_delivery_boy_id, assigned_at);
 
 -- Order Items table
-CREATE TABLE IF NOT EXISTS order_items (
+DROP TABLE IF EXISTS order_items CASCADE;
+CREATE TABLE order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -115,12 +107,11 @@ CREATE TABLE IF NOT EXISTS order_items (
     total DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create index for order_items
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 
 -- Payments table
-CREATE TABLE IF NOT EXISTS payments (
+DROP TABLE IF EXISTS payments CASCADE;
+CREATE TABLE payments (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
     payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('CASH', 'BANK_TRANSFER', 'SPLIT')),
@@ -132,13 +123,12 @@ CREATE TABLE IF NOT EXISTS payments (
     created_by BIGINT REFERENCES delivery_boys(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create indexes for payments
-CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+CREATE INDEX idx_payments_order_id ON payments(order_id);
+CREATE INDEX idx_payments_status ON payments(status);
 
 -- Location Updates table
-CREATE TABLE IF NOT EXISTS location_updates (
+DROP TABLE IF EXISTS location_updates CASCADE;
+CREATE TABLE location_updates (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
     latitude DECIMAL(10,8) NOT NULL,
@@ -147,13 +137,12 @@ CREATE TABLE IF NOT EXISTS location_updates (
     recorded_by BIGINT REFERENCES delivery_boys(id) ON DELETE SET NULL,
     source VARCHAR(20) DEFAULT 'MANUAL' CHECK (source IN ('AUTO', 'MANUAL'))
 );
+CREATE INDEX idx_location_updates_order_id ON location_updates(order_id);
+CREATE INDEX idx_location_updates_recorded_at ON location_updates(recorded_at);
 
--- Create indexes for location_updates
-CREATE INDEX IF NOT EXISTS idx_location_updates_order_id ON location_updates(order_id);
-CREATE INDEX IF NOT EXISTS idx_location_updates_recorded_at ON location_updates(recorded_at);
-
--- OTP Verifications table
-CREATE TABLE IF NOT EXISTS otp_verifications (
+-- OTP Verifications table (no foreign key to users)
+DROP TABLE IF EXISTS otp_verifications CASCADE;
+CREATE TABLE otp_verifications (
     id BIGSERIAL PRIMARY KEY,
     mobile VARCHAR(20) NOT NULL,
     otp VARCHAR(6) NOT NULL,
@@ -161,27 +150,12 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
     is_used BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_otp_mobile ON otp_verifications(mobile);
+CREATE INDEX idx_otp_expires_at ON otp_verifications(expires_at);
 
--- Create indexes for otp_verifications
-CREATE INDEX IF NOT EXISTS idx_otp_mobile ON otp_verifications(mobile);
-CREATE INDEX IF NOT EXISTS idx_otp_expires_at ON otp_verifications(expires_at);
-
--- Refresh Tokens table
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id BIGSERIAL PRIMARY KEY,
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) UNIQUE NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    is_revoked BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create indexes for refresh_tokens
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
-
--- Order Status History table (Audit Trail)
-CREATE TABLE IF NOT EXISTS order_status_history (
+-- Order Status History table
+DROP TABLE IF EXISTS order_status_history CASCADE;
+CREATE TABLE order_status_history (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
     status VARCHAR(50) NOT NULL,
@@ -189,11 +163,9 @@ CREATE TABLE IF NOT EXISTS order_status_history (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_order_status_history_order_id ON order_status_history(order_id);
 
--- Create index for order_status_history
-CREATE INDEX IF NOT EXISTS idx_order_status_history_order_id ON order_status_history(order_id);
-
--- Create function to update updated_at timestamp
+-- Create triggers
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -202,7 +174,6 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers for updated_at
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -219,7 +190,7 @@ DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to generate order number
+-- Update generate_order_number function to work with UUID
 CREATE OR REPLACE FUNCTION generate_order_number(store_id_param UUID)
 RETURNS VARCHAR(50) AS $$
 DECLARE
@@ -231,7 +202,6 @@ BEGIN
     store_id_str := REPLACE(store_id_param::TEXT, '-', '');
     
     -- Get the next sequence number for this store
-    -- Extract sequence from order_number pattern: ORD-{storeId}-{sequence}
     SELECT COALESCE(
         MAX(
             CASE 
@@ -251,3 +221,6 @@ BEGIN
     RETURN order_num;
 END;
 $$ LANGUAGE plpgsql;
+
+SELECT 'Migration completed! All tables created with UUID foreign keys.' as status;
+
