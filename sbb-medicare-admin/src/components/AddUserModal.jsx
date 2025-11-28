@@ -9,6 +9,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
         name: '',
         mobile: '',
         address: '',
+        store_name: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -34,6 +35,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                     mobile: formData.mobile,
                     password: formData.password,
                     address: formData.address,
+                    store_name: formData.store_name,
                 });
             }
 
@@ -46,9 +48,13 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                 name: '',
                 mobile: '',
                 address: '',
+                store_name: '',
             });
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create user');
+            const errorMsg = err.response?.data?.error?.message || 
+                           err.response?.data?.message || 
+                           'Failed to create user';
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -133,6 +139,20 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                             />
                         </div>
 
+                        {userType === 'store_staff' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Store Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.store_name}
+                                    onChange={(e) => setFormData({ ...formData, store_name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        )}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Address

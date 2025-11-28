@@ -9,25 +9,40 @@ export default function DeliveryBoysPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('all'); // all, active, inactive
+    const [counts, setCounts] = useState({ total: 0, active: 0, inactive: 0 });
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         loadDeliveryBoys();
-    }, []);
+    }, [activeTab]);
 
     const loadDeliveryBoys = async () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await deliveryBoysAPI.getAll();
             
-            // Handle API response structure: { success: true, data: { delivery_boys: [...] } }
-            const deliveryBoysArray = response.data?.data?.delivery_boys || 
-                                     response.data?.delivery_boys || 
-                                     (Array.isArray(response.data?.data) ? response.data.data : []) ||
-                                     (Array.isArray(response.data) ? response.data : []);
+            // Build query params based on active tab
+            let params = {};
+            if (activeTab === 'active') {
+                params.is_active = true;
+            } else if (activeTab === 'inactive') {
+                params.is_active = false;
+            }
+            
+            const response = await deliveryBoysAPI.getAll(params);
+            
+            // Handle API response structure: { success: true, data: { delivery_boys: [...], count, active_count, inactive_count } }
+            const responseData = response.data?.data || {};
+            const deliveryBoysArray = responseData.delivery_boys || [];
+            
+            // Update counts from API response
+            setCounts({
+                total: responseData.count || deliveryBoysArray.length,
+                active: responseData.active_count || 0,
+                inactive: responseData.inactive_count || 0,
+            });
             
             // Map snake_case to camelCase for consistency
             const mappedData = deliveryBoysArray.map(boy => ({
@@ -54,6 +69,7 @@ export default function DeliveryBoysPage() {
             setError(errorMsg);
             // Set empty array on error to prevent blank screen
             setDeliveryBoys([]);
+            setCounts({ total: 0, active: 0, inactive: 0 });
         } finally {
             setLoading(false);
         }
@@ -71,23 +87,36 @@ export default function DeliveryBoysPage() {
         }
     };
 
-    const handleDeactivate = async (userId) => {
-        if (!confirm('Deactivate this delivery boy?')) return;
+    const handleApprove = async (userId) => {
+        if (!confirm('Approve this delivery boy?')) return;
 
         try {
-            await deliveryBoysAPI.toggleActive(userId, false);
+            await deliveryBoysAPI.approve(userId);
             loadDeliveryBoys();
-            alert('Delivery boy deactivated');
+            alert('Delivery boy approved successfully');
         } catch (error) {
-            alert('Error deactivating delivery boy');
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Error approving delivery boy';
+            alert(errorMsg);
         }
     };
 
-    const filteredDeliveryBoys = deliveryBoys.filter((boy) => {
-        if (activeTab === 'active') return boy.isActive;
-        if (activeTab === 'inactive') return !boy.isActive;
-        return true;
-    });
+    const handleToggleActive = async (userId, isActive) => {
+        const action = isActive ? 'activate' : 'deactivate';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this delivery boy?`)) return;
+
+        try {
+            await deliveryBoysAPI.toggleActive(userId, isActive);
+            loadDeliveryBoys();
+            alert(`Delivery boy ${action}d successfully`);
+        } catch (error) {
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           `Error ${action}ing delivery boy`;
+            alert(errorMsg);
+        }
+    };
 
     if (loading) {
         return (
@@ -137,7 +166,7 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    All ({deliveryBoys.length})
+                    All ({counts.total})
                 </button>
                 <button
                     onClick={() => setActiveTab('active')}
@@ -147,7 +176,7 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Active ({deliveryBoys.filter((b) => b.isActive).length})
+                    Active ({counts.active})
                 </button>
                 <button
                     onClick={() => setActiveTab('inactive')}
@@ -157,7 +186,7 @@ export default function DeliveryBoysPage() {
                             : 'text-gray-600'
                     }`}
                 >
-                    Inactive ({deliveryBoys.filter((b) => !b.isActive).length})
+                    Inactive ({counts.inactive})
                 </button>
             </div>
 
@@ -184,14 +213,14 @@ export default function DeliveryBoysPage() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredDeliveryBoys.length === 0 ? (
+                        {deliveryBoys.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                                     No delivery boys found
                                 </td>
                             </tr>
                         ) : (
-                            filteredDeliveryBoys.map((boy) => (
+                            deliveryBoys.map((boy) => (
                                 <tr key={boy.id || Math.random()} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
@@ -209,54 +238,51 @@ export default function DeliveryBoysPage() {
                                         {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        {boy.isActive ? (
-                                            <div className="flex gap-2">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedUser(boy);
+                                                    setShowEditModal(true);
+                                                }}
+                                                className="text-blue-600 hover:text-blue-900"
+                                                title="Edit"
+                                            >
+                                                <Edit className="w-5 h-5" />
+                                            </button>
+                                            {boy.status === 'pending' && (
                                                 <button
-                                                    onClick={() => {
-                                                        setSelectedUser(boy);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                    title="Edit"
+                                                    onClick={() => handleApprove(boy.id)}
+                                                    className="text-green-600 hover:text-green-900"
+                                                    title="Approve"
                                                 >
-                                                    <Edit className="w-5 h-5" />
+                                                    <UserCheck className="w-5 h-5" />
                                                 </button>
+                                            )}
+                                            {boy.isActive ? (
                                                 <button
-                                                    onClick={() => handleDeactivate(boy.id)}
+                                                    onClick={() => handleToggleActive(boy.id, false)}
                                                     className="text-orange-600 hover:text-orange-900"
                                                     title="Deactivate"
                                                 >
                                                     <UserX className="w-5 h-5" />
                                                 </button>
+                                            ) : (
                                                 <button
-                                                    onClick={() => handleDelete(boy.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Delete"
+                                                    onClick={() => handleToggleActive(boy.id, true)}
+                                                    className="text-green-600 hover:text-green-900"
+                                                    title="Activate"
                                                 >
-                                                    <Trash2 className="w-5 h-5" />
+                                                    <UserCheck className="w-5 h-5" />
                                                 </button>
-                                            </div>
-                                        ) : (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedUser(boy);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                    className="text-blue-600 hover:text-blue-900"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(boy.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                        )}
+                                            )}
+                                            <button
+                                                onClick={() => handleDelete(boy.id)}
+                                                className="text-red-600 hover:text-red-900"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -295,12 +321,15 @@ export default function DeliveryBoysPage() {
 function StatusBadge({ isActive, status }) {
     let config;
 
+    // Use status field for display as per API spec
     if (status === 'pending') {
         config = { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending Approval' };
-    } else if (isActive) {
-        config = { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' };
+    } else if (status === 'approved') {
+        config = { bg: 'bg-green-100', text: 'text-green-800', label: 'Approved' };
+    } else if (status === 'rejected') {
+        config = { bg: 'bg-red-100', text: 'text-red-800', label: 'Rejected' };
     } else {
-        config = { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' };
+        config = { bg: 'bg-gray-100', text: 'text-gray-800', label: status || 'Unknown' };
     }
 
     return (

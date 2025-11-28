@@ -18,10 +18,31 @@ export default function StoreStaffPage() {
 
     const loadStoreStaff = async () => {
         try {
+            setLoading(true);
             const response = await accessControlAPI.getAll();
-            setStoreStaff(response.data?.data || []);
+            
+            // Handle API response structure: { success: true, data: { store_managers: [...] } }
+            const responseData = response.data?.data || {};
+            const storeManagersArray = responseData.store_managers || [];
+            
+            // Map snake_case to camelCase for consistency
+            const mappedData = storeManagersArray.map(manager => ({
+                id: manager.id,
+                name: manager.name,
+                email: manager.email,
+                mobile: manager.mobile,
+                address: manager.address,
+                storeName: manager.store_name || manager.storeName,
+                role: manager.role,
+                isActive: manager.is_active !== undefined ? manager.is_active : manager.isActive,
+                createdAt: manager.created_at || manager.createdAt,
+                updatedAt: manager.updated_at || manager.updatedAt,
+            }));
+            
+            setStoreStaff(mappedData);
         } catch (error) {
             console.error('Error loading store staff:', error);
+            setStoreStaff([]);
         } finally {
             setLoading(false);
         }
