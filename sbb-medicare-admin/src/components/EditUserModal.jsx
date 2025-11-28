@@ -7,6 +7,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
         name: '',
         mobile: '',
         address: '',
+        store_name: '',
         status: 'active',
     });
     const [loading, setLoading] = useState(false);
@@ -18,6 +19,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                 name: user.name || '',
                 mobile: user.mobile || '',
                 address: user.address || '',
+                store_name: user.storeName || user.store_name || '',
                 status: user.isActive ? 'active' : 'inactive',
             });
         }
@@ -41,6 +43,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                     name: formData.name,
                     mobile: formData.mobile,
                     address: formData.address,
+                    store_name: formData.store_name,
                 });
                 await accessControlAPI.toggleActive(user.id, formData.status === 'active');
             }
@@ -48,7 +51,10 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
             onSuccess();
             onClose();
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update user');
+            const errorMsg = err.response?.data?.error?.message || 
+                           err.response?.data?.message || 
+                           'Failed to update user';
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -117,6 +123,20 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                             />
                         </div>
 
+                        {userType === 'store_staff' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Store Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.store_name}
+                                    onChange={(e) => setFormData({ ...formData, store_name: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    required
+                                />
+                            </div>
+                        )}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Address

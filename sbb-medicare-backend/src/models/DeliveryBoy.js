@@ -116,20 +116,31 @@ class DeliveryBoy {
         return result.rowCount > 0;
     }
 
-    // Approve delivery boy
+    // Approve delivery boy (sets status to approved and is_active to true)
     static async approve(id) {
-        const result = await query(
-            `UPDATE delivery_boys SET status = 'approved', is_active = true WHERE id = $1 RETURNING *`,
-            [id]
+        const updateResult = await query(
+            'UPDATE delivery_boys SET status = $1, is_active = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id',
+            ['approved', true, id]
         );
-        return result.rows[0];
+        
+        if (updateResult.rowCount === 0) {
+            return null;
+        }
+        
+        // Return the full updated object
+        return await this.findById(id);
     }
 
-    // Toggle active status
+    // Toggle active status (also updates status field)
     static async toggleActive(id, isActive) {
+        // Determine status based on is_active value
+        // is_active: true → status: "approved"
+        // is_active: false → status: "pending"
+        const newStatus = isActive ? 'approved' : 'pending';
+        
         const updateResult = await query(
-            'UPDATE delivery_boys SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id',
-            [isActive, id]
+            'UPDATE delivery_boys SET is_active = $1, status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id',
+            [isActive, newStatus, id]
         );
         
         if (updateResult.rowCount === 0) {

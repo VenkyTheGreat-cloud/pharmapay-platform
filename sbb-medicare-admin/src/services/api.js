@@ -3,8 +3,8 @@ import axios from 'axios';
 // Flip this flag to false when you want to use the real backend.
 const USE_MOCK_API = false;
 
-// Base URL for SBB Medicare backend (e.g. http://localhost:9000)
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
+// Base URL for SBB Medicare backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sbb-medicare-api.onrender.com';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -87,25 +87,27 @@ const realPaymentsAPI = {
 };
 
 const realDeliveryBoysAPI = {
-    getAll: (params) => api.get('/delivery-boys', { params }),
-    getById: (id) => api.get(`/delivery-boys/${id}`),
-    create: (data) => api.post('/delivery-boys', data),
-    update: (id, data) => api.put(`/delivery-boys/${id}`, data),
-    delete: (id) => api.delete(`/delivery-boys/${id}`),
-    approve: (id) => api.patch(`/delivery-boys/${id}/approve`),
+    getAll: (params) => api.get('/api/delivery-boys', { params }),
+    getApproved: () => api.get('/api/delivery-boys/approved'),
+    getById: (id) => api.get(`/api/delivery-boys/${id}`),
+    create: (data) => api.post('/api/delivery-boys', data),
+    update: (id, data) => api.put(`/api/delivery-boys/${id}`, data),
+    delete: (id) => api.delete(`/api/delivery-boys/${id}`),
+    approve: (id) => api.patch(`/api/delivery-boys/${id}/approve`),
     toggleActive: (id, isActive) =>
-        api.patch(`/delivery-boys/${id}/toggle-active`, { isActive }),
+        api.patch(`/api/delivery-boys/${id}/toggle-active`, { isActive }),
     updateAvailability: (id, isAvailable) =>
-        api.patch(`/delivery-boys/${id}/availability`, { isAvailable }),
+        api.patch(`/api/delivery-boys/${id}/availability`, { isAvailable }),
 };
 
 const realAccessControlAPI = {
-    getAll: () => api.get('/access-control'),
-    create: (data) => api.post('/access-control', data),
-    update: (id, data) => api.put(`/access-control/${id}`, data),
-    delete: (id) => api.delete(`/access-control/${id}`),
+    getAll: () => api.get('/api/access-control'),
+    getById: (id) => api.get(`/api/access-control/${id}`),
+    create: (data) => api.post('/api/access-control', data),
+    update: (id, data) => api.put(`/api/access-control/${id}`, data),
+    delete: (id) => api.delete(`/api/access-control/${id}`),
     toggleActive: (id, isActive) =>
-        api.patch(`/access-control/${id}/toggle-active`, { isActive }),
+        api.patch(`/api/access-control/${id}/toggle-active`, { isActive }),
 };
 
 const realConfigAPI = {

@@ -193,10 +193,15 @@ exports.toggleActiveStatus = async (req, res, next) => {
         logger.info('Delivery boy active status toggled', {
             deliveryBoyId: req.params.id,
             is_active,
+            status: deliveryBoy.status,
             updatedBy: req.user?.userId
         });
 
-        res.json(successResponse(deliveryBoy, `Delivery boy ${is_active ? 'activated' : 'deactivated'} successfully`));
+        const statusMessage = is_active 
+            ? 'activated and approved successfully' 
+            : 'deactivated and set to pending approval';
+
+        res.json(successResponse(deliveryBoy, `Delivery boy ${statusMessage}`));
     } catch (error) {
         next(error);
     }
