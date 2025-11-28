@@ -233,10 +233,11 @@ exports.toggleActiveStatus = async (req, res, next) => {
         
         let is_active;
 
-        // If is_active is provided in body, use it (support boolean or string)
-        if (req.body.hasOwnProperty('is_active')) {
-            const value = req.body.is_active;
-            
+        // Support both isActive (camelCase) and is_active (snake_case)
+        const value = req.body.is_active !== undefined ? req.body.is_active : req.body.isActive;
+
+        // If value is provided in body, use it (support boolean or string)
+        if (value !== undefined) {
             // Handle string booleans
             if (typeof value === 'string') {
                 if (value.toLowerCase() === 'true' || value === '1') {
@@ -244,12 +245,15 @@ exports.toggleActiveStatus = async (req, res, next) => {
                 } else if (value.toLowerCase() === 'false' || value === '0') {
                     is_active = false;
                 } else {
-                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active/isActive must be a boolean or "true"/"false" string'));
                 }
             } else if (typeof value === 'boolean') {
                 is_active = value;
+            } else if (typeof value === 'number') {
+                // Handle numeric: 1 = true, 0 = false
+                is_active = value === 1;
             } else {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active/isActive must be a boolean or "true"/"false" string'));
             }
         } else {
             // If no body provided, toggle the current status
@@ -282,6 +286,14 @@ exports.toggleActiveStatus = async (req, res, next) => {
             `Store manager ${statusMessage} successfully`
         ));
     } catch (error) {
+        // Log detailed error for debugging
+        logger.error('Error toggling store manager active status', {
+            error: error.message,
+            errorCode: error.code,
+            stack: error.stack,
+            storeManagerId: req.params.id,
+            requestBody: req.body
+        });
         next(error);
     }
 };
