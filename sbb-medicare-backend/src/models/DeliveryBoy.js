@@ -127,11 +127,17 @@ class DeliveryBoy {
 
     // Toggle active status
     static async toggleActive(id, isActive) {
-        const result = await query(
-            'UPDATE delivery_boys SET is_active = $1 WHERE id = $2 RETURNING id, name, is_active',
+        const updateResult = await query(
+            'UPDATE delivery_boys SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id',
             [isActive, id]
         );
-        return result.rows[0];
+        
+        if (updateResult.rowCount === 0) {
+            return null;
+        }
+        
+        // Return the full updated object
+        return await this.findById(id);
     }
 }
 
