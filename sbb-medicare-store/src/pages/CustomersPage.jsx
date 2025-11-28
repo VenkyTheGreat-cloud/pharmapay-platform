@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { customersAPI, ordersAPI } from '../services/api';
+import { customersAPI } from '../services/api';
 import { Users, Search, Eye, MapPin, Plus, Edit, Trash2, Package } from 'lucide-react';
 import AddCustomerModal from '../components/AddCustomerModal';
 import EditCustomerModal from '../components/EditCustomerModal';
@@ -53,31 +53,19 @@ export default function CustomersPage() {
 
     const viewCustomerDetails = async (customerId) => {
         try {
+            setLoadingOrders(true);
             const response = await customersAPI.getById(customerId);
-            // Backend: { success, data: {...customer} }
-            const customerData = response.data?.data || response.data;
-            setSelectedCustomer(customerData);
-            setShowViewModal(true);
+            // Backend: { success, data: { customer: {...}, orders: [...], order_count: ... } }
+            const responseData = response.data?.data || {};
+            const customerData = responseData.customer || responseData;
+            const orders = responseData.orders || [];
             
-            // Load customer orders if mobile number is available
-            if (customerData.mobile || customerData.mobile_number) {
-                await loadCustomerOrders(customerData.mobile || customerData.mobile_number);
-            }
+            setSelectedCustomer(customerData);
+            setCustomerOrders(Array.isArray(orders) ? orders : []);
+            setShowViewModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
             alert('Error loading customer details. Please try again.');
-        }
-    };
-
-    const loadCustomerOrders = async (mobile) => {
-        try {
-            setLoadingOrders(true);
-            const response = await ordersAPI.getByCustomerMobile(mobile);
-            // Backend: { success, data: [...] }
-            const orders = response.data?.data || [];
-            setCustomerOrders(Array.isArray(orders) ? orders : []);
-        } catch (error) {
-            console.error('Error loading customer orders:', error);
             setCustomerOrders([]);
         } finally {
             setLoadingOrders(false);
@@ -87,8 +75,8 @@ export default function CustomersPage() {
     const handleEdit = async (customerId) => {
         try {
             const response = await customersAPI.getById(customerId);
-            // Backend: { success, data: {...customer} }
-            const customerData = response.data?.data || response.data;
+            // Backend: { success, data: { customer: {...} } }
+            const customerData = response.data?.data?.customer || response.data?.data || response.data;
             setSelectedCustomer(customerData);
             setShowEditModal(true);
         } catch (error) {
@@ -359,19 +347,27 @@ export default function CustomersPage() {
                                                     {customerOrders.map((order) => (
                                                         <tr key={order.id} className="hover:bg-gray-50">
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                {order.orderNumber || order.order_number}
+                                                                {order.order_number || order.orderNumber}
                                                             </td>
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                                                {(order.created_at || order.createdTime) ? new Date(order.created_at || order.createdTime).toLocaleDateString() : '-'}
+                                                                {(order.created_at || order.createdTime) ? new Date(order.created_at || order.createdTime).toLocaleString() : '-'}
                                                             </td>
                                                             <td className="px-4 py-3 text-sm text-gray-700">
                                                                 {order.items && Array.isArray(order.items) && order.items.length > 0 ? (
-                                                                    <div className="space-y-1">
+                                                                    <div className="space-y-1 max-w-xs">
                                                                         {order.items.map((item, idx) => (
-                                                                            <div key={idx} className="text-xs">
-                                                                                {item.name} x{item.quantity} @ ₹{item.price}
+                                                                            <div key={item.id || idx} className="text-xs border-b pb-1 last:border-0">
+                                                                                <span className="font-medium">{item.name}</span>
+                                                                                <span className="text-gray-500"> x{item.quantity}</span>
+                                                                                <span className="text-gray-500"> @ ₹{item.price}</span>
+                                                                                <span className="text-gray-600 font-semibold"> = ₹{item.total || (item.quantity * item.price)}</span>
                                                                             </div>
                                                                         ))}
+                                                                        {order.item_count && (
+                                                                            <div className="text-xs text-gray-500 mt-1 pt-1 border-t">
+                                                                                Total Items: {order.item_count}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 ) : (
                                                                     <span className="text-gray-400">No items</span>
@@ -385,6 +381,7 @@ export default function CustomersPage() {
                                                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                                                                     order.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
                                                                     order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                                    order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
                                                                     order.status === 'PAYMENT_COLLECTION' ? 'bg-indigo-100 text-indigo-800' :
                                                                     'bg-gray-100 text-gray-800'
                                                                 }`}>
@@ -392,7 +389,7 @@ export default function CustomersPage() {
                                                                 </span>
                                                             </td>
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                                                {order.payment_mode || order.paymentMode || 'N/A'}
+                                                                {order.payment_mode || order.paymentMode || (order.status === 'DELIVERED' ? 'Pending' : 'N/A')}
                                                             </td>
                                                         </tr>
                                                     ))}
