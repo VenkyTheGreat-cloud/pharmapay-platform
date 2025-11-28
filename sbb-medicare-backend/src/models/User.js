@@ -145,8 +145,8 @@ class User {
         
         values.push(id);
         const result = await query(
-            `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramCount}
-             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, updated_at`,
+            `UPDATE users SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramCount}
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at`,
             values
         );
         return result.rows[0];
