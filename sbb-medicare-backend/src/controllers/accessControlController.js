@@ -6,11 +6,34 @@ const { successResponse, errorResponse } = require('../utils/apiResponse');
 // Get all store managers (admin only)
 exports.getAllStoreManagers = async (req, res, next) => {
     try {
-        const storeManagers = await User.findByRole('store_manager');
+        const { filter } = req.query; // filter: 'all', 'active', 'inactive'
+        
+        let storeManagers = await User.findByRole('store_manager');
+
+        // Filter based on query parameter
+        if (filter === 'active') {
+            // Only active records (is_active = true, status = 'active')
+            storeManagers = storeManagers.filter(manager => 
+                manager.is_active === true && manager.status === 'active'
+            );
+        } else if (filter === 'inactive') {
+            // Only inactive records (is_active = false, status = 'inactive')
+            storeManagers = storeManagers.filter(manager => 
+                manager.is_active === false || manager.status === 'inactive'
+            );
+        }
+        // If filter is 'all' or not provided, return all records
+
+        // Calculate counts
+        const activeCount = storeManagers.filter(m => m.is_active === true && m.status === 'active').length;
+        const inactiveCount = storeManagers.filter(m => m.is_active === false || m.status === 'inactive').length;
 
         res.json(successResponse({
             store_managers: storeManagers,
-            count: storeManagers.length
+            count: storeManagers.length,
+            active_count: activeCount,
+            inactive_count: inactiveCount,
+            filter: filter || 'all'
         }));
     } catch (error) {
         next(error);

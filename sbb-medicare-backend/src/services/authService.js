@@ -73,20 +73,25 @@ class AuthService {
 
     // Login user
     static async login(mobileEmail, password) {
+        const logger = require('../config/logger');
+        
         // Find user by email or mobile
         const user = await User.findByEmailOrMobile(mobileEmail);
         if (!user) {
+            logger.warn('Login failed - user not found', { mobileEmail: mobileEmail?.substring(0, 3) + '***' });
             throw new Error('INVALID_CREDENTIALS');
         }
 
         // Check if user is active
         if (!user.is_active) {
+            logger.warn('Login failed - inactive user', { userId: user.id, email: user.email });
             throw new Error('INACTIVE_USER');
         }
 
         // Verify password
         const isPasswordValid = await this.comparePassword(password, user.password_hash);
         if (!isPasswordValid) {
+            logger.warn('Login failed - invalid password', { userId: user.id, email: user.email });
             throw new Error('INVALID_CREDENTIALS');
         }
 

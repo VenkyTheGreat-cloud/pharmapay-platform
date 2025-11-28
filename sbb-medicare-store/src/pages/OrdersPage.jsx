@@ -8,7 +8,8 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: '',
-        date: '',
+        dateFrom: '',
+        dateTo: '',
     });
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
@@ -24,18 +25,20 @@ export default function OrdersPage() {
     const loadOrders = async () => {
         try {
             setLoading(true);
-            const params = {
-                status: filters.status || undefined,
-                date: filters.date || undefined,
-                page: 1,
-                limit: 20,
-            };
+            const params = {};
+            if (filters.status) params.status = filters.status.toUpperCase();
+            if (filters.dateFrom) params.dateFrom = filters.dateFrom;
+            if (filters.dateTo) params.dateTo = filters.dateTo;
+            params.page = 1;
+            params.limit = 20;
+            
             const response = await ordersAPI.getAll(params);
             // Backend: { success, data: { orders: [...], pagination: {...} } }
-            const list = response.data?.data?.orders || [];
-            setOrders(list);
+            const list = response.data?.data?.orders || response.data?.data || [];
+            setOrders(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading orders:', error);
+            setOrders([]);
         } finally {
             setLoading(false);
         }
@@ -145,12 +148,12 @@ export default function OrdersPage() {
                             className="border border-gray-300 rounded px-3 py-2"
                         >
                             <option value="">All Status</option>
-                            <option value="new">New</option>
-                            <option value="assigned">Assigned</option>
-                            <option value="picked_up">Picked Up</option>
-                            <option value="in_transit">In Transit</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
+                            <option value="ASSIGNED">Assigned</option>
+                            <option value="PICKED_UP">Picked Up</option>
+                            <option value="IN_TRANSIT">In Transit</option>
+                            <option value="PAYMENT_COLLECTION">Payment Collection</option>
+                            <option value="DELIVERED">Delivered</option>
+                            <option value="CANCELLED">Cancelled</option>
                         </select>
                     </div>
                     <div>
@@ -301,7 +304,7 @@ export default function OrdersPage() {
                                 Assign Delivery Boy
                             </h2>
                             <p className="text-sm text-gray-600 mb-4">
-                                Order: <span className="font-semibold">{selectedOrder.order_number}</span>
+                                Order: <span className="font-semibold">{selectedOrder.orderNumber || selectedOrder.order_number}</span>
                             </p>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -315,7 +318,7 @@ export default function OrdersPage() {
                                     <option value="">Select a delivery boy</option>
                                     {deliveryBoys.map(boy => (
                                         <option key={boy.id} value={boy.id}>
-                                            {boy.full_name} - {boy.mobile_number}
+                                            {boy.name} - {boy.mobile}
                                         </option>
                                     ))}
                                 </select>
@@ -361,14 +364,14 @@ export default function OrdersPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Order Number</h3>
-                                    <p className="text-gray-900">{selectedOrder.order_number}</p>
+                                    <p className="text-gray-900">{selectedOrder.orderNumber || selectedOrder.order_number}</p>
                                 </div>
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Customer</h3>
-                                    <p className="text-gray-900">{selectedOrder.customer_name}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customer_mobile}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customer_address}</p>
+                                    <p className="text-gray-900">{selectedOrder.customerName || selectedOrder.customer_name}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile || selectedOrder.customer_mobile}</p>
+                                    <p className="text-sm text-gray-600">{selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address}</p>
                                 </div>
 
                                 <div>
@@ -380,7 +383,7 @@ export default function OrdersPage() {
 
                                 <div>
                                     <h3 className="font-semibold text-gray-700">Total Amount</h3>
-                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.total_amount}</p>
+                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount || selectedOrder.total_amount}</p>
                                 </div>
 
                                 <div>
@@ -394,11 +397,11 @@ export default function OrdersPage() {
                                     </span>
                                 </div>
 
-                                {selectedOrder.delivery_boy_name && (
+                                {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
                                     <div>
                                         <h3 className="font-semibold text-gray-700">Delivery Boy</h3>
-                                        <p className="text-gray-900">{selectedOrder.delivery_boy_name}</p>
-                                        <p className="text-sm text-gray-600">{selectedOrder.delivery_boy_mobile}</p>
+                                        <p className="text-gray-900">{selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}</p>
+                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile}</p>
                                     </div>
                                 )}
 
