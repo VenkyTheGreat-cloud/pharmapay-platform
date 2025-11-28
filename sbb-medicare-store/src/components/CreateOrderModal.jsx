@@ -38,8 +38,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const loadDeliveryBoys = async () => {
         try {
             const response = await deliveryBoysAPI.listApproved();
-            // Backend format: { success, data: [...] }
-            const list = response.data?.data || [];
+            // Backend format: { success, data: { delivery_boys: [...], count: ... } }
+            const list = response.data?.data?.delivery_boys || response.data?.data || [];
             setDeliveryBoys(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
