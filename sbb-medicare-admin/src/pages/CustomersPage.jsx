@@ -86,9 +86,17 @@ export default function CustomersPage() {
 
             // Handle different possible response structures for customer
             let apiCustomer = null;
-            if (customerRes.data?.data) {
+            if (customerRes.data?.data?.customer) {
+                // Structure: { success: true, data: { customer: {...} } }
+                apiCustomer = customerRes.data.data.customer;
+            } else if (customerRes.data?.data && !Array.isArray(customerRes.data.data)) {
+                // Structure: { success: true, data: {...} }
                 apiCustomer = customerRes.data.data;
-            } else if (customerRes.data) {
+            } else if (customerRes.data?.customer) {
+                // Structure: { success: true, customer: {...} }
+                apiCustomer = customerRes.data.customer;
+            } else if (customerRes.data && !Array.isArray(customerRes.data) && customerRes.data.id) {
+                // Direct customer object
                 apiCustomer = customerRes.data;
             }
 
@@ -96,6 +104,9 @@ export default function CustomersPage() {
             let apiOrders = [];
             if (ordersRes.data?.data?.orders) {
                 // Structure: { success: true, data: { orders: [...] } }
+                apiOrders = ordersRes.data.data.orders;
+            } else if (ordersRes.data?.data?.customer?.orders) {
+                // Structure: { success: true, data: { customer: {...}, orders: [...] } }
                 apiOrders = ordersRes.data.data.orders;
             } else if (ordersRes.data?.data && Array.isArray(ordersRes.data.data)) {
                 // Structure: { success: true, data: [...] }
@@ -108,12 +119,27 @@ export default function CustomersPage() {
                 apiOrders = ordersRes.data;
             }
 
+            console.log('Parsed Customer:', apiCustomer); // Debug log
+            console.log('Parsed Orders:', apiOrders); // Debug log
+
             if (apiCustomer) {
-                setSelectedCustomer(normalizeCustomer(apiCustomer));
+                const normalizedCustomer = normalizeCustomer(apiCustomer);
+                console.log('Normalized Customer:', normalizedCustomer); // Debug log
+                setSelectedCustomer(normalizedCustomer);
                 setSelectedCustomerOrders(apiOrders);
                 setShowModal(true);
             } else {
-                alert('Customer details not found');
+                // Fallback: Try to find customer from the current list
+                const customerFromList = customers.find(c => c.id === customerId || c.id === String(customerId));
+                if (customerFromList) {
+                    console.log('Using customer from list as fallback:', customerFromList);
+                    setSelectedCustomer(customerFromList);
+                    setSelectedCustomerOrders(apiOrders);
+                    setShowModal(true);
+                } else {
+                    console.error('Customer not found in response or list:', customerRes.data);
+                    alert('Customer details not found');
+                }
             }
         } catch (error) {
             console.error('Error loading customer details:', error);
@@ -227,16 +253,18 @@ export default function CustomersPage() {
             )}
 
             {/* Customer Details Modal */}
-            {showModal && selectedCustomer && (
+            {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
                         {/* Header */}
                         <div className="flex justify-between items-center px-6 py-4 border-b">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900">Customer Details</h2>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    ID: {selectedCustomer.id}
-                                </p>
+                                {selectedCustomer && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        ID: {selectedCustomer.id}
+                                    </p>
+                                )}
                             </div>
                             <button
                                 onClick={() => setShowModal(false)}
@@ -249,71 +277,77 @@ export default function CustomersPage() {
                         {/* Content */}
                         <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-64px)] space-y-6">
                             {/* Top section: customer details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Full Name
-                                        </h3>
-                                        <p className="text-base text-gray-900 font-medium">{selectedCustomer.name}</p>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Mobile Number
-                                        </h3>
-                                        <p className="text-base text-gray-900">{selectedCustomer.mobile}</p>
-                                    </div>
-                                    {selectedCustomer.email && (
+                            {selectedCustomer ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
                                         <div>
                                             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                                Email
+                                                Full Name
                                             </h3>
-                                            <p className="text-base text-gray-900">{selectedCustomer.email}</p>
+                                            <p className="text-base text-gray-900 font-medium">{selectedCustomer.name || 'N/A'}</p>
                                         </div>
-                                    )}
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Customer ID
-                                        </h3>
-                                        <p className="text-sm text-gray-600 font-mono">{selectedCustomer.id}</p>
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                Mobile Number
+                                            </h3>
+                                            <p className="text-base text-gray-900">{selectedCustomer.mobile || 'N/A'}</p>
+                                        </div>
+                                        {selectedCustomer.email && (
+                                            <div>
+                                                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                    Email
+                                                </h3>
+                                                <p className="text-base text-gray-900">{selectedCustomer.email}</p>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                Customer ID
+                                            </h3>
+                                            <p className="text-sm text-gray-600 font-mono">{selectedCustomer.id || 'N/A'}</p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Address
-                                        </h3>
-                                        <p className="text-base text-gray-900 whitespace-pre-line">
-                                            {selectedCustomer.address}
-                                        </p>
-                                    </div>
-                                    {selectedCustomer.landmark && (
+                                    <div className="space-y-4">
                                         <div>
                                             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                                Landmark
+                                                Address
                                             </h3>
-                                            <p className="text-base text-gray-900">{selectedCustomer.landmark}</p>
+                                            <p className="text-base text-gray-900 whitespace-pre-line">
+                                                {selectedCustomer.address || 'N/A'}
+                                            </p>
                                         </div>
-                                    )}
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Registered On
-                                        </h3>
-                                        <p className="text-base text-gray-900">
-                                            {selectedCustomer.createdAt
-                                                ? new Date(selectedCustomer.createdAt).toLocaleString()
-                                                : 'N/A'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                                            Total Orders
-                                        </h3>
-                                        <p className="text-base text-gray-900 font-semibold">{selectedCustomer.orderCount || selectedCustomerOrders.length}</p>
+                                        {selectedCustomer.landmark && (
+                                            <div>
+                                                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                    Landmark
+                                                </h3>
+                                                <p className="text-base text-gray-900">{selectedCustomer.landmark}</p>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                Registered On
+                                            </h3>
+                                            <p className="text-base text-gray-900">
+                                                {selectedCustomer.createdAt
+                                                    ? new Date(selectedCustomer.createdAt).toLocaleString()
+                                                    : 'N/A'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                Total Orders
+                                            </h3>
+                                            <p className="text-base text-gray-900 font-semibold">{selectedCustomer.orderCount || selectedCustomerOrders.length}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <p className="text-gray-500">Loading customer details...</p>
+                                </div>
+                            )}
 
                             {/* Customer Orders */}
                             <div className="pt-6 border-t">
