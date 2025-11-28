@@ -188,7 +188,7 @@ export default function OrdersPage() {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
                                     Order #
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -250,7 +250,7 @@ export default function OrdersPage() {
                                     
                                     return (
                                         <tr key={order.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm text-gray-900 max-w-[200px]">
+                                            <td className="px-4 py-4 text-sm text-gray-900 max-w-[150px]">
                                                 {formatOrderNumber(orderNumber)}
                                             </td>
                                         <td className="px-6 py-4 whitespace-nowrap">

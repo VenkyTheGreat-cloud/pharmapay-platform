@@ -16,22 +16,41 @@ export default function CustomersPage() {
 
     const normalizeCustomer = (apiCustomer) => ({
         id: apiCustomer.id,
-        name: apiCustomer.name,
-        mobile: apiCustomer.mobile,
-        address: apiCustomer.address,
-        landmark: apiCustomer.landmark,
-        orderCount: apiCustomer.orderCount,
-        createdAt: apiCustomer.createdAt,
+        name: apiCustomer.name || 'N/A',
+        mobile: apiCustomer.mobile || 'N/A',
+        address: apiCustomer.address || 'N/A',
+        landmark: apiCustomer.landmark || null,
+        orderCount: apiCustomer.orderCount || apiCustomer.total_orders || 0,
+        createdAt: apiCustomer.created_at || apiCustomer.createdAt,
+        email: apiCustomer.email || null,
     });
 
     const loadCustomers = async (params = {}) => {
         try {
             setLoading(true);
             const response = await customersAPI.getAll(params);
-            const list = response.data?.data?.data || [];
+            console.log('Customers API Response:', response.data); // Debug log
+            
+            // Handle different possible response structures
+            let list = [];
+            if (response.data?.data?.data) {
+                // Structure: { success: true, data: { data: [...] } }
+                list = response.data.data.data;
+            } else if (response.data?.data) {
+                // Structure: { success: true, data: [...] }
+                list = Array.isArray(response.data.data) ? response.data.data : [];
+            } else if (Array.isArray(response.data)) {
+                // Structure: { success: true, data: [...] } or direct array
+                list = response.data;
+            }
+            
             setCustomers(list.map(normalizeCustomer));
         } catch (error) {
             console.error('Error loading customers:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to load customers';
+            alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }
@@ -52,19 +71,54 @@ export default function CustomersPage() {
 
     const viewCustomerDetails = async (customerId) => {
         try {
+            setLoading(true);
             const [customerRes, ordersRes] = await Promise.all([
                 customersAPI.getById(customerId),
                 customersAPI.getOrdersForCustomer(customerId),
             ]);
 
-            const apiCustomer = customerRes.data?.data;
-            const apiOrders = ordersRes.data?.data?.orders || [];
+            console.log('Customer Details Response:', customerRes.data); // Debug log
+            console.log('Customer Orders Response:', ordersRes.data); // Debug log
 
-            setSelectedCustomer(normalizeCustomer(apiCustomer));
-            setSelectedCustomerOrders(apiOrders);
-            setShowModal(true);
+            // Handle different possible response structures for customer
+            let apiCustomer = null;
+            if (customerRes.data?.data) {
+                apiCustomer = customerRes.data.data;
+            } else if (customerRes.data) {
+                apiCustomer = customerRes.data;
+            }
+
+            // Handle different possible response structures for orders
+            let apiOrders = [];
+            if (ordersRes.data?.data?.orders) {
+                // Structure: { success: true, data: { orders: [...] } }
+                apiOrders = ordersRes.data.data.orders;
+            } else if (ordersRes.data?.data && Array.isArray(ordersRes.data.data)) {
+                // Structure: { success: true, data: [...] }
+                apiOrders = ordersRes.data.data;
+            } else if (ordersRes.data?.orders) {
+                // Structure: { success: true, orders: [...] }
+                apiOrders = ordersRes.data.orders;
+            } else if (Array.isArray(ordersRes.data)) {
+                // Direct array
+                apiOrders = ordersRes.data;
+            }
+
+            if (apiCustomer) {
+                setSelectedCustomer(normalizeCustomer(apiCustomer));
+                setSelectedCustomerOrders(apiOrders);
+                setShowModal(true);
+            } else {
+                alert('Customer details not found');
+            }
         } catch (error) {
             console.error('Error loading customer details:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to load customer details';
+            alert(`Error: ${errorMsg}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -191,109 +245,152 @@ export default function CustomersPage() {
                         {/* Content */}
                         <div className="px-6 py-4 overflow-y-auto max-h-[calc(90vh-64px)] space-y-6">
                             {/* Top section: customer details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
                                     <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                             Full Name
                                         </h3>
-                                        <p className="text-sm text-gray-900">{selectedCustomer.name}</p>
+                                        <p className="text-base text-gray-900 font-medium">{selectedCustomer.name}</p>
                                     </div>
                                     <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                             Mobile Number
                                         </h3>
-                                        <p className="text-sm text-gray-900">{selectedCustomer.mobile}</p>
+                                        <p className="text-base text-gray-900">{selectedCustomer.mobile}</p>
                                     </div>
+                                    {selectedCustomer.email && (
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                Email
+                                            </h3>
+                                            <p className="text-base text-gray-900">{selectedCustomer.email}</p>
+                                        </div>
+                                    )}
                                     <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                            Registered On
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                            Customer ID
                                         </h3>
-                                        <p className="text-sm text-gray-900">
-                                            {selectedCustomer.createdAt
-                                                ? new Date(selectedCustomer.createdAt).toLocaleString()
-                                                : '-'}
-                                        </p>
+                                        <p className="text-sm text-gray-600 font-mono">{selectedCustomer.id}</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     <div>
-                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                             Address
                                         </h3>
-                                        <p className="text-sm text-gray-900 whitespace-pre-line">
+                                        <p className="text-base text-gray-900 whitespace-pre-line">
                                             {selectedCustomer.address}
                                         </p>
                                     </div>
                                     {selectedCustomer.landmark && (
                                         <div>
-                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                                                 Landmark
                                             </h3>
-                                            <p className="text-sm text-gray-900">{selectedCustomer.landmark}</p>
+                                            <p className="text-base text-gray-900">{selectedCustomer.landmark}</p>
                                         </div>
                                     )}
-                                    {selectedCustomer.orderCount !== undefined && (
-                                        <div>
-                                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                                Total Orders
-                                            </h3>
-                                            <p className="text-sm text-gray-900">{selectedCustomer.orderCount}</p>
-                                        </div>
-                                    )}
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                            Registered On
+                                        </h3>
+                                        <p className="text-base text-gray-900">
+                                            {selectedCustomer.createdAt
+                                                ? new Date(selectedCustomer.createdAt).toLocaleString()
+                                                : 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                            Total Orders
+                                        </h3>
+                                        <p className="text-base text-gray-900 font-semibold">{selectedCustomer.orderCount || selectedCustomerOrders.length}</p>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Customer Orders */}
-                            <div className="pt-4 border-t">
-                                <h3 className="font-semibold text-gray-800 mb-3">Customer Orders</h3>
+                            <div className="pt-6 border-t">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Customer Orders ({selectedCustomerOrders.length})</h3>
                                 {selectedCustomerOrders.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No orders found for this customer.</p>
+                                    <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                        <p className="text-sm text-gray-500">No orders found for this customer.</p>
+                                    </div>
                                 ) : (
-                                    <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                                    <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
                                         {selectedCustomerOrders.map((order) => (
                                             <div
-                                                key={order.id}
-                                                className="border rounded-lg p-3 bg-gray-50"
+                                                key={order.id || order.order_id}
+                                                className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow"
                                             >
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-gray-900">
-                                                            {order.orderNumber}
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex-1">
+                                                        <p className="text-base font-semibold text-gray-900 mb-1">
+                                                            Order #{order.orderNumber || order.order_number || order.id}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            {order.orderDate
-                                                                ? new Date(order.orderDate).toLocaleDateString()
-                                                                : ''}
-                                                        </p>
+                                                        <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                                                            {order.orderDate && (
+                                                                <span>
+                                                                    📅 {new Date(order.orderDate || order.order_date || order.created_at || order.createdTime).toLocaleDateString()}
+                                                                </span>
+                                                            )}
+                                                            {order.status && (
+                                                                <span className={`px-2 py-1 rounded-full ${
+                                                                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                                    order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                                    order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                                }`}>
+                                                                    {order.status}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="text-sm font-semibold text-gray-900">
-                                                            ₹{order.amount}
+                                                    <div className="text-right ml-4">
+                                                        <p className="text-lg font-bold text-gray-900">
+                                                            ₹{parseFloat(order.amount || order.total_amount || 0).toFixed(2)}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            {order.status}
-                                                        </p>
+                                                        {order.payment_mode && (
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                💳 {order.payment_mode}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
 
                                                 {/* Order Items */}
-                                                {order.items && order.items.length > 0 && (
-                                                    <div className="mt-2">
-                                                        <p className="text-xs font-semibold text-gray-700 mb-1">
-                                                            Items
+                                                {(order.items || order.medicines) && (order.items?.length > 0 || order.medicines?.length > 0) && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                                        <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                                                            Order Items
                                                         </p>
-                                                        <ul className="text-xs text-gray-800 list-disc list-inside space-y-0.5">
-                                                            {order.items.map((item) => (
-                                                                <li key={item.id}>
-                                                                    {item.name || item.medicine_name} —{' '}
-                                                                    {item.quantity} × ₹
-                                                                    {item.price ?? item.price_per_unit}{' '}
-                                                                    (= ₹{item.total ?? item.total_price})
+                                                        <ul className="space-y-1.5">
+                                                            {(order.items || order.medicines || []).map((item, idx) => (
+                                                                <li key={item.id || idx} className="text-sm text-gray-800 flex justify-between items-center">
+                                                                    <span>
+                                                                        {item.name || item.medicine_name || 'Item'} 
+                                                                        <span className="text-gray-500 ml-2">
+                                                                            (Qty: {item.quantity || 0})
+                                                                        </span>
+                                                                    </span>
+                                                                    <span className="font-medium">
+                                                                        ₹{parseFloat(item.total || item.total_price || (item.price || item.price_per_unit || 0) * (item.quantity || 0)).toFixed(2)}
+                                                                    </span>
                                                                 </li>
                                                             ))}
                                                         </ul>
+                                                    </div>
+                                                )}
+
+                                                {/* Delivery Information */}
+                                                {(order.deliveryBoyName || order.delivery_boy_name) && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                                        <p className="text-xs text-gray-600">
+                                                            🚚 Delivered by: <span className="font-medium">{order.deliveryBoyName || order.delivery_boy_name}</span>
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
