@@ -38,12 +38,21 @@ exports.getAllCustomers = async (req, res, next) => {
 // Get customer by ID
 exports.getCustomerById = async (req, res, next) => {
     try {
-        const customer = await Customer.getWithOrderCount(req.params.id);
+        const customer = await Customer.findById(req.params.id);
         if (!customer) {
-            return res.status(404).json({ error: 'Customer not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: 'Customer not found'
+                }
+            });
         }
 
-        res.json({ customer });
+        res.json({ 
+            success: true,
+            data: { customer }
+        });
     } catch (error) {
         next(error);
     }
@@ -183,13 +192,31 @@ exports.deleteCustomer = async (req, res, next) => {
         const deleted = await Customer.delete(req.params.id);
 
         if (!deleted) {
-            return res.status(404).json({ error: 'Customer not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: 'Customer not found'
+                }
+            });
         }
 
-        logger.info('Customer deleted', { customerId: req.params.id, deletedBy: req.user.id });
+        logger.info('Customer deleted', { customerId: req.params.id, deletedBy: req.user.userId });
 
-        res.json({ message: 'Customer deleted successfully' });
+        res.json({ 
+            success: true,
+            data: { message: 'Customer deleted successfully' }
+        });
     } catch (error) {
+        if (error.message === 'CUSTOMER_HAS_ORDERS') {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'CUSTOMER_HAS_ORDERS',
+                    message: 'Cannot delete customer with existing orders'
+                }
+            });
+        }
         next(error);
     }
 };
