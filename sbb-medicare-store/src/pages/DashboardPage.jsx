@@ -51,7 +51,7 @@ export default function DashboardPage() {
         const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
 
         const inRange = orders.filter((order) => {
-            const created = order.createdTime ? new Date(order.createdTime) : null;
+            const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
             if (!created) return false;
             if (fromDate && created < fromDate) return false;
             if (toDate && created > toDate) return false;
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
         const totalCollectedAmount = inRange
             .filter((o) => o.status === 'DELIVERED' || o.status === 'PAYMENT_COLLECTION')
-            .reduce((sum, o) => sum + (Number(o.amount) || 0), 0);
+            .reduce((sum, o) => sum + (Number(o.amount || o.total_amount) || 0), 0);
 
         // For list: only non-ongoing statuses (exclude IN_TRANSIT and any others not relevant)
         const allowedStatuses = new Set(['ASSIGNED', 'PICKED_UP', 'DELIVERED', 'PAYMENT_COLLECTION']);
@@ -196,19 +196,19 @@ export default function DashboardPage() {
                                         {filteredForList.map((order) => (
                                             <tr key={order.id}>
                                                 <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
-                                                    {order.orderNumber}
+                                                    {order.orderNumber || order.order_number}
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">{order.customerName}</div>
-                                                    <div className="text-xs text-gray-500">{order.customerMobile}</div>
+                                                    <div className="text-gray-900">{order.customerName || order.customer_name}</div>
+                                                    <div className="text-xs text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap">
                                                     <div className="text-gray-900">
-                                                        {order.deliveryBoyName || 'Not assigned'}
+                                                        {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
                                                     </div>
-                                                    {order.deliveryBoyMobile && (
+                                                    {(order.deliveryBoyMobile || order.delivery_boy_mobile) && (
                                                         <div className="text-xs text-gray-500">
-                                                            {order.deliveryBoyMobile}
+                                                            {order.deliveryBoyMobile || order.delivery_boy_mobile}
                                                         </div>
                                                     )}
                                                 </td>
@@ -216,12 +216,12 @@ export default function DashboardPage() {
                                                     <StatusBadge status={order.status} />
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                                                    {order.createdTime
-                                                        ? new Date(order.createdTime).toLocaleString()
+                                                    {(order.createdTime || order.created_at)
+                                                        ? new Date(order.createdTime || order.created_at).toLocaleString()
                                                         : '-'}
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap text-gray-700">
-                                                    ₹{(Number(order.amount) || 0).toFixed(2)}
+                                                    ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
                                                 </td>
                                             </tr>
                                         ))}
