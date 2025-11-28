@@ -256,19 +256,17 @@ exports.toggleActiveStatus = async (req, res, next) => {
             is_active = !storeManager.is_active;
         }
 
-        const updatedStoreManager = await User.update(req.params.id, { is_active });
+        // Use toggleActive method which properly syncs status
+        const updatedManager = await User.toggleActive(req.params.id, is_active);
 
-        if (!updatedStoreManager) {
+        if (!updatedManager) {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Store manager not found'));
         }
-
-        // Get the updated store manager with status field
-        const updatedManager = await User.findById(req.params.id);
         
         logger.info('Store manager active status toggled', {
             storeManagerId: req.params.id,
             is_active,
-            status: updatedManager?.status,
+            status: updatedManager.status,
             updatedBy: req.user?.userId
         });
 
