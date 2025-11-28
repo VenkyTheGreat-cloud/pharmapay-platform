@@ -5,8 +5,9 @@ import axios from 'axios';
 const API_DISABLED = import.meta.env.VITE_API_DISABLED === 'true';
 
 // Backend base URL (Play Framework API)
-// Default: http://localhost:9000/api
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000/api';
+// Default: https://sbb-medicare-api.onrender.com/api
+// For local development, set VITE_API_URL=http://localhost:9000/api in .env
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sbb-medicare-api.onrender.com/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
