@@ -146,10 +146,33 @@ exports.approveDeliveryBoy = async (req, res, next) => {
 // Toggle active status
 exports.toggleActiveStatus = async (req, res, next) => {
     try {
-        const { is_active } = req.body;
+        let is_active;
 
-        if (typeof is_active !== 'boolean') {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean'));
+        // If is_active is provided in body, use it (support boolean or string)
+        if (req.body.hasOwnProperty('is_active')) {
+            const value = req.body.is_active;
+            
+            // Handle string booleans
+            if (typeof value === 'string') {
+                if (value.toLowerCase() === 'true' || value === '1') {
+                    is_active = true;
+                } else if (value.toLowerCase() === 'false' || value === '0') {
+                    is_active = false;
+                } else {
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+                }
+            } else if (typeof value === 'boolean') {
+                is_active = value;
+            } else {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+            }
+        } else {
+            // If no body provided, toggle the current status
+            const deliveryBoy = await DeliveryBoy.findById(req.params.id);
+            if (!deliveryBoy) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+            }
+            is_active = !deliveryBoy.is_active;
         }
 
         const deliveryBoy = await DeliveryBoy.toggleActive(req.params.id, is_active);
