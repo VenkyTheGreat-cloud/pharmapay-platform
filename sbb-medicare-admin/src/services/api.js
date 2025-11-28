@@ -87,27 +87,27 @@ const realPaymentsAPI = {
 };
 
 const realDeliveryBoysAPI = {
-    getAll: (params) => api.get('/api/delivery-boys', { params }),
-    getApproved: () => api.get('/api/delivery-boys/approved'),
-    getById: (id) => api.get(`/api/delivery-boys/${id}`),
-    create: (data) => api.post('/api/delivery-boys', data),
-    update: (id, data) => api.put(`/api/delivery-boys/${id}`, data),
-    delete: (id) => api.delete(`/api/delivery-boys/${id}`),
-    approve: (id) => api.patch(`/api/delivery-boys/${id}/approve`),
+    getAll: (params) => api.get('/delivery-boys', { params }),
+    getApproved: () => api.get('/delivery-boys/approved'),
+    getById: (id) => api.get(`/delivery-boys/${id}`),
+    create: (data) => api.post('/delivery-boys', data),
+    update: (id, data) => api.put(`/delivery-boys/${id}`, data),
+    delete: (id) => api.delete(`/delivery-boys/${id}`),
+    approve: (id) => api.patch(`/delivery-boys/${id}/approve`),
     toggleActive: (id, isActive) =>
-        api.patch(`/api/delivery-boys/${id}/toggle-active`, { isActive }),
+        api.patch(`/delivery-boys/${id}/toggle-active`, { isActive }),
     updateAvailability: (id, isAvailable) =>
-        api.patch(`/api/delivery-boys/${id}/availability`, { isAvailable }),
+        api.patch(`/delivery-boys/${id}/availability`, { isAvailable }),
 };
 
 const realAccessControlAPI = {
-    getAll: () => api.get('/api/access-control'),
-    getById: (id) => api.get(`/api/access-control/${id}`),
-    create: (data) => api.post('/api/access-control', data),
-    update: (id, data) => api.put(`/api/access-control/${id}`, data),
-    delete: (id) => api.delete(`/api/access-control/${id}`),
+    getAll: () => api.get('/access-control'),
+    getById: (id) => api.get(`/access-control/${id}`),
+    create: (data) => api.post('/access-control', data),
+    update: (id, data) => api.put(`/access-control/${id}`, data),
+    delete: (id) => api.delete(`/access-control/${id}`),
     toggleActive: (id, isActive) =>
-        api.patch(`/api/access-control/${id}/toggle-active`, { isActive }),
+        api.patch(`/access-control/${id}/toggle-active`, { isActive }),
 };
 
 const realConfigAPI = {
