@@ -17,15 +17,25 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
     useEffect(() => {
         if (customer) {
             setFormData({
-                name: customer.name || '',
-                mobile: customer.mobile || '',
+                name: customer.name || customer.full_name || '',
+                mobile: customer.mobile || customer.mobile_number || '',
                 address: customer.address || '',
                 landmark: customer.landmark || '',
-                customerLat: customer.customerLat ?? '',
-                customerLng: customer.customerLng ?? ''
+                customerLat: customer.customerLat || customer.customer_lat || customer.latitude || '',
+                customerLng: customer.customerLng || customer.customer_lng || customer.longitude || ''
+            });
+        } else {
+            // Reset form when modal closes
+            setFormData({
+                name: '',
+                mobile: '',
+                address: '',
+                landmark: '',
+                customerLat: '',
+                customerLng: ''
             });
         }
-    }, [customer]);
+    }, [customer, isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
