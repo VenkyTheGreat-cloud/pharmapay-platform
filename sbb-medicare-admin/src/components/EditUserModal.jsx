@@ -20,7 +20,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                 mobile: user.mobile || '',
                 address: user.address || '',
                 store_name: user.storeName || user.store_name || '',
-                status: user.isActive ? 'active' : 'inactive',
+                status: user.status || (user.isActive ? 'active' : 'inactive'),
             });
         }
     }, [user]);

@@ -7,6 +7,7 @@ import EditUserModal from '../components/EditUserModal';
 export default function StoreStaffPage() {
     const [storeStaff, setStoreStaff] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('all'); // all, active, inactive
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -19,6 +20,7 @@ export default function StoreStaffPage() {
     const loadStoreStaff = async () => {
         try {
             setLoading(true);
+            setError(null);
             const response = await accessControlAPI.getAll();
             
             // Handle API response structure: { success: true, data: { store_managers: [...] } }
@@ -35,6 +37,7 @@ export default function StoreStaffPage() {
                 storeName: manager.store_name || manager.storeName,
                 role: manager.role,
                 isActive: manager.is_active !== undefined ? manager.is_active : manager.isActive,
+                status: manager.status || (manager.is_active ? 'active' : 'inactive'),
                 createdAt: manager.created_at || manager.createdAt,
                 updatedAt: manager.updated_at || manager.updatedAt,
             }));
@@ -42,33 +45,29 @@ export default function StoreStaffPage() {
             setStoreStaff(mappedData);
         } catch (error) {
             console.error('Error loading store staff:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to load store staff';
+            setError(errorMsg);
             setStoreStaff([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleActivate = async (userId) => {
-        if (!confirm('Activate this store staff member?')) return;
+    const handleToggleActive = async (userId, isActive) => {
+        const action = isActive ? 'activate' : 'deactivate';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this store manager?`)) return;
 
         try {
-            await accessControlAPI.toggleActive(userId, true);
+            await accessControlAPI.toggleActive(userId, isActive);
             loadStoreStaff();
-            alert('Store staff activated successfully');
+            alert(`Store manager ${action}d successfully`);
         } catch (error) {
-            alert('Error activating store staff');
-        }
-    };
-
-    const handleDeactivate = async (userId) => {
-        if (!confirm('Deactivate this store staff member?')) return;
-
-        try {
-            await accessControlAPI.toggleActive(userId, false);
-            loadStoreStaff();
-            alert('Store staff deactivated');
-        } catch (error) {
-            alert('Error deactivating store staff');
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           `Error ${action}ing store manager`;
+            alert(errorMsg);
         }
     };
 
@@ -101,6 +100,19 @@ export default function StoreStaffPage() {
 
     return (
         <div className="p-6">
+            {error && (
+                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p className="text-red-800 text-sm">
+                        <strong>Error:</strong> {error}
+                    </p>
+                    <button
+                        onClick={loadStoreStaff}
+                        className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
             <div className="mb-6 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Store Staff</h1>
@@ -191,7 +203,7 @@ export default function StoreStaffPage() {
                                         <div className="text-sm text-gray-900">{staff.mobile}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge isActive={staff.isActive} />
+                                        <StatusBadge isActive={staff.isActive} status={staff.status} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : '-'}
@@ -210,7 +222,7 @@ export default function StoreStaffPage() {
                                             </button>
                                             {staff.isActive ? (
                                                 <button
-                                                    onClick={() => handleDeactivate(staff.id)}
+                                                    onClick={() => handleToggleActive(staff.id, false)}
                                                     className="text-orange-600 hover:text-orange-900"
                                                     title="Deactivate"
                                                 >
@@ -218,7 +230,7 @@ export default function StoreStaffPage() {
                                                 </button>
                                             ) : (
                                                 <button
-                                                    onClick={() => handleActivate(staff.id)}
+                                                    onClick={() => handleToggleActive(staff.id, true)}
                                                     className="text-green-600 hover:text-green-900"
                                                     title="Activate"
                                                 >
@@ -268,10 +280,16 @@ export default function StoreStaffPage() {
     );
 }
 
-function StatusBadge({ isActive }) {
-    const config = isActive
-        ? { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' }
-        : { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' };
+function StatusBadge({ isActive, status }) {
+    // Use status field if available, otherwise fallback to isActive
+    const displayStatus = status || (isActive ? 'active' : 'inactive');
+    
+    let config;
+    if (displayStatus === 'active') {
+        config = { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' };
+    } else {
+        config = { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Inactive' };
+    }
 
     return (
         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${config.bg} ${config.text}`}>
