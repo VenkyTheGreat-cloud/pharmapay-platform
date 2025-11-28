@@ -28,24 +28,23 @@ class User {
         
         // Default is_active to true if not provided
         const activeStatus = is_active !== undefined ? is_active : true;
+        // Set status based on is_active (similar to delivery_boys)
+        const statusValue = activeStatus ? 'active' : 'inactive';
         
         // Log exactly what we're inserting (for debugging)
         const logger = require('../config/logger');
         logger.info('User.create - Inserting user', {
             email: email,
             role: validRole,
-            roleType: typeof validRole,
-            roleLength: validRole ? validRole.length : 0,
-            roleBytes: validRole ? Buffer.from(validRole).toString('hex') : 'null',
-            roleJSON: JSON.stringify(validRole),
-            exactMatch: validRole === 'store_manager'
+            is_active: activeStatus,
+            status: statusValue
         });
         
         const result = await query(
-            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at`,
-            [name, store_name, mobile, email, password_hash, address, validRole, activeStatus]
+            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at`,
+            [name, store_name, mobile, email, password_hash, address, validRole, activeStatus, statusValue]
         );
         
         // Log what was actually inserted
@@ -76,19 +75,29 @@ class User {
         return result.rows[0];
     }
 
-    // Find user by email or mobile
+    // Find user by email or mobile (optimized to use indexes)
     static async findByEmailOrMobile(mobileEmail) {
-        const result = await query(
-            'SELECT * FROM users WHERE email = $1 OR mobile = $1',
+        // Try email first (faster if email format)
+        const emailResult = await query(
+            'SELECT * FROM users WHERE email = $1 LIMIT 1',
             [mobileEmail]
         );
-        return result.rows[0];
+        if (emailResult.rows.length > 0) {
+            return emailResult.rows[0];
+        }
+        
+        // Try mobile if email didn't match
+        const mobileResult = await query(
+            'SELECT * FROM users WHERE mobile = $1 LIMIT 1',
+            [mobileEmail]
+        );
+        return mobileResult.rows[0];
     }
 
     // Find user by ID
     static async findById(id) {
         const result = await query(
-            'SELECT id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at FROM users WHERE id = $1',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at FROM users WHERE id = $1',
             [id]
         );
         return result.rows[0];
@@ -97,7 +106,7 @@ class User {
     // Get all users by role
     static async findByRole(role) {
         const result = await query(
-            'SELECT id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
             [role]
         );
         return result.rows;
@@ -126,10 +135,18 @@ class User {
             throw new Error('No fields to update');
         }
 
+        // If is_active is being updated, also sync status
+        if (updates.is_active !== undefined) {
+            const newStatus = updates.is_active ? 'active' : 'inactive';
+            fields.push(`status = $${paramCount}`);
+            values.push(newStatus);
+            paramCount++;
+        }
+        
         values.push(id);
         const result = await query(
             `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramCount}
-             RETURNING id, name, store_name, mobile, email, address, role, is_active, updated_at`,
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, updated_at`,
             values
         );
         return result.rows[0];
@@ -144,13 +161,24 @@ class User {
         return result.rowCount > 0;
     }
 
-    // Toggle active status
+    // Toggle active status (also updates status field, similar to delivery_boys)
     static async toggleActive(id, isActive) {
-        const result = await query(
-            'UPDATE users SET is_active = $1 WHERE id = $2 RETURNING id, name, is_active',
-            [isActive, id]
+        // Determine status based on is_active value
+        // is_active: true → status: "active"
+        // is_active: false → status: "inactive"
+        const newStatus = isActive ? 'active' : 'inactive';
+        
+        const updateResult = await query(
+            'UPDATE users SET is_active = $1, status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING id',
+            [isActive, newStatus, id]
         );
-        return result.rows[0];
+        
+        if (updateResult.rowCount === 0) {
+            return null;
+        }
+        
+        // Return the full updated object
+        return await this.findById(id);
     }
 }
 

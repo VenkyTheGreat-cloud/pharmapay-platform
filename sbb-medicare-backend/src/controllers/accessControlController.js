@@ -262,18 +262,26 @@ exports.toggleActiveStatus = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Store manager not found'));
         }
 
+        // Get the updated store manager with status field
+        const updatedManager = await User.findById(req.params.id);
+        
         logger.info('Store manager active status toggled', {
             storeManagerId: req.params.id,
             is_active,
+            status: updatedManager?.status,
             updatedBy: req.user?.userId
         });
 
         // Don't return password hash
-        delete updatedStoreManager.password_hash;
+        delete updatedManager.password_hash;
+
+        const statusMessage = is_active 
+            ? 'activated and status set to active' 
+            : 'deactivated and status set to inactive';
 
         res.json(successResponse(
-            updatedStoreManager, 
-            `Store manager ${is_active ? 'activated' : 'deactivated'} successfully`
+            updatedManager, 
+            `Store manager ${statusMessage} successfully`
         ));
     } catch (error) {
         next(error);
