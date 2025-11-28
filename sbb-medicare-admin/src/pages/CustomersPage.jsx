@@ -20,7 +20,7 @@ export default function CustomersPage() {
         mobile: apiCustomer.mobile || 'N/A',
         address: apiCustomer.address || 'N/A',
         landmark: apiCustomer.landmark || null,
-        orderCount: apiCustomer.orderCount || apiCustomer.total_orders || 0,
+        orderCount: parseInt(apiCustomer.order_count || apiCustomer.orderCount || apiCustomer.total_orders || 0),
         createdAt: apiCustomer.created_at || apiCustomer.createdAt,
         email: apiCustomer.email || null,
     });
@@ -33,17 +33,21 @@ export default function CustomersPage() {
             
             // Handle different possible response structures
             let list = [];
-            if (response.data?.data?.data) {
+            if (response.data?.data?.customers) {
+                // Structure: { success: true, data: { customers: [...] } }
+                list = response.data.data.customers;
+            } else if (response.data?.data?.data) {
                 // Structure: { success: true, data: { data: [...] } }
                 list = response.data.data.data;
-            } else if (response.data?.data) {
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
                 // Structure: { success: true, data: [...] }
-                list = Array.isArray(response.data.data) ? response.data.data : [];
+                list = response.data.data;
             } else if (Array.isArray(response.data)) {
-                // Structure: { success: true, data: [...] } or direct array
+                // Direct array
                 list = response.data;
             }
             
+            console.log('Parsed customers list:', list); // Debug log
             setCustomers(list.map(normalizeCustomer));
         } catch (error) {
             console.error('Error loading customers:', error);
