@@ -22,9 +22,30 @@ export default function DeliveryBoysPage() {
             setLoading(true);
             setError(null);
             const response = await deliveryBoysAPI.getAll();
-            // Handle different response structures
-            const data = response.data?.data || response.data || [];
-            setDeliveryBoys(Array.isArray(data) ? data : []);
+            
+            // Handle API response structure: { success: true, data: { delivery_boys: [...] } }
+            const deliveryBoysArray = response.data?.data?.delivery_boys || 
+                                     response.data?.delivery_boys || 
+                                     (Array.isArray(response.data?.data) ? response.data.data : []) ||
+                                     (Array.isArray(response.data) ? response.data : []);
+            
+            // Map snake_case to camelCase for consistency
+            const mappedData = deliveryBoysArray.map(boy => ({
+                id: boy.id,
+                name: boy.name,
+                email: boy.email,
+                mobile: boy.mobile,
+                address: boy.address,
+                photoUrl: boy.photo_url || boy.photoUrl,
+                status: boy.status,
+                isActive: boy.is_active !== undefined ? boy.is_active : boy.isActive,
+                createdAt: boy.created_at || boy.createdAt,
+                updatedAt: boy.updated_at || boy.updatedAt,
+                storeId: boy.store_id || boy.storeId,
+                storeName: boy.store_name || boy.storeName,
+            }));
+            
+            setDeliveryBoys(mappedData);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
             const errorMsg = error.response?.data?.error?.message || 
