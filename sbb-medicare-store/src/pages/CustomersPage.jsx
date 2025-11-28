@@ -344,11 +344,40 @@ export default function CustomersPage() {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
-                                                    {customerOrders.map((order) => (
-                                                        <tr key={order.id} className="hover:bg-gray-50">
-                                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                {order.order_number || order.orderNumber}
-                                                            </td>
+                                                    {customerOrders.map((order) => {
+                                                        const orderNumber = order.order_number || order.orderNumber || '';
+                                                        // Format order number to break into 2 lines if it's long
+                                                        const formatOrderNumber = (orderNum) => {
+                                                            if (!orderNum) return '-';
+                                                            // If it contains a hyphen, break after the first part
+                                                            if (orderNum.includes('-')) {
+                                                                const parts = orderNum.split('-');
+                                                                if (parts.length >= 2) {
+                                                                    return (
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-medium">{parts[0]}-{parts[1]}</span>
+                                                                            <span className="text-gray-600 text-xs">{parts.slice(2).join('-')}</span>
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                            }
+                                                            // Otherwise, break at a reasonable length
+                                                            if (orderNum.length > 20) {
+                                                                return (
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-medium">{orderNum.substring(0, 20)}</span>
+                                                                        <span className="text-gray-600 text-xs">{orderNum.substring(20)}</span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return <span className="font-medium">{orderNum}</span>;
+                                                        };
+                                                        
+                                                        return (
+                                                            <tr key={order.id} className="hover:bg-gray-50">
+                                                                <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] break-words">
+                                                                    {formatOrderNumber(orderNumber)}
+                                                                </td>
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                                                                 {(order.created_at || order.createdTime) ? new Date(order.created_at || order.createdTime).toLocaleString() : '-'}
                                                             </td>
@@ -392,7 +421,8 @@ export default function CustomersPage() {
                                                                 {order.payment_mode || order.paymentMode || (order.status === 'DELIVERED' ? 'Pending' : 'N/A')}
                                                             </td>
                                                         </tr>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>
