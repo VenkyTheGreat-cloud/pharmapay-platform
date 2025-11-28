@@ -146,12 +146,19 @@ exports.approveDeliveryBoy = async (req, res, next) => {
 // Toggle active status
 exports.toggleActiveStatus = async (req, res, next) => {
     try {
+        // Get the delivery boy first to check if exists
+        const currentDeliveryBoy = await DeliveryBoy.findById(req.params.id);
+        if (!currentDeliveryBoy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+        }
+
         let is_active;
 
-        // If is_active is provided in body, use it (support boolean or string)
-        if (req.body.hasOwnProperty('is_active')) {
-            const value = req.body.is_active;
-            
+        // Support both camelCase (isActive) and snake_case (is_active)
+        const value = req.body.is_active !== undefined ? req.body.is_active : req.body.isActive;
+
+        // If value is provided in body, use it (support boolean or string)
+        if (value !== undefined) {
             // Handle string booleans
             if (typeof value === 'string') {
                 if (value.toLowerCase() === 'true' || value === '1') {
@@ -159,20 +166,16 @@ exports.toggleActiveStatus = async (req, res, next) => {
                 } else if (value.toLowerCase() === 'false' || value === '0') {
                     is_active = false;
                 } else {
-                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active/isActive must be a boolean or "true"/"false" string'));
                 }
             } else if (typeof value === 'boolean') {
                 is_active = value;
             } else {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active must be a boolean or "true"/"false" string'));
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'is_active/isActive must be a boolean or "true"/"false" string'));
             }
         } else {
             // If no body provided, toggle the current status
-            const deliveryBoy = await DeliveryBoy.findById(req.params.id);
-            if (!deliveryBoy) {
-                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
-            }
-            is_active = !deliveryBoy.is_active;
+            is_active = !currentDeliveryBoy.is_active;
         }
 
         const deliveryBoy = await DeliveryBoy.toggleActive(req.params.id, is_active);
