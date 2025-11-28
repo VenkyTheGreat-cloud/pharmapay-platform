@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { customersAPI } from '../services/api';
-import { Users, Search, Eye, MapPin, Plus, Edit, Trash2 } from 'lucide-react';
+import { customersAPI, ordersAPI } from '../services/api';
+import { Users, Search, Eye, MapPin, Plus, Edit, Trash2, Package } from 'lucide-react';
 import AddCustomerModal from '../components/AddCustomerModal';
 import EditCustomerModal from '../components/EditCustomerModal';
 
@@ -9,6 +9,8 @@ export default function CustomersPage() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [customerOrders, setCustomerOrders] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -53,20 +55,45 @@ export default function CustomersPage() {
         try {
             const response = await customersAPI.getById(customerId);
             // Backend: { success, data: {...customer} }
-            setSelectedCustomer(response.data?.data);
+            const customerData = response.data?.data || response.data;
+            setSelectedCustomer(customerData);
             setShowViewModal(true);
+            
+            // Load customer orders if mobile number is available
+            if (customerData.mobile || customerData.mobile_number) {
+                await loadCustomerOrders(customerData.mobile || customerData.mobile_number);
+            }
         } catch (error) {
             console.error('Error loading customer details:', error);
+            alert('Error loading customer details. Please try again.');
+        }
+    };
+
+    const loadCustomerOrders = async (mobile) => {
+        try {
+            setLoadingOrders(true);
+            const response = await ordersAPI.getByCustomerMobile(mobile);
+            // Backend: { success, data: [...] }
+            const orders = response.data?.data || [];
+            setCustomerOrders(Array.isArray(orders) ? orders : []);
+        } catch (error) {
+            console.error('Error loading customer orders:', error);
+            setCustomerOrders([]);
+        } finally {
+            setLoadingOrders(false);
         }
     };
 
     const handleEdit = async (customerId) => {
         try {
             const response = await customersAPI.getById(customerId);
-            setSelectedCustomer(response.data?.data);
+            // Backend: { success, data: {...customer} }
+            const customerData = response.data?.data || response.data;
+            setSelectedCustomer(customerData);
             setShowEditModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
+            alert('Error loading customer details. Please try again.');
         }
     };
 
@@ -235,65 +262,145 @@ export default function CustomersPage() {
             {/* Customer Details Modal */}
             {showViewModal && selectedCustomer && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-6">
                                 <h2 className="text-2xl font-bold text-gray-900">Customer Details</h2>
                                 <button
-                                    onClick={() => setShowViewModal(false)}
+                                    onClick={() => {
+                                        setShowViewModal(false);
+                                        setCustomerOrders([]);
+                                    }}
                                     className="text-gray-400 hover:text-gray-600"
                                 >
                                     ✕
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Full Name</h3>
-                                    <p className="text-gray-900">{selectedCustomer.name || selectedCustomer.full_name}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Mobile Number</h3>
-                                    <p className="text-gray-900">{selectedCustomer.mobile || selectedCustomer.mobile_number}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Address</h3>
-                                    <p className="text-gray-900">{selectedCustomer.address}</p>
-                                </div>
-
-                                {selectedCustomer.landmark && (
+                            <div className="space-y-6">
+                                {/* Customer Information */}
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <h3 className="font-semibold text-gray-700">Landmark</h3>
-                                        <p className="text-gray-900">{selectedCustomer.landmark}</p>
+                                        <h3 className="font-semibold text-gray-700 text-sm">Full Name</h3>
+                                        <p className="text-gray-900 mt-1">{selectedCustomer.name || selectedCustomer.full_name || 'N/A'}</p>
                                     </div>
-                                )}
 
-                                {(selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude) && 
-                                 (selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude) && (
                                     <div>
-                                        <h3 className="font-semibold text-gray-700">Location</h3>
-                                        <p className="text-gray-900">
-                                            <MapPin className="inline w-4 h-4 mr-1" />
-                                            {selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude}, {selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude}
+                                        <h3 className="font-semibold text-gray-700 text-sm">Mobile Number</h3>
+                                        <p className="text-gray-900 mt-1">{selectedCustomer.mobile || selectedCustomer.mobile_number || 'N/A'}</p>
+                                    </div>
+
+                                    <div className="col-span-2">
+                                        <h3 className="font-semibold text-gray-700 text-sm">Address</h3>
+                                        <p className="text-gray-900 mt-1">{selectedCustomer.address || 'N/A'}</p>
+                                    </div>
+
+                                    {selectedCustomer.landmark && (
+                                        <div className="col-span-2">
+                                            <h3 className="font-semibold text-gray-700 text-sm">Landmark</h3>
+                                            <p className="text-gray-900 mt-1">{selectedCustomer.landmark}</p>
+                                        </div>
+                                    )}
+
+                                    {(selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude) && 
+                                     (selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude) && (
+                                        <div className="col-span-2">
+                                            <h3 className="font-semibold text-gray-700 text-sm">Location</h3>
+                                            <p className="text-gray-900 mt-1">
+                                                <MapPin className="inline w-4 h-4 mr-1" />
+                                                {selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude}, {selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700 text-sm">Registered On</h3>
+                                        <p className="text-gray-900 mt-1">
+                                            {(selectedCustomer.created_at || selectedCustomer.createdAt) ? new Date(selectedCustomer.created_at || selectedCustomer.createdAt).toLocaleString() : 'N/A'}
                                         </p>
                                     </div>
-                                )}
 
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Registered On</h3>
-                                    <p className="text-gray-900">
-                                        {new Date(selectedCustomer.created_at).toLocaleString()}
-                                    </p>
+                                    {(selectedCustomer.order_count !== undefined || selectedCustomer.order_count !== null) && (
+                                        <div>
+                                            <h3 className="font-semibold text-gray-700 text-sm">Total Orders</h3>
+                                            <p className="text-gray-900 mt-1">{selectedCustomer.order_count || 0}</p>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {selectedCustomer.order_count !== undefined && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Total Orders</h3>
-                                        <p className="text-gray-900">{selectedCustomer.order_count}</p>
+                                {/* Customer Orders */}
+                                <div className="border-t pt-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Package className="w-5 h-5 text-gray-700" />
+                                        <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
                                     </div>
-                                )}
+                                    
+                                    {loadingOrders ? (
+                                        <div className="text-center py-8">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                            <p className="text-gray-600 mt-2 text-sm">Loading orders...</p>
+                                        </div>
+                                    ) : customerOrders.length === 0 ? (
+                                        <p className="text-gray-500 text-sm">No orders found for this customer.</p>
+                                    ) : (
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {customerOrders.map((order) => (
+                                                        <tr key={order.id} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                                {order.orderNumber || order.order_number}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                                                {(order.created_at || order.createdTime) ? new Date(order.created_at || order.createdTime).toLocaleDateString() : '-'}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm text-gray-700">
+                                                                {order.items && Array.isArray(order.items) && order.items.length > 0 ? (
+                                                                    <div className="space-y-1">
+                                                                        {order.items.map((item, idx) => (
+                                                                            <div key={idx} className="text-xs">
+                                                                                {item.name} x{item.quantity} @ ₹{item.price}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-gray-400">No items</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                                                                ₹{order.total_amount || order.amount || '0.00'}
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                                    order.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
+                                                                    order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                                    order.status === 'PAYMENT_COLLECTION' ? 'bg-indigo-100 text-indigo-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                                }`}>
+                                                                    {order.status ? order.status.replace(/_/g, ' ') : 'N/A'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                                                {order.payment_mode || order.paymentMode || 'N/A'}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
