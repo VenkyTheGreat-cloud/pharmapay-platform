@@ -40,7 +40,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             const response = await deliveryBoysAPI.listApproved();
             // Backend format: { success, data: { delivery_boys: [...], count: ... } }
             const list = response.data?.data?.delivery_boys || response.data?.data || [];
-            setDeliveryBoys(Array.isArray(list) ? list : []);
+            const deliveryBoysList = Array.isArray(list) ? list : [];
+            console.log('Loaded delivery boys:', deliveryBoysList); // Debug log
+            setDeliveryBoys(deliveryBoysList);
         } catch (error) {
             console.error('Error loading delivery boys:', error);
             setDeliveryBoys([]);
@@ -216,12 +218,19 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 disabled={isSubmitting}
                             >
                                 <option value="">Assign later</option>
-                                {deliveryBoys.map(boy => (
-                                    <option key={boy.id} value={boy.id}>
-                                        {boy.name} - {boy.mobile}
-                                    </option>
-                                ))}
+                                {deliveryBoys.length === 0 ? (
+                                    <option value="" disabled>No approved delivery boys available</option>
+                                ) : (
+                                    deliveryBoys.map(boy => (
+                                        <option key={boy.id} value={boy.id}>
+                                            {boy.name} - {boy.mobile}
+                                        </option>
+                                    ))
+                                )}
                             </select>
+                            {deliveryBoys.length === 0 && !loading && (
+                                <p className="text-sm text-gray-500 mt-1">No approved and active delivery boys found</p>
+                            )}
                         </div>
 
                         {/* Order Items */}
