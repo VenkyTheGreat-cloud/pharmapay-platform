@@ -63,16 +63,25 @@ exports.createStoreManager = async (req, res, next) => {
         const password_hash = await bcrypt.hash(password, 10);
 
         // Create store manager
-        const storeManager = await User.create({
-            name,
-            store_name,
-            mobile,
-            email,
+        // Explicitly set role to ensure it matches the database constraint
+        const userData = {
+            name: name.trim(),
+            store_name: store_name ? store_name.trim() : null,
+            mobile: mobile.trim(),
+            email: email.trim().toLowerCase(),
             password_hash,
-            address,
-            role: 'store_manager',
+            address: address ? address.trim() : null,
+            role: 'store_manager', // Must be exactly 'store_manager' or 'admin' (matches CHECK constraint)
             is_active: true
+        };
+
+        logger.info('Creating store manager', { 
+            email: userData.email,
+            role: userData.role,
+            createdBy: req.user?.userId 
         });
+
+        const storeManager = await User.create(userData);
 
         logger.info('Store manager created', { 
             storeManagerId: storeManager.id, 
@@ -84,6 +93,15 @@ exports.createStoreManager = async (req, res, next) => {
 
         res.status(201).json(successResponse(storeManager, 'Store manager created successfully'));
     } catch (error) {
+        // Log detailed error for debugging
+        if (error.message && error.message.includes('users_role_check')) {
+            logger.error('Role constraint violation', {
+                error: error.message,
+                requestedRole: 'store_manager',
+                stack: error.stack
+            });
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid role value. Role must be "admin" or "store_manager".'));
+        }
         next(error);
     }
 };

@@ -3,12 +3,22 @@ const { query } = require('../config/database');
 class User {
     // Create a new user
     static async create(userData) {
-        const { name, store_name, mobile, email, password_hash, address, role } = userData;
+        const { name, store_name, mobile, email, password_hash, address, role, is_active } = userData;
+        
+        // Ensure role is valid (default to 'store_manager' if not provided or invalid)
+        let validRole = (role || 'store_manager').trim().toLowerCase();
+        if (!['admin', 'store_manager'].includes(validRole)) {
+            validRole = 'store_manager';
+        }
+        
+        // Default is_active to true if not provided
+        const activeStatus = is_active !== undefined ? is_active : true;
+        
         const result = await query(
-            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id, name, store_name, mobile, email, address, role, is_active, created_at, updated_at`,
-            [name, store_name, mobile, email, password_hash, address, role || 'store_manager']
+            [name, store_name, mobile, email, password_hash, address, validRole, activeStatus]
         );
         return result.rows[0];
     }
