@@ -71,48 +71,109 @@ class AuthService {
         };
     }
 
-    // Login user
+    // Login user (supports both users and delivery boys)
     static async login(mobileEmail, password) {
         const logger = require('../config/logger');
         
-        // Find user by email or mobile
-        const user = await User.findByEmailOrMobile(mobileEmail);
+        // First, try to find in users table (admin/store_manager)
+        let user = await User.findByEmailOrMobile(mobileEmail);
+        let isDeliveryBoy = false;
+
+        // If not found in users, check delivery_boys table
+        if (!user) {
+            const deliveryBoy = await DeliveryBoy.findByEmailOrMobile(mobileEmail);
+            if (deliveryBoy) {
+                user = deliveryBoy;
+                isDeliveryBoy = true;
+            }
+        }
+
         if (!user) {
             logger.warn('Login failed - user not found', { mobileEmail: mobileEmail?.substring(0, 3) + '***' });
             throw new Error('INVALID_CREDENTIALS');
         }
 
-        // Check if user is active
+        // Check if user/delivery boy is active
         if (!user.is_active) {
-            logger.warn('Login failed - inactive user', { userId: user.id, email: user.email });
+            logger.warn('Login failed - inactive user', { 
+                userId: user.id, 
+                email: user.email,
+                isDeliveryBoy 
+            });
             throw new Error('INACTIVE_USER');
+        }
+
+        // For delivery boys, also check if they're approved
+        if (isDeliveryBoy && user.status !== 'approved') {
+            logger.warn('Login failed - delivery boy not approved', { 
+                deliveryBoyId: user.id, 
+                email: user.email,
+                status: user.status
+            });
+            throw new Error('NOT_APPROVED');
+        }
+
+        // Check if password exists
+        if (!user.password_hash) {
+            logger.warn('Login failed - no password set', { 
+                userId: user.id, 
+                email: user.email,
+                isDeliveryBoy 
+            });
+            throw new Error('NO_PASSWORD_SET');
         }
 
         // Verify password
         const isPasswordValid = await this.comparePassword(password, user.password_hash);
         if (!isPasswordValid) {
-            logger.warn('Login failed - invalid password', { userId: user.id, email: user.email });
+            logger.warn('Login failed - invalid password', { 
+                userId: user.id, 
+                email: user.email,
+                isDeliveryBoy 
+            });
             throw new Error('INVALID_CREDENTIALS');
         }
 
-        // Generate tokens
-        const { accessToken, refreshToken } = this.generateTokens(user);
+        // Generate tokens (for delivery boys, use role 'delivery_boy')
+        const tokenUser = {
+            ...user,
+            role: isDeliveryBoy ? 'delivery_boy' : user.role
+        };
+        const { accessToken, refreshToken } = this.generateTokens(tokenUser);
 
         // Store refresh token
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
-        await RefreshToken.create(user.id, refreshToken, expiresAt);
+        
+        // Only store refresh token for users (UUID), not delivery boys (BIGINT)
+        // refresh_tokens.user_id expects UUID, delivery_boys.id is BIGINT
+        if (!isDeliveryBoy) {
+            try {
+                await RefreshToken.create(user.id, refreshToken, expiresAt);
+            } catch (error) {
+                logger.error('Failed to store refresh token', { 
+                    error: error.message,
+                    userId: user.id 
+                });
+            }
+        }
 
         // Return user data (without password)
         const userData = {
             id: user.id,
             name: user.name,
-            storeName: user.store_name,
+            storeName: isDeliveryBoy ? null : (user.store_name || null),
             mobile: user.mobile,
             email: user.email,
             address: user.address,
-            role: user.role
+            role: isDeliveryBoy ? 'delivery_boy' : user.role
         };
+
+        // Add delivery boy specific fields
+        if (isDeliveryBoy) {
+            userData.status = user.status;
+            userData.photo_url = user.photo_url;
+        }
 
         return {
             token: accessToken,

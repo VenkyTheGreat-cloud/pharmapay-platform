@@ -3,12 +3,12 @@ const { query } = require('../config/database');
 class DeliveryBoy {
     // Create a new delivery boy
     static async create(deliveryBoyData) {
-        const { name, mobile, email, address, photo_url, store_id } = deliveryBoyData;
+        const { name, mobile, email, address, photo_url, store_id, password_hash } = deliveryBoyData;
         const result = await query(
-            `INSERT INTO delivery_boys (name, mobile, email, address, photo_url, store_id, status, is_active)
-             VALUES ($1, $2, $3, $4, $5, $6, 'pending', false)
+            `INSERT INTO delivery_boys (name, mobile, email, address, photo_url, store_id, password_hash, status, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', false)
              RETURNING *`,
-            [name, mobile, email, address, photo_url, store_id]
+            [name, mobile, email, address, photo_url, store_id, password_hash || null]
         );
         return result.rows[0];
     }
@@ -32,6 +32,33 @@ class DeliveryBoy {
             [mobile]
         );
         return result.rows[0];
+    }
+
+    // Find delivery boy by email
+    static async findByEmail(email) {
+        const result = await query(
+            'SELECT * FROM delivery_boys WHERE email = $1',
+            [email]
+        );
+        return result.rows[0];
+    }
+
+    // Find delivery boy by email or mobile
+    static async findByEmailOrMobile(mobileEmail) {
+        // Try email first
+        const emailResult = await query(
+            'SELECT * FROM delivery_boys WHERE email = $1 LIMIT 1',
+            [mobileEmail]
+        );
+        if (emailResult.rows.length > 0) {
+            return emailResult.rows[0];
+        }
+        // Try mobile
+        const mobileResult = await query(
+            'SELECT * FROM delivery_boys WHERE mobile = $1 LIMIT 1',
+            [mobileEmail]
+        );
+        return mobileResult.rows[0];
     }
 
     // Get all delivery boys with filters
