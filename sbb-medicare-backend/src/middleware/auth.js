@@ -101,6 +101,12 @@ const checkStoreAccess = async (req, res, next) => {
             return next();
         }
 
+        // Delivery boys can access orders assigned to them
+        if (req.user.role === 'delivery_boy') {
+            req.deliveryBoyId = req.user.userId; // Delivery boy's user ID is their delivery boy ID
+            return next();
+        }
+
         return res.status(403).json({
             success: false,
             error: {

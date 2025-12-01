@@ -157,6 +157,12 @@ class Order {
             paramCount++;
         }
 
+        if (filters.assigned_delivery_boy_id) {
+            queryText += ` AND assigned_delivery_boy_id = $${paramCount}`;
+            params.push(filters.assigned_delivery_boy_id);
+            paramCount++;
+        }
+
         const result = await query(queryText, params);
         return parseInt(result.rows[0].total);
     }
@@ -192,6 +198,23 @@ class Order {
 
         queryText += ' ORDER BY o.created_at DESC';
         const result = await query(queryText, params);
+        return result.rows;
+    }
+
+    // Get ongoing orders for a specific delivery boy
+    static async getOngoingOrdersForDeliveryBoy(deliveryBoyId) {
+        const result = await query(
+            `SELECT o.*, 
+                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
+                    u.name as store_name, u.store_name as store_store_name
+             FROM orders o
+             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+             LEFT JOIN users u ON o.store_id = u.id
+             WHERE o.assigned_delivery_boy_id = $1
+               AND o.status IN ('ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+             ORDER BY o.created_at DESC`,
+            [deliveryBoyId]
+        );
         return result.rows;
     }
 

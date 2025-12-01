@@ -67,18 +67,20 @@ exports.createDeliveryBoy = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name and mobile are required'));
         }
 
+        // Password is required for delivery boys to login
+        if (!password) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password is required for delivery boy'));
+        }
+
         // Check if mobile already exists
         const existing = await DeliveryBoy.findByMobile(mobile);
         if (existing) {
             return res.status(409).json(errorResponse('DUPLICATE_MOBILE', 'Mobile number already registered'));
         }
 
-        // Hash password if provided
-        let password_hash = null;
-        if (password) {
-            const AuthService = require('../services/authService');
-            password_hash = await AuthService.hashPassword(password);
-        }
+        // Hash password (required)
+        const AuthService = require('../services/authService');
+        const password_hash = await AuthService.hashPassword(password);
 
         const deliveryBoy = await DeliveryBoy.create({
             name,
