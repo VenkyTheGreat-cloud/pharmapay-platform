@@ -116,7 +116,34 @@ exports.verifyOTP = async (req, res, next) => {
 // Get profile
 exports.getProfile = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.userId);
+        let user;
+        const DeliveryBoy = require('../models/DeliveryBoy');
+
+        // Check if user is a delivery boy
+        if (req.user.role === 'delivery_boy') {
+            user = await DeliveryBoy.findById(req.user.userId);
+            if (!user) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+            }
+
+            const userData = {
+                id: user.id,
+                name: user.name,
+                storeName: user.store_name || null,
+                mobile: user.mobile,
+                email: user.email,
+                address: user.address,
+                role: 'delivery_boy',
+                status: user.status,
+                is_active: user.is_active,
+                photo_url: user.photo_url
+            };
+
+            return res.json(successResponse(userData));
+        }
+
+        // For admin and store managers, use User model
+        user = await User.findById(req.user.userId);
         if (!user) {
             return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
         }
@@ -133,6 +160,12 @@ exports.getProfile = async (req, res, next) => {
 
         res.json(successResponse(userData));
     } catch (error) {
+        logger.error('Error getting profile', {
+            error: error.message,
+            userId: req.user?.userId,
+            role: req.user?.role,
+            stack: error.stack
+        });
         next(error);
     }
 };
@@ -140,9 +173,50 @@ exports.getProfile = async (req, res, next) => {
 // Update profile
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { name, email, address, storeName } = req.body;
-        const updates = {};
+        const { name, email, address, storeName, photo_url } = req.body;
+        const DeliveryBoy = require('../models/DeliveryBoy');
 
+        // Check if user is a delivery boy
+        if (req.user.role === 'delivery_boy') {
+            const updates = {};
+            if (name !== undefined) updates.name = name;
+            if (email !== undefined) updates.email = email;
+            if (address !== undefined) updates.address = address;
+            if (photo_url !== undefined) updates.photo_url = photo_url;
+
+            // Check if email already exists (if changing email)
+            if (email) {
+                const existingDeliveryBoy = await DeliveryBoy.findByEmail(email);
+                if (existingDeliveryBoy && existingDeliveryBoy.id !== req.user.userId) {
+                    return res.status(409).json(errorResponse('DUPLICATE_EMAIL', 'Email already exists'));
+                }
+            }
+
+            const deliveryBoy = await DeliveryBoy.update(req.user.userId, updates);
+
+            if (!deliveryBoy) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+            }
+
+            const userData = {
+                id: deliveryBoy.id,
+                name: deliveryBoy.name,
+                storeName: deliveryBoy.store_name || null,
+                mobile: deliveryBoy.mobile,
+                email: deliveryBoy.email,
+                address: deliveryBoy.address,
+                role: 'delivery_boy',
+                status: deliveryBoy.status,
+                is_active: deliveryBoy.is_active,
+                photo_url: deliveryBoy.photo_url
+            };
+
+            logger.info('Delivery boy profile updated', { userId: req.user.userId });
+            return res.json(successResponse(userData));
+        }
+
+        // For admin and store managers
+        const updates = {};
         if (name !== undefined) updates.name = name;
         if (email !== undefined) updates.email = email;
         if (address !== undefined) updates.address = address;
@@ -188,7 +262,36 @@ exports.changePassword = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'New password must be at least 6 characters'));
         }
 
-        const user = await User.findById(req.user.userId);
+        const DeliveryBoy = require('../models/DeliveryBoy');
+        let user;
+
+        // Check if user is a delivery boy
+        if (req.user.role === 'delivery_boy') {
+            user = await DeliveryBoy.findById(req.user.userId);
+            if (!user) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+            }
+
+            // Verify old password
+            if (!user.password_hash) {
+                return res.status(400).json(errorResponse('NO_PASSWORD_SET', 'No password set for this account'));
+            }
+
+            const isPasswordValid = await AuthService.comparePassword(oldPassword, user.password_hash);
+            if (!isPasswordValid) {
+                return res.status(401).json(errorResponse('INVALID_PASSWORD', 'Old password is incorrect'));
+            }
+
+            // Hash new password
+            const password_hash = await AuthService.hashPassword(newPassword);
+            await DeliveryBoy.update(req.user.userId, { password_hash });
+
+            logger.info('Delivery boy password changed', { userId: req.user.userId });
+            return res.json(successResponse(null, 'Password changed successfully'));
+        }
+
+        // For admin and store managers
+        user = await User.findById(req.user.userId);
         if (!user) {
             return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
         }
@@ -214,7 +317,34 @@ exports.changePassword = async (req, res, next) => {
 // Verify token
 exports.verify = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.userId);
+        const DeliveryBoy = require('../models/DeliveryBoy');
+        let user;
+
+        // Check if user is a delivery boy
+        if (req.user.role === 'delivery_boy') {
+            user = await DeliveryBoy.findById(req.user.userId);
+            if (!user) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+            }
+
+            const userData = {
+                id: user.id,
+                name: user.name,
+                storeName: user.store_name || null,
+                mobile: user.mobile,
+                email: user.email,
+                address: user.address,
+                role: 'delivery_boy',
+                status: user.status,
+                is_active: user.is_active,
+                photo_url: user.photo_url
+            };
+
+            return res.json(successResponse(userData));
+        }
+
+        // For admin and store managers
+        user = await User.findById(req.user.userId);
         if (!user) {
             return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
         }
