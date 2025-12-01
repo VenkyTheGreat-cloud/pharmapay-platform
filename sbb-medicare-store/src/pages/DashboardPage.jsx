@@ -67,9 +67,8 @@ export default function DashboardPage() {
             .filter((o) => o.status === 'DELIVERED' || o.status === 'PAYMENT_COLLECTION')
             .reduce((sum, o) => sum + (Number(o.amount || o.total_amount) || 0), 0);
 
-        // For list: only non-ongoing statuses (exclude IN_TRANSIT and any others not relevant)
-        const allowedStatuses = new Set(['ASSIGNED', 'PICKED_UP', 'DELIVERED', 'PAYMENT_COLLECTION']);
-        const list = inRange.filter((o) => allowedStatuses.has(o.status));
+        // For list: show ALL statuses (ASSIGNED, IN_TRANSIT, DELIVERED, etc.)
+        const list = inRange;
 
         return {
             filteredByDate: inRange,
