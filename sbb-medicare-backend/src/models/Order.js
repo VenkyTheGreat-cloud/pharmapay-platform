@@ -391,10 +391,41 @@ class Order {
             const updateResult = await client.query(updateQuery, updateParams);
 
             // Create status history
+            // changed_by is UUID (references users.id), but delivery boys have BIGINT IDs
+            // Check if changedBy is a delivery boy ID (numeric) or UUID (has dashes)
+            let changedByValue = null;
+            let historyNotes = notes || '';
+            
+            // UUIDs contain dashes, delivery boy IDs are just numbers
+            const changedByStr = String(changedBy || '');
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changedByStr);
+            
+            if (isUUID) {
+                // This is a UUID (admin/store manager)
+                changedByValue = changedBy;
+            } else if (/^\d+$/.test(changedByStr)) {
+                // This is a numeric ID (delivery boy)
+                // Set changed_by to NULL and add delivery boy name to notes
+                try {
+                    const deliveryBoyResult = await client.query(
+                        'SELECT name FROM delivery_boys WHERE id = $1',
+                        [changedBy]
+                    );
+                    if (deliveryBoyResult.rows.length > 0) {
+                        const dbName = deliveryBoyResult.rows[0].name;
+                        historyNotes = notes ? `${notes} (Changed by delivery boy: ${dbName})` : `Changed by delivery boy: ${dbName}`;
+                    } else {
+                        historyNotes = notes || 'Changed by delivery boy';
+                    }
+                } catch (err) {
+                    historyNotes = notes || 'Changed by delivery boy';
+                }
+            }
+
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [orderId, status, changedBy, notes]
+                [orderId, status, changedByValue, historyNotes]
             );
 
             return updateResult.rows[0];
