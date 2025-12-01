@@ -24,7 +24,23 @@ router.get('/my-payments', authorizeRoles('delivery_boy'), paymentController.get
 // Get payment statistics (admin and store staff only)
 router.get('/statistics', authorizeRoles('admin', 'store_staff'), paymentController.getPaymentStatistics);
 
-// Get payment by order ID
+// Collect payment (delivery boys only) - MUST come before /order/:orderId to avoid route conflicts
+router.post(
+    '/collect',
+    authorizeRoles('delivery_boy'),
+    upload.single('receipt'),
+    paymentController.collectPayment
+);
+
+// Split payment (delivery boys only)
+router.post(
+    '/split',
+    authorizeRoles('delivery_boy'),
+    upload.single('receipt'),
+    paymentController.splitPayment
+);
+
+// Get payment by order ID (must be after specific routes)
 router.get('/order/:orderId', paymentController.getPaymentByOrderId);
 
 // Create payment with receipt upload (delivery boys only)
