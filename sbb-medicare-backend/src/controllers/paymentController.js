@@ -1,6 +1,7 @@
 const Payment = require('../models/Payment');
 const Order = require('../models/Order');
 const logger = require('../config/logger');
+const { successResponse, errorResponse } = require('../utils/apiResponse');
 
 // Create payment
 exports.createPayment = async (req, res, next) => {
@@ -133,6 +134,191 @@ exports.getMyPayments = async (req, res, next) => {
 
         res.json({ payments, count: payments.length });
     } catch (error) {
+        next(error);
+    }
+};
+
+// Collect payment (simplified endpoint)
+exports.collectPayment = async (req, res, next) => {
+    try {
+        // Support both field names: amount/total_amount
+        const amount = req.body.amount || req.body.total_amount;
+        const order_id = req.body.order_id;
+        let payment_mode = (req.body.payment_mode || 'CASH').toUpperCase();
+        const transaction_reference = req.body.transaction_reference;
+        
+        // Normalize payment_mode to match database enum (CASH, BANK_TRANSFER, SPLIT)
+        if (payment_mode === 'CASH') {
+            payment_mode = 'CASH';
+        } else if (payment_mode === 'BANK' || payment_mode === 'BANK_TRANSFER') {
+            payment_mode = 'BANK_TRANSFER';
+        } else if (payment_mode === 'SPLIT') {
+            payment_mode = 'SPLIT';
+        }
+
+        // Validation
+        if (!order_id) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Order ID is required'));
+        }
+        if (!amount || parseFloat(amount) <= 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Valid amount is required'));
+        }
+        if (!['CASH', 'BANK_TRANSFER', 'SPLIT'].includes(payment_mode)) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, BANK_TRANSFER, or SPLIT'));
+        }
+
+        // Verify order exists
+        const order = await Order.findById(order_id);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check if order is assigned to this delivery boy (if user is delivery boy)
+        if (req.user.role === 'delivery_boy' && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+
+        // Check if payment already exists
+        const existingPayment = await Payment.findByOrderId(order_id);
+        if (existingPayment) {
+            return res.status(409).json(errorResponse('DUPLICATE_PAYMENT', 'Payment already exists for this order'));
+        }
+
+        // Handle receipt photo from file upload or base64
+        let receipt_photo_url = null;
+        if (req.file) {
+            receipt_photo_url = `/uploads/${req.file.filename}`;
+        } else if (req.body.receipt_image) {
+            receipt_photo_url = req.body.receipt_image;
+        }
+
+        // Prepare payment data
+        const totalAmount = parseFloat(amount);
+        let cash_amount = 0;
+        let bank_amount = 0;
+
+        if (payment_mode === 'CASH') {
+            cash_amount = totalAmount;
+        } else if (payment_mode === 'BANK_TRANSFER') {
+            bank_amount = totalAmount;
+        } else if (payment_mode === 'SPLIT') {
+            // For split, expect cash_amount and bank_amount in request
+            cash_amount = parseFloat(req.body.cash_amount || 0);
+            bank_amount = parseFloat(req.body.bank_amount || 0);
+            if (!cash_amount || !bank_amount || (cash_amount + bank_amount) !== totalAmount) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'For split payment, both cash_amount and bank_amount are required and must equal the total amount'));
+            }
+        }
+
+        // Create payment
+        const payment = await Payment.create({
+            order_id,
+            payment_mode,
+            cash_amount,
+            bank_amount,
+            transaction_reference: transaction_reference || null,
+            receipt_photo_url,
+            created_by: req.user.userId // Delivery boy ID (BIGINT)
+        });
+
+        logger.info('Payment collected', {
+            paymentId: payment.id,
+            orderId: order_id,
+            amount: totalAmount,
+            paymentMode: payment_mode,
+            collectedBy: req.user.userId,
+            role: req.user.role
+        });
+
+        res.status(201).json(successResponse(payment, 'Payment collected successfully'));
+    } catch (error) {
+        logger.error('Error collecting payment', {
+            error: error.message,
+            stack: error.stack,
+            body: req.body
+        });
+        next(error);
+    }
+};
+
+// Split payment
+exports.splitPayment = async (req, res, next) => {
+    try {
+        // This is similar to collectPayment but specifically for split payments
+        const amount = req.body.amount || req.body.total_amount;
+        const order_id = req.body.order_id;
+        const cash_amount = parseFloat(req.body.cash_amount || 0);
+        const bank_amount = parseFloat(req.body.bank_amount || 0);
+        const transaction_reference = req.body.transaction_reference;
+
+        // Validation
+        if (!order_id) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Order ID is required'));
+        }
+        if (!cash_amount || !bank_amount) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Both cash_amount and bank_amount are required for split payment'));
+        }
+        if (cash_amount <= 0 || bank_amount <= 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Cash and bank amounts must be greater than 0'));
+        }
+
+        const totalAmount = cash_amount + bank_amount;
+        if (amount && Math.abs(parseFloat(amount) - totalAmount) > 0.01) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Total amount must equal cash_amount + bank_amount'));
+        }
+
+        // Verify order exists
+        const order = await Order.findById(order_id);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check if order is assigned to this delivery boy
+        if (req.user.role === 'delivery_boy' && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+
+        // Check if payment already exists
+        const existingPayment = await Payment.findByOrderId(order_id);
+        if (existingPayment) {
+            return res.status(409).json(errorResponse('DUPLICATE_PAYMENT', 'Payment already exists for this order'));
+        }
+
+        // Handle receipt photo
+        let receipt_photo_url = null;
+        if (req.file) {
+            receipt_photo_url = `/uploads/${req.file.filename}`;
+        } else if (req.body.receipt_image) {
+            receipt_photo_url = req.body.receipt_image;
+        }
+
+        // Create split payment
+        const payment = await Payment.create({
+            order_id,
+            payment_mode: 'SPLIT',
+            cash_amount,
+            bank_amount,
+            transaction_reference: transaction_reference || null,
+            receipt_photo_url,
+            created_by: req.user.userId
+        });
+
+        logger.info('Split payment collected', {
+            paymentId: payment.id,
+            orderId: order_id,
+            cashAmount: cash_amount,
+            bankAmount: bank_amount,
+            totalAmount: totalAmount,
+            collectedBy: req.user.userId
+        });
+
+        res.status(201).json(successResponse(payment, 'Split payment collected successfully'));
+    } catch (error) {
+        logger.error('Error collecting split payment', {
+            error: error.message,
+            stack: error.stack,
+            body: req.body
+        });
         next(error);
     }
 };
