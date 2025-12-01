@@ -221,33 +221,26 @@ export default function OrdersPage() {
                             ) : (
                                 orders.map((order) => {
                                     const orderNumber = order.orderNumber || order.order_number || '';
-                                    // Format order number to break into 2 lines if it's long
+
+                                    // Format order number by trimming the middle for long IDs
                                     const formatOrderNumber = (orderNum) => {
                                         if (!orderNum) return '-';
-                                        // If it contains a hyphen, break after the first part
-                                        if (orderNum.includes('-')) {
-                                            const parts = orderNum.split('-');
-                                            if (parts.length >= 2) {
-                                                return (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-sm">{parts[0]}-{parts[1]}</span>
-                                                        <span className="text-gray-600 text-xs">{parts.slice(2).join('-')}</span>
-                                                    </div>
-                                                );
-                                            }
+
+                                        const maxLength = 18;
+                                        if (orderNum.length <= maxLength) {
+                                            return <span className="font-medium text-sm break-all">{orderNum}</span>;
                                         }
-                                        // Otherwise, break at a reasonable length
-                                        if (orderNum.length > 20) {
-                                            return (
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">{orderNum.substring(0, 20)}</span>
-                                                    <span className="text-gray-600 text-xs">{orderNum.substring(20)}</span>
-                                                </div>
-                                            );
-                                        }
-                                        return <span className="font-medium text-sm">{orderNum}</span>;
+
+                                        const start = orderNum.slice(0, 10);
+                                        const end = orderNum.slice(-6);
+
+                                        return (
+                                            <span className="font-medium text-sm break-all">
+                                                {start}...{end}
+                                            </span>
+                                        );
                                     };
-                                    
+
                                     return (
                                         <tr key={order.id} className="hover:bg-gray-50">
                                             <td className="px-4 py-4 text-sm text-gray-900 max-w-[150px]">

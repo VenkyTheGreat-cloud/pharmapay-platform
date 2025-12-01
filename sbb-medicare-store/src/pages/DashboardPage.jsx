@@ -192,10 +192,31 @@ export default function DashboardPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
-                                        {filteredForList.map((order) => (
+                                        {filteredForList.map((order) => {
+                                            const orderNumber = order.orderNumber || order.order_number || '';
+
+                                            const formatOrderNumber = (orderNum) => {
+                                                if (!orderNum) return '-';
+
+                                                const maxLength = 18;
+                                                if (orderNum.length <= maxLength) {
+                                                    return <span className="font-medium text-sm break-all">{orderNum}</span>;
+                                                }
+
+                                                const start = orderNum.slice(0, 10);
+                                                const end = orderNum.slice(-6);
+
+                                                return (
+                                                    <span className="font-medium text-sm break-all">
+                                                        {start}...{end}
+                                                    </span>
+                                                );
+                                            };
+
+                                            return (
                                             <tr key={order.id}>
-                                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
-                                                    {order.orderNumber || order.order_number}
+                                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 max-w-[160px]">
+                                                    {formatOrderNumber(orderNumber)}
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap">
                                                     <div className="text-gray-900">{order.customerName || order.customer_name}</div>
@@ -223,7 +244,8 @@ export default function DashboardPage() {
                                                     ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
                                                 </td>
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
