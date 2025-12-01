@@ -63,6 +63,12 @@ exports.login = async (req, res, next) => {
         if (error.message === 'INACTIVE_USER') {
             return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive. Please contact administrator.'));
         }
+        if (error.message === 'NOT_APPROVED') {
+            return res.status(403).json(errorResponse('NOT_APPROVED', 'Delivery boy account is not approved yet. Please contact administrator.'));
+        }
+        if (error.message === 'NO_PASSWORD_SET') {
+            return res.status(403).json(errorResponse('NO_PASSWORD_SET', 'No password set for this account. Please contact administrator.'));
+        }
         next(error);
     }
 };
