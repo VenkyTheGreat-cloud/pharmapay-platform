@@ -16,7 +16,10 @@ class DeliveryBoy {
     // Find delivery boy by ID
     static async findById(id) {
         const result = await query(
-            `SELECT db.*, u.name as store_name, u.store_name as store_store_name
+            `SELECT db.id, db.name, db.mobile, db.email, db.address, db.photo_url, 
+                    db.status, db.is_active, db.store_id, db.password_hash,
+                    db.created_at, db.updated_at,
+                    u.name as store_name, u.store_name as store_store_name
              FROM delivery_boys db
              LEFT JOIN users u ON db.store_id = u.id
              WHERE db.id = $1`,

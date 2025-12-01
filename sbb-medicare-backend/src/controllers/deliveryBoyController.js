@@ -61,7 +61,7 @@ exports.getDeliveryBoyById = async (req, res, next) => {
 // Create delivery boy
 exports.createDeliveryBoy = async (req, res, next) => {
     try {
-        const { name, mobile, email, address, photo_url, store_id } = req.body;
+        const { name, mobile, email, address, photo_url, store_id, password } = req.body;
 
         if (!name || !mobile) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name and mobile are required'));
@@ -73,19 +73,35 @@ exports.createDeliveryBoy = async (req, res, next) => {
             return res.status(409).json(errorResponse('DUPLICATE_MOBILE', 'Mobile number already registered'));
         }
 
+        // Hash password if provided
+        let password_hash = null;
+        if (password) {
+            const AuthService = require('../services/authService');
+            password_hash = await AuthService.hashPassword(password);
+        }
+
         const deliveryBoy = await DeliveryBoy.create({
             name,
             mobile,
             email,
             address,
             photo_url,
-            store_id: store_id || req.user.userId || null
+            store_id: store_id || req.user.userId || null,
+            password_hash
         });
+
+        // Don't return password_hash in response
+        delete deliveryBoy.password_hash;
 
         logger.info('Delivery boy created', { deliveryBoyId: deliveryBoy.id, createdBy: req.user?.userId });
 
         res.status(201).json(successResponse(deliveryBoy, 'Delivery boy created successfully'));
     } catch (error) {
+        logger.error('Error creating delivery boy', {
+            error: error.message,
+            stack: error.stack,
+            body: req.body
+        });
         next(error);
     }
 };
@@ -93,18 +109,31 @@ exports.createDeliveryBoy = async (req, res, next) => {
 // Update delivery boy
 exports.updateDeliveryBoy = async (req, res, next) => {
     try {
-        const { name, mobile, email, address, photo_url } = req.body;
+        const { name, mobile, email, address, photo_url, password } = req.body;
 
-        const deliveryBoy = await DeliveryBoy.update(req.params.id, {
+        const updates = {
             name,
             mobile,
             email,
             address,
             photo_url
-        });
+        };
+
+        // Hash password if provided
+        if (password) {
+            const AuthService = require('../services/authService');
+            updates.password_hash = await AuthService.hashPassword(password);
+        }
+
+        const deliveryBoy = await DeliveryBoy.update(req.params.id, updates);
 
         if (!deliveryBoy) {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+        }
+
+        // Don't return password_hash in response
+        if (deliveryBoy.password_hash) {
+            delete deliveryBoy.password_hash;
         }
 
         logger.info('Delivery boy updated', { deliveryBoyId: req.params.id, updatedBy: req.user?.userId });

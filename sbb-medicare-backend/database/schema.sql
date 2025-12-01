@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS delivery_boys (
     email VARCHAR(255),
     address TEXT,
     photo_url VARCHAR(500),
+    password_hash VARCHAR(255),
     status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
     is_active BOOLEAN DEFAULT false,
     store_id UUID REFERENCES users(id) ON DELETE SET NULL,
