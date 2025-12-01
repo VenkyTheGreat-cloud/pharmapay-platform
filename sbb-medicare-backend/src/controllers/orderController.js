@@ -37,7 +37,6 @@ const normalizeDateParam = (rawDate) => {
 exports.getAllOrders = async (req, res, next) => {
     try {
         const { status, date: rawDate, page = 1, limit = 20 } = req.query;
-        const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
         const date = normalizeDateParam(rawDate);
 
         const filters = {
@@ -45,9 +44,21 @@ exports.getAllOrders = async (req, res, next) => {
             offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 50)
         };
 
+        // Filter based on user role
+        if (req.user.role === 'admin') {
+            // Admin can see all orders, optionally filtered by store
+            const storeId = req.query.storeId;
+            if (storeId) filters.store_id = storeId;
+        } else if (req.user.role === 'store_manager') {
+            // Store managers see only their store's orders
+            filters.store_id = req.user.userId;
+        } else if (req.user.role === 'delivery_boy') {
+            // Delivery boys see only orders assigned to them
+            filters.assigned_delivery_boy_id = req.user.userId;
+        }
+
         if (status) filters.status = status;
         if (date) filters.date = date;
-        if (storeId) filters.store_id = storeId;
 
         const orders = await Order.findAll(filters);
         const total = await Order.count(filters);
@@ -118,6 +129,17 @@ exports.getTodayOrders = async (req, res, next) => {
 // Get ongoing orders
 exports.getOngoingOrders = async (req, res, next) => {
     try {
+        // For delivery boys, filter by assigned_delivery_boy_id
+        if (req.user.role === 'delivery_boy') {
+            const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId);
+            const ordersWithItems = await Promise.all(orders.map(async (order) => {
+                const items = await OrderItem.findByOrderId(order.id);
+                return { ...order, items };
+            }));
+            return res.json(successResponse({ orders: ordersWithItems, count: ordersWithItems.length }));
+        }
+
+        // For admin and store managers
         const storeId = req.user.role === 'admin' ? req.query.storeId : req.user.userId;
         const orders = await Order.getOngoingOrders(storeId);
 
