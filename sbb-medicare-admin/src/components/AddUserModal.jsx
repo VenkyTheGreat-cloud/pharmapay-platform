@@ -21,12 +21,13 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
 
         try {
             if (userType === 'delivery_boy') {
+                // Backend requires password for delivery boy
                 await deliveryBoysAPI.create({
                     name: formData.name,
                     email: formData.email,
                     mobile: formData.mobile,
                     address: formData.address,
-                    // backend will set status / isActive
+                    password: formData.password,
                 });
             } else {
                 await accessControlAPI.create({
@@ -113,7 +114,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Password {userType === 'store_staff' && '*'} 
+                                Password *
                             </label>
                             <input
                                 type="password"
@@ -121,9 +122,11 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 minLength={6}
-                                required={userType === 'store_staff'}
+                                required
                             />
-                            <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                Minimum 6 characters (used for login)
+                            </p>
                         </div>
 
                         <div>
