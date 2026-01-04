@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, DollarSign, CheckCircle, Truck, Calendar, IndianRupee } from 'lucide-react';
+import { Package, DollarSign, CheckCircle, Truck, Calendar, IndianRupee, Eye } from 'lucide-react';
 
 export default function DashboardPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [dateRange, setDateRange] = useState({
         from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         to: new Date().toISOString().split('T')[0],
@@ -26,6 +28,34 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const viewOrderDetails = async (orderId) => {
+        try {
+            const response = await ordersAPI.getById(orderId);
+            // Backend: { success, data: {...order} }
+            setSelectedOrder(response.data?.data);
+            setShowViewModal(true);
+        } catch (error) {
+            console.error('Error loading order details:', error);
+            alert('Error loading order details. Please try again.');
+        }
+    };
+
+    const getStatusColor = (status) => {
+        if (!status) return 'bg-gray-100 text-gray-800';
+        const normalized = status.toUpperCase();
+        const colors = {
+            ASSIGNED: 'bg-purple-100 text-purple-800',
+            ACCEPTED: 'bg-blue-100 text-blue-800',
+            REJECTED: 'bg-red-100 text-red-800',
+            PICKED_UP: 'bg-yellow-100 text-yellow-800',
+            IN_TRANSIT: 'bg-orange-100 text-orange-800',
+            PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
+            DELIVERED: 'bg-green-100 text-green-800',
+            CANCELLED: 'bg-red-100 text-red-800',
+        };
+        return colors[normalized] || 'bg-gray-100 text-gray-800';
     };
 
     const {
@@ -189,6 +219,9 @@ export default function DashboardPage() {
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Amount
                                             </th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Actions
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
@@ -225,11 +258,11 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2 whitespace-nowrap">
                                                     <div className="text-gray-900">
                                                         {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
-                                                    </div>
+                            </div>
                                                     {(order.deliveryBoyMobile || order.delivery_boy_mobile) && (
                                                         <div className="text-xs text-gray-500">
                                                             {order.deliveryBoyMobile || order.delivery_boy_mobile}
-                                                        </div>
+                            </div>
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap">
@@ -243,15 +276,340 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2 whitespace-nowrap text-gray-700">
                                                     ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
                                                 </td>
+                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                                    <button
+                                                        onClick={() => viewOrderDetails(order.id)}
+                                                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="w-5 h-5" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                             );
                                         })}
                                     </tbody>
                                 </table>
-                            </div>
-                        )}
+                        </div>
+                    )}
                     </div>
                 </>
+            )}
+
+            {/* Order Details Modal */}
+            {showViewModal && selectedOrder && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {selectedOrder.orderNumber || selectedOrder.order_number || 'N/A'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowViewModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Left Column - Order Information */}
+                                <div className="space-y-6">
+                                    {/* Order Status */}
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h3 className="text-sm font-medium text-gray-500 mb-2">Current Status</h3>
+                                        <span
+                                            className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
+                                                selectedOrder.status
+                                            )}`}
+                                        >
+                                            {selectedOrder.status ? selectedOrder.status.replace(/_/g, ' ').toUpperCase() : 'N/A'}
+                                        </span>
+                                    </div>
+
+                                    {/* Customer Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Name</p>
+                                                <p className="text-base font-medium text-gray-900">
+                                                    {selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Mobile</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Address</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address || 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Delivery Boy Information */}
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Name</p>
+                                                    <p className="text-base font-medium text-gray-900">
+                                                        {selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Mobile</p>
+                                                    <p className="text-base text-gray-900">
+                                                        {selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Payment Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                                            {selectedOrder.payment_summary ? (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_paid) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.remaining_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                        <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                            selectedOrder.payment_summary.payment_status === 'FULL' || selectedOrder.payment_summary.is_fully_paid
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : selectedOrder.payment_summary.payment_status === 'PARTIAL'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {selectedOrder.payment_summary.payment_status || 'PENDING'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    {(selectedOrder.payment_status) && (
+                                                        <div className="flex justify-between items-center border-b pb-2">
+                                                            <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                            <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                                selectedOrder.payment_status === 'FULL' || selectedOrder.payment_status === 'PAID'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : selectedOrder.payment_status === 'PARTIAL'
+                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                    : 'bg-red-100 text-red-800'
+                                                            }`}>
+                                                                {selectedOrder.payment_status}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                            {(selectedOrder.paymentMode || selectedOrder.payment_mode) && (
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm font-medium text-gray-700">Payment Mode</span>
+                                                    <span className="text-base font-semibold text-blue-600">
+                                                        {selectedOrder.paymentMode || selectedOrder.payment_mode}
+                                                    </span>
+                                    </div>
+                                            )}
+                                            {(selectedOrder.transactionReference || selectedOrder.transaction_reference) && (
+                                                <div className="pt-2 border-t">
+                                                    <p className="text-sm text-gray-500 mb-1">Transaction Reference</p>
+                                                    <p className="text-base text-gray-900 font-mono">
+                                                        {selectedOrder.transactionReference || selectedOrder.transaction_reference}
+                                                    </p>
+                                    </div>
+                                            )}
+                                    </div>
+                                </div>
+                            </div>
+
+                                {/* Right Column - Status Timeline */}
+                                <div className="space-y-6">
+                                    {/* Status Timeline */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Status Timeline</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <div className="space-y-4">
+                                                {/* Created */}
+                                                {selectedOrder.created_at || selectedOrder.createdTime ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Order Created</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.created_at || selectedOrder.createdTime).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Assigned */}
+                                                {selectedOrder.assigned_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Assigned to Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.assigned_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Accepted */}
+                                                {selectedOrder.accepted_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.accepted_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Picked Up */}
+                                                {selectedOrder.picked_up_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Picked Up</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.picked_up_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* In Transit */}
+                                                {selectedOrder.in_transit_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">In Transit</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.in_transit_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Payment Collection */}
+                                                {selectedOrder.payment_collection_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Payment Collected</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.payment_collection_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Delivered */}
+                                                {selectedOrder.delivered_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Delivered</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.delivered_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Cancelled */}
+                                                {selectedOrder.cancelled_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-red-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Cancelled</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.cancelled_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                            </div>
+
+                                    {/* Customer Comments */}
+                                    {(selectedOrder.customerComments || selectedOrder.customer_comments) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Comments</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">
+                                                    {selectedOrder.customerComments || selectedOrder.customer_comments}
+                                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                                    {/* Notes */}
+                                    {selectedOrder.notes && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">{selectedOrder.notes}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
             )}
         </div>
     );

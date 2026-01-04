@@ -29,7 +29,7 @@ exports.register = async (req, res, next) => {
 // Login
 exports.login = async (req, res, next) => {
     try {
-        const { mobileEmail, password } = req.body;
+        const { mobileEmail, password, dashboardType } = req.body;
 
         // Validation
         if (!mobileEmail || !password) {
@@ -38,15 +38,17 @@ exports.login = async (req, res, next) => {
 
         logger.info('Login attempt', { 
             mobileEmail: mobileEmail?.substring(0, 3) + '***',
-            hasPassword: !!password 
+            hasPassword: !!password,
+            dashboardType: dashboardType || 'not specified'
         });
 
-        const result = await AuthService.login(mobileEmail, password);
+        const result = await AuthService.login(mobileEmail, password, dashboardType);
 
         logger.info('User logged in successfully', { 
             userId: result.user.id, 
             role: result.user.role,
-            email: result.user.email 
+            email: result.user.email,
+            dashboardType: dashboardType || 'not specified'
         });
 
         res.json(successResponse(result));
@@ -68,6 +70,9 @@ exports.login = async (req, res, next) => {
         }
         if (error.message === 'NO_PASSWORD_SET') {
             return res.status(403).json(errorResponse('NO_PASSWORD_SET', 'No password set for this account. Please contact administrator.'));
+        }
+        if (error.message === 'DASHBOARD_ACCESS_DENIED') {
+            return res.status(403).json(errorResponse('DASHBOARD_ACCESS_DENIED', error.details || 'Access denied to this dashboard'));
         }
         next(error);
     }
@@ -92,11 +97,11 @@ exports.sendOTP = async (req, res, next) => {
 // Verify OTP
 exports.verifyOTP = async (req, res, next) => {
     try {
-        const { mobile, otp } = req.body;
+        const { mobile, otp, dashboardType } = req.body;
 
-        const result = await AuthService.verifyOTP(mobile, otp);
+        const result = await AuthService.verifyOTP(mobile, otp, dashboardType);
 
-        logger.info('OTP verified and user logged in', { mobile });
+        logger.info('OTP verified and user logged in', { mobile, dashboardType: dashboardType || 'not specified' });
 
         res.json(successResponse(result));
     } catch (error) {
@@ -108,6 +113,9 @@ exports.verifyOTP = async (req, res, next) => {
         }
         if (error.message === 'INACTIVE_USER') {
             return res.status(403).json(errorResponse('INACTIVE_USER', 'User account is inactive'));
+        }
+        if (error.message === 'DASHBOARD_ACCESS_DENIED') {
+            return res.status(403).json(errorResponse('DASHBOARD_ACCESS_DENIED', error.details || 'Access denied to this dashboard'));
         }
         next(error);
     }

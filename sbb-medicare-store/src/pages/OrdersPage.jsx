@@ -467,24 +467,75 @@ export default function OrdersPage() {
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
                                         <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                                            <div className="flex justify-between items-center border-b pb-2">
-                                                <span className="text-sm font-medium text-gray-700">Total Amount</span>
-                                                <span className="text-xl font-bold text-gray-900">
-                                                    ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center border-b pb-2">
-                                                <span className="text-sm font-medium text-gray-700">Paid Amount</span>
-                                                <span className="text-lg font-semibold text-gray-900">
-                                                    ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between items-center border-b pb-2">
-                                                <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
-                                                <span className="text-lg font-semibold text-gray-900">
-                                                    ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
-                                                </span>
-                                            </div>
+                                            {selectedOrder.payment_summary ? (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_paid) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.remaining_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                        <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                            selectedOrder.payment_summary.payment_status === 'FULL' || selectedOrder.payment_summary.is_fully_paid
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : selectedOrder.payment_summary.payment_status === 'PARTIAL'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {selectedOrder.payment_summary.payment_status || 'PENDING'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    {(selectedOrder.payment_status) && (
+                                                        <div className="flex justify-between items-center border-b pb-2">
+                                                            <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                            <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                                selectedOrder.payment_status === 'FULL' || selectedOrder.payment_status === 'PAID'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : selectedOrder.payment_status === 'PARTIAL'
+                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                    : 'bg-red-100 text-red-800'
+                                                            }`}>
+                                                                {selectedOrder.payment_status}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
                                             {(selectedOrder.paymentMode || selectedOrder.payment_mode) && (
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-sm font-medium text-gray-700">Payment Mode</span>
