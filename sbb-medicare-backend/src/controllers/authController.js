@@ -305,6 +305,10 @@ exports.changePassword = async (req, res, next) => {
         }
 
         // Verify old password
+        if (!user.password_hash) {
+            return res.status(400).json(errorResponse('NO_PASSWORD_SET', 'No password set for this account'));
+        }
+
         const isPasswordValid = await AuthService.comparePassword(oldPassword, user.password_hash);
         if (!isPasswordValid) {
             return res.status(401).json(errorResponse('INVALID_PASSWORD', 'Old password is incorrect'));

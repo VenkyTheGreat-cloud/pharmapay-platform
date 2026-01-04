@@ -82,16 +82,8 @@ export default function Layout({ children }) {
                         ))}
                     </nav>
 
-                    {/* User info */}
+                    {/* Logout button */}
                     <div className="p-4 border-t">
-                        <div className="mb-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                            <p className="text-xs text-gray-500">{user?.email}</p>
-                            {user?.storeName && (
-                                <p className="text-xs text-gray-500 mt-0.5">{user.storeName}</p>
-                            )}
-                            <p className="text-xs text-blue-600 mt-1 capitalize">{user?.role}</p>
-                        </div>
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
