@@ -39,3 +39,6 @@ ROLLBACK;
 
 SELECT '✅✅✅ FIXED! Now try creating a store manager via API. ✅✅✅' as status;
 
+
+
+

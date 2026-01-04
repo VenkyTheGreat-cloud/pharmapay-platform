@@ -15,3 +15,6 @@ CREATE INDEX IF NOT EXISTS idx_delivery_boys_mobile ON delivery_boys(mobile);
 -- You can set a default password for existing delivery boys if needed:
 -- UPDATE delivery_boys SET password_hash = '$2a$10$...' WHERE password_hash IS NULL;
 
+
+
+

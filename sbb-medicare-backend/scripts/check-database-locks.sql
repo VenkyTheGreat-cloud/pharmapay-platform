@@ -44,3 +44,6 @@ WHERE datname = current_database();
 -- AND state != 'idle'
 -- AND pid != pg_backend_pid();
 
+
+
+

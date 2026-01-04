@@ -21,3 +21,6 @@ FROM users
 WHERE role NOT IN ('admin', 'store_manager')
 ORDER BY created_at;
 
+
+
+

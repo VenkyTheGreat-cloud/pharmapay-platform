@@ -63,9 +63,10 @@ exports.getAllOrders = async (req, res, next) => {
         const orders = await Order.findAll(filters);
         const total = await Order.count(filters);
 
-        // Get order items for each order
-        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+        // Get payment summary and items for each order
+        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             const items = await OrderItem.findByOrderId(order.id);
+            const paymentSummary = await Payment.getPaymentSummary(order.id);
             return {
                 ...order,
                 items: items.map(item => ({
@@ -74,7 +75,8 @@ exports.getAllOrders = async (req, res, next) => {
                     quantity: item.quantity,
                     price: parseFloat(item.price),
                     total: parseFloat(item.total)
-                }))
+                })),
+                payment_summary: paymentSummary
             };
         }));
 
@@ -168,6 +170,8 @@ exports.getOrderById = async (req, res, next) => {
         }
 
         const items = await OrderItem.findByOrderId(order.id);
+        const paymentSummary = await Payment.getPaymentSummary(order.id);
+        const payments = await Payment.findByOrderId(order.id);
 
         res.json(successResponse({
             ...order,
@@ -177,22 +181,62 @@ exports.getOrderById = async (req, res, next) => {
                 quantity: item.quantity,
                 price: parseFloat(item.price),
                 total: parseFloat(item.total)
-            }))
+            })),
+            payment_summary: paymentSummary,
+            payments: payments
         }));
     } catch (error) {
         next(error);
     }
 };
 
-// Create order
+// Create order (simplified - no items list, only total amount)
 exports.createOrder = async (req, res, next) => {
     try {
-        const { customerId, deliveryBoyId, items, customerComments } = req.body;
+        const { 
+            orderNumber, 
+            customerId, 
+            deliveryBoyId, 
+            totalAmount, 
+            paidAmount,           // Optional: Amount already paid
+            paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, BANK_TRANSFER)
+            transactionReference, // Optional: Transaction reference
+            customerComments 
+        } = req.body;
         const storeId = req.user.userId;
 
-        // Validate items
-        if (!items || items.length === 0) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'At least one item is required'));
+        // Validate order number
+        if (!orderNumber || orderNumber.trim() === '') {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Order number is required'));
+        }
+
+        // Validate total amount
+        if (!totalAmount || parseFloat(totalAmount) <= 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Total amount is required and must be greater than 0'));
+        }
+
+        const totalAmountNum = parseFloat(totalAmount);
+        const paidAmountNum = paidAmount ? parseFloat(paidAmount) : 0;
+
+        // Validate paid amount
+        if (paidAmountNum < 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Paid amount cannot be negative'));
+        }
+
+        if (paidAmountNum > totalAmountNum) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Paid amount cannot exceed total amount'));
+        }
+
+        // Validate payment mode if paid amount is provided
+        if (paidAmountNum > 0) {
+            if (!paymentMode) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode is required when paid amount is provided'));
+            }
+            const validPaymentModes = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
+            const normalizedMode = paymentMode.toUpperCase();
+            if (!validPaymentModes.includes(normalizedMode)) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'));
+            }
         }
 
         // Get customer
@@ -220,70 +264,102 @@ exports.createOrder = async (req, res, next) => {
             return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_AVAILABLE', 'Delivery boy is not active'));
         }
 
-        // Calculate total amount
-        const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
+        // Determine payment status based on paid amount
+        let initialPaymentStatus = 'PENDING';
+        if (paidAmountNum >= totalAmountNum) {
+            initialPaymentStatus = 'PAID';
+        } else if (paidAmountNum > 0) {
+            initialPaymentStatus = 'PARTIAL';
+        }
 
-        // Create order with items
+        // Normalize payment mode
+        const normalizedPaymentMode = paidAmountNum > 0 ? paymentMode.toUpperCase() : null;
+
+        // Create order (no items)
         const order = await transaction(async (client) => {
-            // Generate order number
-            const orderNumberResult = await client.query(
-                'SELECT generate_order_number($1) as order_number',
-                [storeId]
+            // Check if order number already exists
+            const existingOrder = await client.query(
+                'SELECT id FROM orders WHERE order_number = $1',
+                [orderNumber.trim()]
             );
-            const orderNumber = orderNumberResult.rows[0].order_number;
+            if (existingOrder.rowCount > 0) {
+                throw new Error('DUPLICATE_ORDER_NUMBER');
+            }
 
-            // Create order
+            // Create order with provided order number
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, customer_comments, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, CURRENT_TIMESTAMP)
+                                    total_amount, status, payment_status, payment_mode, customer_comments, assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
-                [orderNumber, customerId, deliveryBoyId, storeId,
+                [orderNumber.trim(), customerId, deliveryBoyId, storeId,
                  customer.name, customer.mobile, customer.address, customer.customer_lat, customer.customer_lng,
-                 totalAmount, customerComments]
+                 totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments]
             );
 
             const order = orderResult.rows[0];
 
-            // Create order items
-            const itemValues = [];
-            const itemPlaceholders = [];
-            let paramCount = 1;
+            // Create initial payment if paid amount > 0
+            if (paidAmountNum > 0) {
+                let cashAmount = 0;
+                let bankAmount = 0;
 
-            items.forEach((item) => {
-                const { name, quantity, price } = item;
-                const total = quantity * price;
-                itemPlaceholders.push(`($${paramCount}, $${paramCount + 1}, $${paramCount + 2}, $${paramCount + 3}, $${paramCount + 4})`);
-                itemValues.push(order.id, name, quantity, price, total);
-                paramCount += 5;
-            });
+                // Set amounts based on payment mode
+                if (normalizedPaymentMode === 'CASH') {
+                    cashAmount = paidAmountNum;
+                } else if (['CARD', 'UPI', 'BANK_TRANSFER'].includes(normalizedPaymentMode)) {
+                    bankAmount = paidAmountNum;
+                }
 
-            await client.query(
-                `INSERT INTO order_items (order_id, name, quantity, price, total)
-                 VALUES ${itemPlaceholders.join(', ')}`,
-                itemValues
-            );
+                // Create payment record
+                // Note: created_by is BIGINT (delivery_boys.id), but storeId is UUID
+                // For store-created payments, set created_by to NULL and add store info in notes
+                await client.query(
+                    `INSERT INTO payments (order_id, payment_mode, cash_amount, bank_amount,
+                                          transaction_reference, status, created_by)
+                     VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NULL)`,
+                    [order.id, normalizedPaymentMode, cashAmount, bankAmount, transactionReference || null]
+                );
+
+                // If fully paid, mark order as DELIVERED
+                if (initialPaymentStatus === 'PAID') {
+                    await client.query(
+                        `UPDATE orders 
+                         SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP
+                         WHERE id = $1`,
+                        [order.id]
+                    );
+                }
+            }
 
             // Create status history
+            const statusNotes = paidAmountNum > 0 
+                ? `Order created and assigned. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
+                : 'Order created and assigned';
+            
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [order.id, 'ASSIGNED', storeId, 'Order created and assigned']
+                [order.id, 'ASSIGNED', storeId, statusNotes]
             );
 
             return order;
         });
 
-        const orderItems = await OrderItem.findByOrderId(order.id);
+        // Calculate payment summary
+        const paymentSummary = await Payment.getPaymentSummary(order.id);
 
-        logger.info('Order created', { orderId: order.id, createdBy: storeId });
+        logger.info('Order created', { orderId: order.id, orderNumber: order.order_number, createdBy: storeId, totalAmount });
 
         res.status(201).json(successResponse({
             ...order,
-            items: orderItems
+            payment_summary: paymentSummary
         }, 'Order created successfully'));
     } catch (error) {
+        if (error.message === 'DUPLICATE_ORDER_NUMBER') {
+            return res.status(409).json(errorResponse('DUPLICATE_ORDER_NUMBER', 'Order number already exists. Please use a different order number.'));
+        }
         next(error);
     }
 };
@@ -305,6 +381,11 @@ exports.assignOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
         }
 
+        // Allow assignment if order is ASSIGNED or REJECTED
+        if (order.status !== 'ASSIGNED' && order.status !== 'REJECTED') {
+            return res.status(400).json(errorResponse('INVALID_STATUS', `Cannot assign order with status: ${order.status}. Order must be ASSIGNED or REJECTED.`));
+        }
+
         // Get delivery boy
         const deliveryBoy = await DeliveryBoy.findById(deliveryBoyId);
         if (!deliveryBoy) {
@@ -315,7 +396,7 @@ exports.assignOrder = async (req, res, next) => {
             return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
         }
 
-        // Assign order
+        // Assign order (handles both new assignment and reassignment of rejected orders)
         const updatedOrder = await Order.assign(orderId, deliveryBoyId, req.user.userId);
 
         logger.info('Order assigned', { orderId, deliveryBoyId, assignedBy: req.user.userId });
@@ -365,6 +446,125 @@ exports.updateOrderStatus = async (req, res, next) => {
         if (error.message === 'CONFLICT') {
             return res.status(409).json(errorResponse('CONFLICT', 'Another order is already in transit for this delivery boy'));
         }
+        next(error);
+    }
+};
+
+// Accept order (delivery boy accepts assigned order)
+exports.acceptOrder = async (req, res, next) => {
+    try {
+        const orderId = req.params.id;
+        const { notes } = req.body;
+
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Only delivery boys can accept orders
+        if (req.user.role !== 'delivery_boy') {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Only delivery boys can accept orders'));
+        }
+
+        // Verify order is assigned to this delivery boy
+        if (order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+
+        // Accept order
+        const updatedOrder = await Order.accept(orderId, req.user.userId, notes);
+
+        logger.info('Order accepted', { orderId, deliveryBoyId: req.user.userId });
+
+        const items = await OrderItem.findByOrderId(updatedOrder.id);
+
+        res.json(successResponse({
+            ...updatedOrder,
+            items
+        }, 'Order accepted successfully'));
+    } catch (error) {
+        if (error.message === 'INVALID_STATUS_TRANSITION') {
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Order must be in ASSIGNED status to accept'));
+        }
+        next(error);
+    }
+};
+
+// Reject order (delivery boy rejects assigned order)
+exports.rejectOrder = async (req, res, next) => {
+    try {
+        const orderId = req.params.id;
+        const { reason } = req.body;
+
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Only delivery boys can reject orders
+        if (req.user.role !== 'delivery_boy') {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Only delivery boys can reject orders'));
+        }
+
+        // Verify order is assigned to this delivery boy
+        if (order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+
+        // Reject order
+        const updatedOrder = await Order.reject(orderId, req.user.userId, reason);
+
+        logger.info('Order rejected', { orderId, deliveryBoyId: req.user.userId, reason });
+
+        res.json(successResponse({
+            ...updatedOrder
+        }, 'Order rejected. Store manager can reassign to another delivery boy.'));
+    } catch (error) {
+        if (error.message === 'INVALID_STATUS_TRANSITION') {
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Order must be in ASSIGNED status to reject'));
+        }
+        next(error);
+    }
+};
+
+// Upload delivery/payment proof photo
+exports.uploadDeliveryPhoto = async (req, res, next) => {
+    try {
+        const orderId = req.params.id;
+        
+        if (!req.file) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Photo file is required'));
+        }
+
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check access
+        if (req.user.role === 'delivery_boy' && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        }
+        if (req.user.role === 'store_manager' && order.store_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
+        }
+
+        // Update order with delivery photo URL
+        const photoUrl = `/uploads/${req.file.filename}`;
+        const result = await query(
+            `UPDATE orders SET delivery_photo_url = $1 WHERE id = $2 RETURNING *`,
+            [photoUrl, orderId]
+        );
+
+        logger.info('Delivery photo uploaded', { orderId, uploadedBy: req.user.userId });
+
+        res.json(successResponse({
+            ...result.rows[0]
+        }, 'Delivery photo uploaded successfully'));
+    } catch (error) {
         next(error);
     }
 };

@@ -33,3 +33,6 @@ ORDER BY table_name;
 -- Check search_path (important for finding tables)
 SHOW search_path;
 
+
+
+

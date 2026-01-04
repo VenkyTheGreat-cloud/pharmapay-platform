@@ -65,3 +65,6 @@ After deploying, test:
 3. Ensure frontend URL is in the allowed origins list
 4. Check if any middleware is interfering with OPTIONS requests
 
+
+
+

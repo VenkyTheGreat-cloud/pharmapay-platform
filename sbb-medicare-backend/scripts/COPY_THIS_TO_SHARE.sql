@@ -56,3 +56,6 @@ WHERE table_name = 'users' AND column_name = 'role';
 \echo 'Copy everything above this line'
 \echo '========================================'
 
+
+
+

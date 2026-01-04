@@ -1,7 +1,7 @@
 const { query, transaction } = require('../config/database');
 
 class Payment {
-    // Create a new payment
+    // Create a new payment (supports partial payments)
     static async create(paymentData) {
         const {
             order_id,
@@ -14,6 +14,16 @@ class Payment {
         } = paymentData;
 
         return transaction(async (client) => {
+            // Get order total amount
+            const orderResult = await client.query(
+                'SELECT total_amount FROM orders WHERE id = $1',
+                [order_id]
+            );
+            if (orderResult.rowCount === 0) {
+                throw new Error('ORDER_NOT_FOUND');
+            }
+            const orderTotal = parseFloat(orderResult.rows[0].total_amount);
+
             // Create payment
             const result = await client.query(
                 `INSERT INTO payments (order_id, payment_mode, cash_amount, bank_amount,
@@ -24,18 +34,61 @@ class Payment {
                  transaction_reference, receipt_photo_url, created_by]
             );
 
-            // Update order payment status
-            await client.query(
-                `UPDATE orders SET payment_status = 'PAID', payment_mode = $1 WHERE id = $2`,
-                [payment_mode, order_id]
+            // Calculate total paid amount (sum of all confirmed payments)
+            const totalPaidResult = await client.query(
+                `SELECT COALESCE(SUM(cash_amount + bank_amount), 0) as total_paid
+                 FROM payments
+                 WHERE order_id = $1 AND status = 'CONFIRMED'`,
+                [order_id]
             );
+            const totalPaid = parseFloat(totalPaidResult.rows[0].total_paid);
+
+            // Update order payment status based on total paid
+            let paymentStatus = 'PENDING';
+            if (totalPaid >= orderTotal) {
+                paymentStatus = 'PAID';
+            } else if (totalPaid > 0) {
+                paymentStatus = 'PARTIAL';
+            }
+
+            // Update order payment status and mode
+            await client.query(
+                `UPDATE orders 
+                 SET payment_status = $1, 
+                     payment_mode = CASE WHEN payment_mode IS NULL THEN $2 ELSE payment_mode END
+                 WHERE id = $3`,
+                [paymentStatus, payment_mode, order_id]
+            );
+
+            // If fully paid, mark order as DELIVERED
+            if (paymentStatus === 'PAID') {
+                await client.query(
+                    `UPDATE orders 
+                     SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP
+                     WHERE id = $1 AND status != 'DELIVERED'`,
+                    [order_id]
+                );
+            }
 
             return result.rows[0];
         });
     }
 
-    // Find payment by order ID
+    // Find all payments by order ID (returns all payments for the order)
     static async findByOrderId(orderId) {
+        const result = await query(
+            `SELECT p.*, db.name as created_by_name
+             FROM payments p
+             LEFT JOIN delivery_boys db ON p.created_by = db.id
+             WHERE p.order_id = $1
+             ORDER BY p.created_at DESC`,
+            [orderId]
+        );
+        return result.rows;
+    }
+
+    // Get latest payment by order ID
+    static async findLatestByOrderId(orderId) {
         const result = await query(
             `SELECT p.*, db.name as created_by_name
              FROM payments p
@@ -46,6 +99,35 @@ class Payment {
             [orderId]
         );
         return result.rows[0];
+    }
+
+    // Get payment summary for an order (paid amount, remaining amount)
+    static async getPaymentSummary(orderId) {
+        const result = await query(
+            `SELECT 
+                o.total_amount,
+                COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as total_paid,
+                o.total_amount - COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as remaining_amount,
+                o.payment_status
+             FROM orders o
+             LEFT JOIN payments p ON o.id = p.order_id AND p.status = 'CONFIRMED'
+             WHERE o.id = $1
+             GROUP BY o.id, o.total_amount, o.payment_status`,
+            [orderId]
+        );
+        
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const row = result.rows[0];
+        return {
+            total_amount: parseFloat(row.total_amount || 0),
+            total_paid: parseFloat(row.total_paid || 0),
+            remaining_amount: parseFloat(row.remaining_amount || 0),
+            payment_status: row.payment_status,
+            is_fully_paid: parseFloat(row.total_paid || 0) >= parseFloat(row.total_amount || 0)
+        };
     }
 
     // Find payment by ID

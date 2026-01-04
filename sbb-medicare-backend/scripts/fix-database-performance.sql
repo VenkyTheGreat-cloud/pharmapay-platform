@@ -25,3 +25,6 @@ COMMIT;
 SELECT '✅ Indexes created/verified' as status;
 SELECT indexname FROM pg_indexes WHERE tablename = 'users' ORDER BY indexname;
 
+
+
+

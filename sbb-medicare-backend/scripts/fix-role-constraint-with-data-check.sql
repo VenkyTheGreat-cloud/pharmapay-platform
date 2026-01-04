@@ -67,3 +67,6 @@ ROLLBACK;
 
 SELECT '✅ Role constraint fixed successfully! All invalid roles were updated to store_manager.' as status;
 
+
+
+

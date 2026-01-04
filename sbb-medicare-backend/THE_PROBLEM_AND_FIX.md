@@ -73,3 +73,6 @@ CHECK (role IN ('admin'::character varying, 'store_manager'::character varying))
 
 Someone or some script created the constraint incorrectly, using a text array comparison instead of a simple IN check. The fix removes the bad constraint and creates the correct one.
 
+
+
+

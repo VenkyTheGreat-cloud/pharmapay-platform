@@ -34,3 +34,6 @@ verifyPassword(passwordToTest, hash).then(match => {
     process.exit(match ? 0 : 1);
 });
 
+
+
+

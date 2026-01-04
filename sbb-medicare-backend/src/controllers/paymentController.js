@@ -147,9 +147,13 @@ exports.collectPayment = async (req, res, next) => {
         let payment_mode = (req.body.payment_mode || 'CASH').toUpperCase();
         const transaction_reference = req.body.transaction_reference;
         
-        // Normalize payment_mode to match database enum (CASH, BANK_TRANSFER, SPLIT)
+        // Normalize payment_mode to match database enum (CASH, CARD, UPI, BANK_TRANSFER, SPLIT)
         if (payment_mode === 'CASH') {
             payment_mode = 'CASH';
+        } else if (payment_mode === 'CARD') {
+            payment_mode = 'CARD';
+        } else if (payment_mode === 'UPI') {
+            payment_mode = 'UPI';
         } else if (payment_mode === 'BANK' || payment_mode === 'BANK_TRANSFER') {
             payment_mode = 'BANK_TRANSFER';
         } else if (payment_mode === 'SPLIT') {
@@ -163,8 +167,8 @@ exports.collectPayment = async (req, res, next) => {
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Valid amount is required'));
         }
-        if (!['CASH', 'BANK_TRANSFER', 'SPLIT'].includes(payment_mode)) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, BANK_TRANSFER, or SPLIT'));
+        if (!['CASH', 'CARD', 'UPI', 'BANK_TRANSFER', 'SPLIT'].includes(payment_mode)) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, BANK_TRANSFER, or SPLIT'));
         }
 
         // Verify order exists
@@ -178,10 +182,16 @@ exports.collectPayment = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
         }
 
-        // Check if payment already exists
-        const existingPayment = await Payment.findByOrderId(order_id);
-        if (existingPayment) {
-            return res.status(409).json(errorResponse('DUPLICATE_PAYMENT', 'Payment already exists for this order'));
+        // Get payment summary to check remaining amount
+        const paymentSummary = await Payment.getPaymentSummary(order_id);
+        if (!paymentSummary) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check if payment amount exceeds remaining amount
+        const totalAmount = parseFloat(amount);
+        if (totalAmount > paymentSummary.remaining_amount) {
+            return res.status(400).json(errorResponse('INVALID_AMOUNT', `Payment amount (${totalAmount}) exceeds remaining amount (${paymentSummary.remaining_amount})`));
         }
 
         // Handle receipt photo from file upload or base64
@@ -221,16 +231,23 @@ exports.collectPayment = async (req, res, next) => {
             created_by: req.user.userId // Delivery boy ID (BIGINT)
         });
 
+        // Get updated payment summary
+        const updatedSummary = await Payment.getPaymentSummary(order_id);
+
         logger.info('Payment collected', {
             paymentId: payment.id,
             orderId: order_id,
             amount: totalAmount,
             paymentMode: payment_mode,
             collectedBy: req.user.userId,
-            role: req.user.role
+            role: req.user.role,
+            remainingAmount: updatedSummary.remaining_amount
         });
 
-        res.status(201).json(successResponse(payment, 'Payment collected successfully'));
+        res.status(201).json(successResponse({
+            payment,
+            payment_summary: updatedSummary
+        }, updatedSummary.is_fully_paid ? 'Payment collected successfully. Order is now fully paid.' : 'Payment collected successfully. Remaining amount: ' + updatedSummary.remaining_amount));
     } catch (error) {
         logger.error('Error collecting payment', {
             error: error.message,
@@ -278,10 +295,16 @@ exports.splitPayment = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
         }
 
-        // Check if payment already exists
-        const existingPayment = await Payment.findByOrderId(order_id);
-        if (existingPayment) {
-            return res.status(409).json(errorResponse('DUPLICATE_PAYMENT', 'Payment already exists for this order'));
+        // Get payment summary to check remaining amount
+        const paymentSummary = await Payment.getPaymentSummary(order_id);
+        if (!paymentSummary) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check if payment amount exceeds remaining amount
+        const totalAmount = cash_amount + bank_amount;
+        if (totalAmount > paymentSummary.remaining_amount) {
+            return res.status(400).json(errorResponse('INVALID_AMOUNT', `Payment amount (${totalAmount}) exceeds remaining amount (${paymentSummary.remaining_amount})`));
         }
 
         // Handle receipt photo
@@ -303,16 +326,23 @@ exports.splitPayment = async (req, res, next) => {
             created_by: req.user.userId
         });
 
+        // Get updated payment summary
+        const updatedSummary = await Payment.getPaymentSummary(order_id);
+
         logger.info('Split payment collected', {
             paymentId: payment.id,
             orderId: order_id,
             cashAmount: cash_amount,
             bankAmount: bank_amount,
             totalAmount: totalAmount,
-            collectedBy: req.user.userId
+            collectedBy: req.user.userId,
+            remainingAmount: updatedSummary.remaining_amount
         });
 
-        res.status(201).json(successResponse(payment, 'Split payment collected successfully'));
+        res.status(201).json(successResponse({
+            payment,
+            payment_summary: updatedSummary
+        }, updatedSummary.is_fully_paid ? 'Split payment collected successfully. Order is now fully paid.' : 'Split payment collected successfully. Remaining amount: ' + updatedSummary.remaining_amount));
     } catch (error) {
         logger.error('Error collecting split payment', {
             error: error.message,

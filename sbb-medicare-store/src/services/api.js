@@ -359,9 +359,9 @@ export const ordersAPI = {
                 data: {
                     id: Date.now(),
                     ...data,
-                    orderNumber: 'ORD-1-XXX',
                     status: 'ASSIGNED',
-                    amount: data.items?.reduce((s, i) => s + i.quantity * i.price, 0) || 0,
+                    totalAmount: data.totalAmount || 0,
+                    paidAmount: data.paidAmount || 0,
                 },
             });
         }
@@ -376,6 +376,26 @@ export const ordersAPI = {
             });
         }
         return api.post(`/orders/${id}/assign`, { deliveryBoyId });
+    },
+    accept: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Order accepted (mock)',
+                data: { id, status: 'ACCEPTED' },
+            });
+        }
+        return api.post(`/orders/${id}/accept`);
+    },
+    reject: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Order rejected (mock)',
+                data: { id, status: 'REJECTED' },
+            });
+        }
+        return api.post(`/orders/${id}/reject`);
     },
     updateStatus: (id, data) => {
         if (API_DISABLED) {

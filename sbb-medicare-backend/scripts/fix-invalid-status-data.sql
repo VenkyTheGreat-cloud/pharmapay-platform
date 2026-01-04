@@ -79,3 +79,6 @@ SELECT
 FROM users
 WHERE role = 'store_manager';
 
+
+
+
