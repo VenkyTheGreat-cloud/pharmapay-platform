@@ -24,12 +24,22 @@ POST /api/auth/change-password
 }
 ```
 
+**Alternative Field Names (Also Supported):**
+```json
+{
+  "current_password": "current_password",
+  "new_password": "new_password_123"
+}
+```
+
 ### Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `oldPassword` | string | Yes | Current password of the user |
-| `newPassword` | string | Yes | New password (minimum 6 characters) |
+| `oldPassword` or `current_password` | string | Yes | Current password of the user |
+| `newPassword` or `new_password` | string | Yes | New password (minimum 6 characters) |
+
+**Note:** You can use either camelCase (`oldPassword`, `newPassword`) or snake_case (`current_password`, `new_password`). Both formats are supported.
 
 ### Validation Rules
 
