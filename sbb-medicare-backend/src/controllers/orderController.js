@@ -561,6 +561,11 @@ exports.rejectOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
         }
 
+        // Check current order status before rejecting
+        if (order.status !== 'ASSIGNED') {
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', `Cannot reject order. Current status is: ${order.status}. Only orders with status ASSIGNED can be rejected.`));
+        }
+
         // Reject order
         const updatedOrder = await Order.reject(orderId, req.user.userId, reason);
 
