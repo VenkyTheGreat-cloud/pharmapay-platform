@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee } from 'lucide-react';
+import { Package, CheckCircle, Clock, IndianRupee, Eye } from 'lucide-react';
+import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
     const [allOrders, setAllOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
+    const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [filters, setFilters] = useState(() => {
         const today = new Date();
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -112,6 +115,19 @@ export default function DashboardPage() {
         .filter((o) => o.status === 'DELIVERED')
         .reduce((sum, o) => sum + (o.amount || 0), 0);
 
+    const handleViewOrderDetails = (orderId) => {
+        setSelectedOrderId(orderId);
+        setShowOrderDetails(true);
+    };
+
+    // Utility function to trim order ID in the middle
+    const trimOrderId = (orderId) => {
+        if (!orderId || orderId.length <= 15) return orderId;
+        const start = orderId.substring(0, 8);
+        const end = orderId.substring(orderId.length - 7);
+        return `${start}...${end}`;
+    };
+
     return (
         <div className="p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -214,12 +230,15 @@ export default function DashboardPage() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Created
                                         </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                                                 No orders in this date range
                                             </td>
                                         </tr>
@@ -227,7 +246,7 @@ export default function DashboardPage() {
                                         filteredOrders.map((order) => (
                                             <tr key={order.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {order.orderNumber || order.id || 'N/A'}
+                                                    {trimOrderId(order.orderNumber || order.id || 'N/A')}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div>{order.customerName || 'N/A'}</div>
@@ -256,6 +275,16 @@ export default function DashboardPage() {
                                                         ? new Date(order.createdTime).toLocaleString()
                                                         : '-'}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <button
+                                                        onClick={() => handleViewOrderDetails(order.id)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                                        title="View Order Details"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                        Details
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -265,6 +294,16 @@ export default function DashboardPage() {
                     </div>
                 </>
             )}
+
+            {/* Order Details Modal */}
+            <OrderDetailsModal
+                isOpen={showOrderDetails}
+                onClose={() => {
+                    setShowOrderDetails(false);
+                    setSelectedOrderId(null);
+                }}
+                orderId={selectedOrderId}
+            />
         </div>
     );
 }

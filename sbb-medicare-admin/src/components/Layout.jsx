@@ -7,15 +7,18 @@ import {
     Truck,
     LogOut,
     Menu,
-    X
+    X,
+    UserCircle
 } from 'lucide-react';
 import { useState } from 'react';
+import ProfileModal from './ProfileModal';
 
 export default function Layout({ children }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -78,13 +81,8 @@ export default function Layout({ children }) {
                         ))}
                     </nav>
 
-                    {/* User info */}
+                    {/* Logout button */}
                     <div className="p-4 border-t">
-                        <div className="mb-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
-                            <p className="text-xs text-gray-500">{user?.email}</p>
-                            <p className="text-xs text-blue-600 mt-1 capitalize">{user?.role}</p>
-                        </div>
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 w-full px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -96,7 +94,7 @@ export default function Layout({ children }) {
                 </div>
             </aside>
 
-            {/* Main content */}
+                {/* Main content */}
             <div className="lg:ml-64">
                 {/* Top bar */}
                 <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -108,7 +106,7 @@ export default function Layout({ children }) {
                             <Menu className="w-6 h-6" />
                         </button>
                         <div className="flex items-center gap-4 ml-auto">
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 hidden md:block">
                                 {new Date().toLocaleDateString('en-US', {
                                     weekday: 'long',
                                     year: 'numeric',
@@ -116,6 +114,19 @@ export default function Layout({ children }) {
                                     day: 'numeric',
                                 })}
                             </span>
+                            {/* Admin Name and Profile Icon */}
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-gray-900">
+                                    {user?.name || user?.full_name || 'Admin'}
+                                </span>
+                                <button
+                                    onClick={() => setShowProfileModal(true)}
+                                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                                    title="View Profile"
+                                >
+                                    <UserCircle className="w-8 h-8 text-gray-600 hover:text-blue-600" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -123,6 +134,12 @@ export default function Layout({ children }) {
                 {/* Page content */}
                 <main>{children}</main>
             </div>
+
+            {/* Profile Modal */}
+            <ProfileModal
+                isOpen={showProfileModal}
+                onClose={() => setShowProfileModal(false)}
+            />
         </div>
     );
 }

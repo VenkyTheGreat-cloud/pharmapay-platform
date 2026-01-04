@@ -46,27 +46,40 @@ class AuthService {
 
     // Register delivery boy
     static async registerDeliveryBoy(data) {
-        const { name, mobile, email, address } = data;
+        const { name, mobile, email, password, address } = data;
 
         // Check if mobile already exists
-        const existingDeliveryBoy = await DeliveryBoy.findByMobile(mobile);
-        if (existingDeliveryBoy) {
+        const existingDeliveryBoyByMobile = await DeliveryBoy.findByMobile(mobile);
+        if (existingDeliveryBoyByMobile) {
             throw new Error('DUPLICATE_MOBILE');
         }
+
+        // Check if email already exists
+        if (email) {
+            const existingDeliveryBoyByEmail = await DeliveryBoy.findByEmail(email);
+            if (existingDeliveryBoyByEmail) {
+                throw new Error('DUPLICATE_EMAIL');
+            }
+        }
+
+        // Hash password
+        const password_hash = await this.hashPassword(password);
 
         // Create delivery boy (no store_id for public registration)
         const deliveryBoy = await DeliveryBoy.create({
             name,
             mobile,
-            email,
+            email: email || null,
             address,
-            store_id: null
+            store_id: null,
+            password_hash
         });
 
         return {
             id: deliveryBoy.id,
             name: deliveryBoy.name,
             mobile: deliveryBoy.mobile,
+            email: deliveryBoy.email,
             status: deliveryBoy.status
         };
     }

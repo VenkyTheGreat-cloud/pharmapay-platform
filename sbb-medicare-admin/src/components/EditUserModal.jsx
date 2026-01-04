@@ -9,7 +9,9 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
         address: '',
         store_name: '',
         status: 'active',
+        password: '',
     });
+    const [showPasswordField, setShowPasswordField] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,7 +23,9 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                 address: user.address || '',
                 store_name: user.storeName || user.store_name || '',
                 status: user.status || (user.isActive ? 'active' : 'inactive'),
+                password: '',
             });
+            setShowPasswordField(false);
         }
     }, [user]);
 
@@ -31,20 +35,38 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
         setLoading(true);
 
         try {
+            // Build update payload
+            const updatePayload = {
+                name: formData.name,
+                mobile: formData.mobile,
+                address: formData.address,
+            };
+
+            // Include password if password field is shown (required if shown)
+            if (showPasswordField) {
+                if (!formData.password || formData.password.trim() === '') {
+                    setError('Please enter a new password');
+                    setLoading(false);
+                    return;
+                }
+                if (formData.password.length < 6) {
+                    setError('Password must be at least 6 characters');
+                    setLoading(false);
+                    return;
+                }
+                updatePayload.password = formData.password;
+            }
+
+            // Add store_name for store staff
+            if (userType === 'store_staff') {
+                updatePayload.store_name = formData.store_name;
+            }
+
             if (userType === 'delivery_boy') {
-                await deliveryBoysAPI.update(user.id, {
-                    name: formData.name,
-                    mobile: formData.mobile,
-                    address: formData.address,
-                });
+                await deliveryBoysAPI.update(user.id, updatePayload);
                 await deliveryBoysAPI.toggleActive(user.id, formData.status === 'active');
             } else {
-                await accessControlAPI.update(user.id, {
-                    name: formData.name,
-                    mobile: formData.mobile,
-                    address: formData.address,
-                    store_name: formData.store_name,
-                });
+                await accessControlAPI.update(user.id, updatePayload);
                 await accessControlAPI.toggleActive(user.id, formData.status === 'active');
             }
             alert('User updated successfully!');
@@ -161,6 +183,46 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                        </div>
+
+                        {/* Password Update Section */}
+                        <div className="border-t pt-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Update Password
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowPasswordField(!showPasswordField);
+                                        if (showPasswordField) {
+                                            setFormData({ ...formData, password: '' });
+                                        }
+                                    }}
+                                    className="text-sm text-blue-600 hover:text-blue-700"
+                                >
+                                    {showPasswordField ? 'Cancel' : 'Change Password'}
+                                </button>
+                            </div>
+                            {showPasswordField && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        New Password *
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        placeholder="Enter new password"
+                                        required={showPasswordField}
+                                        minLength={6}
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Minimum 6 characters required.
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3 pt-4">
