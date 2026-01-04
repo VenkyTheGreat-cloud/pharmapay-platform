@@ -8,10 +8,26 @@ exports.register = async (req, res, next) => {
     try {
         const { name, mobile, email, password, address } = req.body;
 
+        // Validation
+        if (!name || !mobile || !email || !password) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, email, and password are required'));
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
+        }
+
         const result = await AuthService.registerDeliveryBoy({
             name,
             mobile,
             email,
+            password,
             address
         });
 
@@ -21,6 +37,9 @@ exports.register = async (req, res, next) => {
     } catch (error) {
         if (error.message === 'DUPLICATE_MOBILE') {
             return res.status(409).json(errorResponse('DUPLICATE_MOBILE', 'Mobile number already registered'));
+        }
+        if (error.message === 'DUPLICATE_EMAIL') {
+            return res.status(409).json(errorResponse('DUPLICATE_EMAIL', 'Email already registered'));
         }
         next(error);
     }

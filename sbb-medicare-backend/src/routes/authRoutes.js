@@ -8,7 +8,8 @@ const { authenticateToken } = require('../middleware/auth');
 const registerValidation = [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('mobile').trim().notEmpty().withMessage('Mobile is required'),
-    body('email').optional().isEmail().normalizeEmail(),
+    body('email').trim().notEmpty().withMessage('Email is required').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ];
 
 const loginValidation = [
