@@ -150,3 +150,6 @@ SELECT
     (SELECT COUNT(*) FROM pg_constraint WHERE conrelid = 'users'::regclass AND conname = 'users_role_check') as role_constraint_exists,
     (SELECT COUNT(*) FROM users WHERE role IS NULL OR role = '' OR role NOT IN ('admin', 'store_manager')) as invalid_roles_count;
 
+
+
+

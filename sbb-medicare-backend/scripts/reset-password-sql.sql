@@ -24,3 +24,6 @@ WHERE email = 'your-email@example.com'
 -- ============================================
 -- Run: node scripts/reset-user-password.js your-email@example.com NewPassword123!
 
+
+
+

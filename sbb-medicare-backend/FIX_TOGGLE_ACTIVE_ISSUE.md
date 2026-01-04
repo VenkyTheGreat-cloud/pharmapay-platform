@@ -62,3 +62,6 @@ When you toggle `is_active` to `false`:
 - ✅ `status` will be `'inactive'`
 - ✅ GET API will show correct values
 
+
+
+

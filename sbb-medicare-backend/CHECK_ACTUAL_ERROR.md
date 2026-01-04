@@ -107,3 +107,6 @@ WHERE table_name = 'users' AND column_name = 'role';
 
 Share the results and I'll help fix it!
 
+
+
+

@@ -409,6 +409,8 @@ export default function CustomersPage() {
                                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                                                                     order.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
+                                                                    order.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                                                                     order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
                                                                     order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
                                                                     order.status === 'PAYMENT_COLLECTION' ? 'bg-indigo-100 text-indigo-800' :

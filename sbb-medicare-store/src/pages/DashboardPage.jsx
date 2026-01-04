@@ -284,6 +284,8 @@ function StatusBadge({ status }) {
     if (!status) return null;
     const labelMap = {
         ASSIGNED: 'Assigned',
+        ACCEPTED: 'Accepted',
+        REJECTED: 'Rejected',
         PICKED_UP: 'PickedUp',
         IN_TRANSIT: 'InTransit',
         PAYMENT_COLLECTION: 'Payment Collected',
@@ -292,7 +294,10 @@ function StatusBadge({ status }) {
     };
     const colorMap = {
         ASSIGNED: 'bg-purple-100 text-purple-800',
+        ACCEPTED: 'bg-blue-100 text-blue-800',
+        REJECTED: 'bg-red-100 text-red-800',
         PICKED_UP: 'bg-yellow-100 text-yellow-800',
+        IN_TRANSIT: 'bg-orange-100 text-orange-800',
         PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
         DELIVERED: 'bg-green-100 text-green-800',
         CANCELLED: 'bg-red-100 text-red-800',

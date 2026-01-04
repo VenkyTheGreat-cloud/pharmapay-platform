@@ -21,3 +21,6 @@ CREATE INDEX idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 -- Verify the table was created
 SELECT 'refresh_tokens table created successfully!' AS status;
 
+
+
+

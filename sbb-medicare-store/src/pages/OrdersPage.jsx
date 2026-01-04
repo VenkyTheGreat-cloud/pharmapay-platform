@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI, deliveryBoysAPI } from '../services/api';
-import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
+import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
 
 export default function OrdersPage() {
@@ -113,6 +113,8 @@ export default function OrdersPage() {
         const normalized = status.toUpperCase();
         const colors = {
             ASSIGNED: 'bg-purple-100 text-purple-800',
+            ACCEPTED: 'bg-blue-100 text-blue-800',
+            REJECTED: 'bg-red-100 text-red-800',
             PICKED_UP: 'bg-yellow-100 text-yellow-800',
             IN_TRANSIT: 'bg-orange-100 text-orange-800',
             PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
@@ -120,6 +122,36 @@ export default function OrdersPage() {
             CANCELLED: 'bg-red-100 text-red-800',
         };
         return colors[normalized] || 'bg-gray-100 text-gray-800';
+    };
+
+    const handleAccept = async (orderId) => {
+        if (!confirm('Accept this order assignment?')) {
+            return;
+        }
+
+        try {
+            await ordersAPI.accept(orderId);
+            alert('Order accepted successfully!');
+            loadOrders();
+        } catch (error) {
+            console.error('Error accepting order:', error);
+            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error accepting order');
+        }
+    };
+
+    const handleReject = async (orderId) => {
+        if (!confirm('Reject this order assignment? The order can be reassigned to another delivery boy.')) {
+            return;
+        }
+
+        try {
+            await ordersAPI.reject(orderId);
+            alert('Order rejected. You can now assign it to another delivery boy.');
+            loadOrders();
+        } catch (error) {
+            console.error('Error rejecting order:', error);
+            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error rejecting order');
+        }
     };
 
     return (
@@ -150,6 +182,8 @@ export default function OrdersPage() {
                         >
                             <option value="">All Status</option>
                             <option value="ASSIGNED">Assigned</option>
+                            <option value="ACCEPTED">Accepted</option>
+                            <option value="REJECTED">Rejected</option>
                             <option value="PICKED_UP">Picked Up</option>
                             <option value="IN_TRANSIT">In Transit</option>
                             <option value="PAYMENT_COLLECTION">Payment Collection</option>
@@ -282,7 +316,9 @@ export default function OrdersPage() {
                                                 >
                                                     <Eye className="w-5 h-5" />
                                                 </button>
-                                                {((order.status === 'ASSIGNED' || order.status === 'assigned') || !(order.deliveryBoyId || order.assigned_delivery_boy_id)) && (
+                                                {((order.status === 'ASSIGNED' || order.status === 'assigned') || 
+                                                  (order.status === 'REJECTED' || order.status === 'rejected') ||
+                                                  !(order.deliveryBoyId || order.assigned_delivery_boy_id)) && (
                                                     <button
                                                         onClick={() => openAssignModal(order)}
                                                         className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
@@ -290,6 +326,24 @@ export default function OrdersPage() {
                                                     >
                                                         <UserPlus className="w-5 h-5" />
                                                     </button>
+                                                )}
+                                                {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleAccept(order.id)}
+                                                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                                                            title="Accept Order"
+                                                        >
+                                                            <CheckCircle className="w-5 h-5" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleReject(order.id)}
+                                                            className="text-orange-600 hover:text-orange-900 p-1 rounded hover:bg-orange-50 transition-colors"
+                                                            title="Reject Order"
+                                                        >
+                                                            <XCircle className="w-5 h-5" />
+                                                        </button>
+                                                    </>
                                                 )}
                                                 {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
                                                     <button

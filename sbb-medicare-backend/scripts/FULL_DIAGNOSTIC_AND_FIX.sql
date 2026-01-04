@@ -117,3 +117,6 @@ COMMIT;
 -- Final status
 SELECT '✅✅✅ DIAGNOSTIC COMPLETE - Check the messages above ✅✅✅' as status;
 
+
+
+

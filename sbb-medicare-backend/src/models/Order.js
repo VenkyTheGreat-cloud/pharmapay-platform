@@ -174,10 +174,10 @@ class Order {
         return this.findAll(filters);
     }
 
-    // Get ongoing orders (ASSIGNED, PICKED_UP, IN_TRANSIT, PAYMENT_COLLECTION)
+    // Get ongoing orders (ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT, PAYMENT_COLLECTION)
     static async getOngoingOrders(storeId = null) {
         const filters = {
-            status: ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
+            status: ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
         };
         if (storeId) filters.store_id = storeId;
         
@@ -186,7 +186,7 @@ class Order {
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
-            WHERE o.status IN ('ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+            WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
         `;
         const params = [];
         let paramCount = 1;
@@ -211,7 +211,7 @@ class Order {
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
              WHERE o.assigned_delivery_boy_id = $1
-               AND o.status IN ('ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+               AND o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
              ORDER BY o.created_at DESC`,
             [deliveryBoyId]
         );
@@ -310,6 +310,18 @@ class Order {
     // Assign order to delivery boy
     static async assign(orderId, deliveryBoyId, assignedBy) {
         return transaction(async (client) => {
+            // Get current order to check if it's REJECTED
+            const currentOrder = await client.query('SELECT status FROM orders WHERE id = $1', [orderId]);
+            if (currentOrder.rowCount === 0) {
+                throw new Error('NOT_FOUND');
+            }
+
+            // If order is REJECTED, allow reassignment. Otherwise, it should be in a state that allows assignment
+            const currentStatus = currentOrder.rows[0].status;
+            if (currentStatus !== 'REJECTED' && currentStatus !== 'ASSIGNED') {
+                throw new Error('INVALID_STATUS_FOR_ASSIGNMENT');
+            }
+
             const result = await client.query(
                 `UPDATE orders
                  SET assigned_delivery_boy_id = $1, status = 'ASSIGNED', assigned_at = CURRENT_TIMESTAMP
@@ -323,10 +335,124 @@ class Order {
             }
 
             // Create status history
+            const notes = currentStatus === 'REJECTED' 
+                ? 'Order reassigned to delivery boy (previously rejected)'
+                : 'Order assigned to delivery boy';
+            
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [orderId, 'ASSIGNED', assignedBy, 'Order assigned to delivery boy']
+                [orderId, 'ASSIGNED', assignedBy, notes]
+            );
+
+            return result.rows[0];
+        });
+    }
+
+    // Accept order (delivery boy accepts assigned order)
+    static async accept(orderId, deliveryBoyId, notes = null) {
+        return transaction(async (client) => {
+            // Verify order is assigned to this delivery boy
+            const orderResult = await client.query(
+                'SELECT * FROM orders WHERE id = $1 AND assigned_delivery_boy_id = $2',
+                [orderId, deliveryBoyId]
+            );
+
+            if (orderResult.rowCount === 0) {
+                throw new Error('NOT_FOUND');
+            }
+
+            const order = orderResult.rows[0];
+
+            // Only ASSIGNED orders can be accepted
+            if (order.status !== 'ASSIGNED') {
+                throw new Error('INVALID_STATUS_TRANSITION');
+            }
+
+            // Update status to ACCEPTED
+            const result = await client.query(
+                `UPDATE orders SET status = 'ACCEPTED' WHERE id = $1 RETURNING *`,
+                [orderId]
+            );
+
+            // Create status history
+            let changedByValue = null;
+            let historyNotes = notes || 'Order accepted by delivery boy';
+            
+            // Get delivery boy name for notes
+            try {
+                const deliveryBoyResult = await client.query(
+                    'SELECT name FROM delivery_boys WHERE id = $1',
+                    [deliveryBoyId]
+                );
+                if (deliveryBoyResult.rows.length > 0) {
+                    const dbName = deliveryBoyResult.rows[0].name;
+                    historyNotes = notes ? `${notes} (Accepted by: ${dbName})` : `Accepted by delivery boy: ${dbName}`;
+                }
+            } catch (err) {
+                // Ignore error, use default notes
+            }
+
+            await client.query(
+                `INSERT INTO order_status_history (order_id, status, changed_by, notes)
+                 VALUES ($1, $2, $3, $4)`,
+                [orderId, 'ACCEPTED', changedByValue, historyNotes]
+            );
+
+            return result.rows[0];
+        });
+    }
+
+    // Reject order (delivery boy rejects assigned order)
+    static async reject(orderId, deliveryBoyId, reason = null) {
+        return transaction(async (client) => {
+            // Verify order is assigned to this delivery boy
+            const orderResult = await client.query(
+                'SELECT * FROM orders WHERE id = $1 AND assigned_delivery_boy_id = $2',
+                [orderId, deliveryBoyId]
+            );
+
+            if (orderResult.rowCount === 0) {
+                throw new Error('NOT_FOUND');
+            }
+
+            const order = orderResult.rows[0];
+
+            // Only ASSIGNED orders can be rejected
+            if (order.status !== 'ASSIGNED') {
+                throw new Error('INVALID_STATUS_TRANSITION');
+            }
+
+            // Update status to REJECTED
+            const result = await client.query(
+                `UPDATE orders SET status = 'REJECTED' WHERE id = $1 RETURNING *`,
+                [orderId]
+            );
+
+            // Create status history
+            let changedByValue = null;
+            let historyNotes = reason || 'Order rejected by delivery boy';
+            
+            // Get delivery boy name for notes
+            try {
+                const deliveryBoyResult = await client.query(
+                    'SELECT name FROM delivery_boys WHERE id = $1',
+                    [deliveryBoyId]
+                );
+                if (deliveryBoyResult.rows.length > 0) {
+                    const dbName = deliveryBoyResult.rows[0].name;
+                    historyNotes = reason 
+                        ? `Rejected by ${dbName}: ${reason}` 
+                        : `Rejected by delivery boy: ${dbName}`;
+                }
+            } catch (err) {
+                // Ignore error, use default notes
+            }
+
+            await client.query(
+                `INSERT INTO order_status_history (order_id, status, changed_by, notes)
+                 VALUES ($1, $2, $3, $4)`,
+                [orderId, 'REJECTED', changedByValue, historyNotes]
             );
 
             return result.rows[0];
@@ -345,7 +471,9 @@ class Order {
 
             // Validate status transition
             const validTransitions = {
-                'ASSIGNED': ['PICKED_UP', 'CANCELLED'],
+                'ASSIGNED': ['ACCEPTED', 'REJECTED', 'CANCELLED'], // Can accept, reject, or cancel
+                'ACCEPTED': ['PICKED_UP', 'CANCELLED'], // Once accepted, can pick up or cancel
+                'REJECTED': ['ASSIGNED'], // Rejected orders can be reassigned
                 'PICKED_UP': ['IN_TRANSIT', 'CANCELLED'],
                 'IN_TRANSIT': ['PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'],
                 'PAYMENT_COLLECTION': ['DELIVERED', 'CANCELLED']
@@ -369,6 +497,7 @@ class Order {
 
             // Update order with appropriate timestamp
             const timestampFields = {
+                'ACCEPTED': 'assigned_at', // Update assigned_at when accepted (optional, can keep original)
                 'PICKED_UP': 'picked_up_at',
                 'IN_TRANSIT': 'in_transit_at',
                 'PAYMENT_COLLECTION': 'payment_collection_at',

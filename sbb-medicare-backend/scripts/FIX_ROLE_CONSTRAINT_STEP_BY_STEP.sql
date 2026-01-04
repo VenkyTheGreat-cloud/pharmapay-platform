@@ -132,3 +132,6 @@ FROM pg_constraint
 WHERE conrelid = 'users'::regclass 
 AND conname = 'users_role_check';
 
+
+
+

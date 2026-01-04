@@ -39,3 +39,6 @@ SELECT status, is_active, COUNT(*) as count
 FROM users
 GROUP BY status, is_active;
 
+
+
+

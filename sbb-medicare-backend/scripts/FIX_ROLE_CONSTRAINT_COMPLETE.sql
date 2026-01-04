@@ -49,3 +49,6 @@ COMMIT;
 -- Final success message
 SELECT '✅✅✅ SUCCESS! Role constraint is now fixed. You can create store managers now. ✅✅✅' as result;
 
+
+
+

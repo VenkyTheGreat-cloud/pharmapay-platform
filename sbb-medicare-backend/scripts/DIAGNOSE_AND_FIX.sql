@@ -135,3 +135,6 @@ ROLLBACK;
 \echo 'If you see "✅ TEST INSERT SUCCESSFUL", the fix worked!'
 \echo 'Now try creating a store manager via the API.'
 
+
+
+

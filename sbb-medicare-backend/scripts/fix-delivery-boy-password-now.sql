@@ -42,3 +42,6 @@ FROM delivery_boys
 WHERE password_hash IS NULL OR password_hash = ''
 ORDER BY created_at DESC;
 
+
+
+

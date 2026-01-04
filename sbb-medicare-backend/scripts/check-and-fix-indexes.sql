@@ -71,3 +71,6 @@ WHERE tablename = 'users';
 EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'test@example.com';
 EXPLAIN ANALYZE SELECT * FROM users WHERE mobile = '1234567890';
 
+
+
+

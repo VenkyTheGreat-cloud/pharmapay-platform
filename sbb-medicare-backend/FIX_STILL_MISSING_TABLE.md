@@ -108,3 +108,6 @@ If restarting doesn't help, the table is likely in a different database. Check:
 - Which database you connected to in psql when you created the table
 - Make sure they match!
 
+
+
+

@@ -118,3 +118,6 @@ ORDER BY table_name, column_name;
 
 3. **✅ Functions**: The `generate_order_number` function is already updated to handle UUID.
 
+
+
+

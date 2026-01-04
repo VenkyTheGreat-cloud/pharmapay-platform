@@ -66,3 +66,6 @@ Make sure:
 - User has proper permissions
 - `.env` file has correct `DATABASE_URL` when using npm scripts
 
+
+
+

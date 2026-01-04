@@ -44,3 +44,6 @@ CREATE INDEX idx_users_role ON users(role);
 \echo '✓ users table recreated with BIGINT id'
 \echo 'Now run the full schema.sql or init-database.js to create remaining tables'
 
+
+
+
