@@ -97,7 +97,7 @@ class User {
     // Find user by ID
     static async findById(id) {
         const result = await query(
-            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at FROM users WHERE id = $1',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, password_hash, created_at, updated_at FROM users WHERE id = $1',
             [id]
         );
         return result.rows[0];
