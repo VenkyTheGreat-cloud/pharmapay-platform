@@ -7,15 +7,19 @@ import {
     Package,
     LogOut,
     Menu,
-    X
+    X,
+    User,
+    Store
 } from 'lucide-react';
 import { useState } from 'react';
+import ProfileModal from './ProfileModal';
 
 export default function Layout({ children }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -119,6 +123,21 @@ export default function Layout({ children }) {
                                     day: 'numeric',
                                 })}
                             </span>
+                            {/* Store Name and Profile Icon */}
+                            <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                    <p className="text-sm font-medium text-gray-900">
+                                        {user?.storeName || user?.store_store_name || 'Store'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setShowProfileModal(true)}
+                                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                    title="View Profile"
+                                >
+                                    <User className="w-6 h-6 text-gray-600" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -126,6 +145,12 @@ export default function Layout({ children }) {
                 {/* Page content */}
                 <main>{children}</main>
             </div>
+
+            {/* Profile Modal */}
+            <ProfileModal
+                isOpen={showProfileModal}
+                onClose={() => setShowProfileModal(false)}
+            />
         </div>
     );
 }

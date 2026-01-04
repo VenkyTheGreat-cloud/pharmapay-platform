@@ -72,7 +72,7 @@ class AuthService {
     }
 
     // Login user (supports both users and delivery boys)
-    static async login(mobileEmail, password) {
+    static async login(mobileEmail, password, dashboardType = null) {
         const logger = require('../config/logger');
         
         // First, try to find in users table (admin/store_manager)
@@ -132,6 +132,38 @@ class AuthService {
                 isDeliveryBoy 
             });
             throw new Error('INVALID_CREDENTIALS');
+        }
+
+        // Validate dashboard access (only for admin and store_manager roles)
+        if (!isDeliveryBoy && dashboardType) {
+            const userRole = user.role;
+            const normalizedDashboardType = dashboardType.toLowerCase();
+
+            // Admin cannot login to store dashboard
+            if (userRole === 'admin' && normalizedDashboardType === 'store') {
+                logger.warn('Login failed - admin trying to access store dashboard', { 
+                    userId: user.id, 
+                    email: user.email,
+                    role: userRole,
+                    dashboardType: normalizedDashboardType
+                });
+                const error = new Error('DASHBOARD_ACCESS_DENIED');
+                error.details = 'Admin users cannot access the store dashboard. Please use the admin dashboard.';
+                throw error;
+            }
+
+            // Store manager cannot login to admin dashboard
+            if (userRole === 'store_manager' && normalizedDashboardType === 'admin') {
+                logger.warn('Login failed - store manager trying to access admin dashboard', { 
+                    userId: user.id, 
+                    email: user.email,
+                    role: userRole,
+                    dashboardType: normalizedDashboardType
+                });
+                const error = new Error('DASHBOARD_ACCESS_DENIED');
+                error.details = 'Store managers cannot access the admin dashboard. Please use the store dashboard.';
+                throw error;
+            }
         }
 
         // Generate tokens (for delivery boys, use role 'delivery_boy')
@@ -205,7 +237,9 @@ class AuthService {
     }
 
     // Verify OTP and login
-    static async verifyOTP(mobile, otp) {
+    static async verifyOTP(mobile, otp, dashboardType = null) {
+        const logger = require('../config/logger');
+        
         // Verify OTP
         const otpRecord = await OtpVerification.verify(mobile, otp);
         if (!otpRecord) {
@@ -221,6 +255,38 @@ class AuthService {
         // Check if user is active
         if (!user.is_active) {
             throw new Error('INACTIVE_USER');
+        }
+
+        // Validate dashboard access
+        if (dashboardType) {
+            const userRole = user.role;
+            const normalizedDashboardType = dashboardType.toLowerCase();
+
+            // Admin cannot login to store dashboard
+            if (userRole === 'admin' && normalizedDashboardType === 'store') {
+                logger.warn('OTP login failed - admin trying to access store dashboard', { 
+                    userId: user.id, 
+                    email: user.email,
+                    role: userRole,
+                    dashboardType: normalizedDashboardType
+                });
+                const error = new Error('DASHBOARD_ACCESS_DENIED');
+                error.details = 'Admin users cannot access the store dashboard. Please use the admin dashboard.';
+                throw error;
+            }
+
+            // Store manager cannot login to admin dashboard
+            if (userRole === 'store_manager' && normalizedDashboardType === 'admin') {
+                logger.warn('OTP login failed - store manager trying to access admin dashboard', { 
+                    userId: user.id, 
+                    email: user.email,
+                    role: userRole,
+                    dashboardType: normalizedDashboardType
+                });
+                const error = new Error('DASHBOARD_ACCESS_DENIED');
+                error.details = 'Store managers cannot access the admin dashboard. Please use the store dashboard.';
+                throw error;
+            }
         }
 
         // Generate tokens

@@ -20,8 +20,12 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (identifier, password) => {
         try {
-            // Backend expects "mobileEmail" which can be mobile or email
-            const response = await authAPI.login({ mobileEmail: identifier, password });
+            // Backend expects "mobileEmail" which can be mobile or email, and "dashboardType" hardcoded to "store"
+            const response = await authAPI.login({ 
+                mobileEmail: identifier, 
+                password,
+                dashboardType: "store"
+            });
 
             if (!response.data?.success) {
                 return {

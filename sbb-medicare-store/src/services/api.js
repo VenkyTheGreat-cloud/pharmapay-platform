@@ -98,6 +98,16 @@ export const authAPI = {
     },
     changePassword: (data) => {
         if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                message: 'Password changed successfully (mock)',
+                data: null,
+            });
+        }
+        return api.post('/auth/change-password', data);
+    },
+    changePassword: (data) => {
+        if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Password changed (mock)' });
         }
         return api.post('/auth/change-password', data);
