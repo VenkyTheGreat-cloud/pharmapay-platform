@@ -466,84 +466,47 @@ export default function OrdersPage() {
                                     {/* Payment Information */}
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
-                                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                            <div className="flex justify-between">
-                                                <span className="text-sm text-gray-500">Total Amount</span>
-                                                <span className="text-lg font-bold text-gray-900">
-                                                    ₹{selectedOrder.amount || selectedOrder.total_amount || '0.00'}
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                                            <div className="flex justify-between items-center border-b pb-2">
+                                                <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                <span className="text-xl font-bold text-gray-900">
+                                                    ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
                                                 </span>
                                             </div>
-                                            {selectedOrder.paidAmount || selectedOrder.paid_amount ? (
-                                                <>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-500">Paid Amount</span>
-                                                        <span className="text-base font-medium text-gray-900">
-                                                            ₹{selectedOrder.paidAmount || selectedOrder.paid_amount || '0.00'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-sm text-gray-500">Remaining</span>
-                                                        <span className="text-base font-medium text-gray-900">
-                                                            ₹{((selectedOrder.amount || selectedOrder.total_amount || 0) - (selectedOrder.paidAmount || selectedOrder.paid_amount || 0)).toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : null}
-                                            {selectedOrder.paymentMode || selectedOrder.payment_mode ? (
-                                                <div className="flex justify-between">
-                                                    <span className="text-sm text-gray-500">Payment Mode</span>
-                                                    <span className="text-base text-gray-900">
+                                            <div className="flex justify-between items-center border-b pb-2">
+                                                <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                <span className="text-lg font-semibold text-gray-900">
+                                                    ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center border-b pb-2">
+                                                <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                <span className="text-lg font-semibold text-gray-900">
+                                                    ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                </span>
+                                            </div>
+                                            {(selectedOrder.paymentMode || selectedOrder.payment_mode) && (
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm font-medium text-gray-700">Payment Mode</span>
+                                                    <span className="text-base font-semibold text-blue-600">
                                                         {selectedOrder.paymentMode || selectedOrder.payment_mode}
                                                     </span>
                                                 </div>
-                                            ) : null}
-                                            {selectedOrder.transactionReference || selectedOrder.transaction_reference ? (
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Transaction Reference</p>
-                                                    <p className="text-base text-gray-900">
+                                            )}
+                                            {(selectedOrder.transactionReference || selectedOrder.transaction_reference) && (
+                                                <div className="pt-2 border-t">
+                                                    <p className="text-sm text-gray-500 mb-1">Transaction Reference</p>
+                                                    <p className="text-base text-gray-900 font-mono">
                                                         {selectedOrder.transactionReference || selectedOrder.transaction_reference}
                                                     </p>
                                                 </div>
-                                            ) : null}
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Right Column - Items and Status Timeline */}
+                                {/* Right Column - Status Timeline */}
                                 <div className="space-y-6">
-                                    {/* Order Items */}
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Items</h3>
-                                        {selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
-                                            <div className="bg-gray-50 rounded-lg overflow-hidden">
-                                                <table className="min-w-full">
-                                                    <thead className="bg-gray-100">
-                                                        <tr>
-                                                            <th className="text-left text-xs font-semibold text-gray-700 px-4 py-2">Item</th>
-                                                            <th className="text-center text-xs font-semibold text-gray-700 px-4 py-2">Qty</th>
-                                                            <th className="text-right text-xs font-semibold text-gray-700 px-4 py-2">Price</th>
-                                                            <th className="text-right text-xs font-semibold text-gray-700 px-4 py-2">Total</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-gray-200">
-                                                        {selectedOrder.items.map((item, idx) => (
-                                                            <tr key={idx}>
-                                                                <td className="text-sm text-gray-900 px-4 py-2">{item.name}</td>
-                                                                <td className="text-sm text-gray-900 text-center px-4 py-2">{item.quantity}</td>
-                                                                <td className="text-sm text-gray-900 text-right px-4 py-2">₹{item.price}</td>
-                                                                <td className="text-sm font-medium text-gray-900 text-right px-4 py-2">
-                                                                    ₹{item.total || (item.quantity * item.price)}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No items found</p>
-                                        )}
-                                    </div>
-
                                     {/* Status Timeline */}
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Status Timeline</h3>
