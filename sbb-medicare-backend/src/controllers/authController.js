@@ -283,10 +283,16 @@ exports.updateProfile = async (req, res, next) => {
 // Change password
 exports.changePassword = async (req, res, next) => {
     try {
-        const { oldPassword, newPassword } = req.body;
+        // Support both camelCase and snake_case field names
+        const oldPassword = req.body.oldPassword || req.body.current_password || req.body.old_password;
+        const newPassword = req.body.newPassword || req.body.new_password;
 
         if (!newPassword || newPassword.length < 6) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'New password must be at least 6 characters'));
+        }
+
+        if (!oldPassword) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Current password is required'));
         }
 
         const DeliveryBoy = require('../models/DeliveryBoy');

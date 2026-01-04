@@ -64,7 +64,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
 
             if (userType === 'delivery_boy') {
                 await deliveryBoysAPI.update(user.id, updatePayload);
-                await deliveryBoysAPI.toggleActive(user.id, formData.status === 'active');
+                // Status (activate/deactivate) is managed from the list view, not from edit modal
             } else {
                 await accessControlAPI.update(user.id, updatePayload);
                 await accessControlAPI.toggleActive(user.id, formData.status === 'active');
@@ -171,19 +171,22 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Status
-                            </label>
-                            <select
-                                value={formData.status}
-                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        </div>
+                        {/* Status field - only show for store staff, hide for delivery boys */}
+                        {userType === 'store_staff' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Status
+                                </label>
+                                <select
+                                    value={formData.status}
+                                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        )}
 
                         {/* Password Update Section */}
                         <div className="border-t pt-4">
