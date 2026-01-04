@@ -385,98 +385,299 @@ export default function OrdersPage() {
             {/* Order Details Modal */}
             {showViewModal && selectedOrder && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        {selectedOrder.orderNumber || selectedOrder.order_number || 'N/A'}
+                                    </p>
+                                </div>
                                 <button
                                     onClick={() => setShowViewModal(false)}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                                 >
                                     ✕
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Order Number</h3>
-                                    <p className="text-gray-900">{selectedOrder.orderNumber || selectedOrder.order_number || 'N/A'}</p>
-                                </div>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Left Column - Order Information */}
+                                <div className="space-y-6">
+                                    {/* Order Status */}
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h3 className="text-sm font-medium text-gray-500 mb-2">Current Status</h3>
+                                        <span
+                                            className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
+                                                selectedOrder.status
+                                            )}`}
+                                        >
+                                            {selectedOrder.status ? selectedOrder.status.replace(/_/g, ' ').toUpperCase() : 'N/A'}
+                                        </span>
+                                    </div>
 
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Customer</h3>
-                                    <p className="text-gray-900">{selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address || 'N/A'}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Items</h3>
-                                    {selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
-                                        <div className="bg-gray-50 p-3 rounded">
-                                            <table className="min-w-full">
-                                                <thead>
-                                                    <tr className="border-b">
-                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Name</th>
-                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Quantity</th>
-                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Price</th>
-                                                        <th className="text-left text-sm font-semibold text-gray-700 pb-2">Total</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {selectedOrder.items.map((item, idx) => (
-                                                        <tr key={idx} className="border-b">
-                                                            <td className="text-sm text-gray-900 py-1">{item.name}</td>
-                                                            <td className="text-sm text-gray-900 py-1">{item.quantity}</td>
-                                                            <td className="text-sm text-gray-900 py-1">₹{item.price}</td>
-                                                            <td className="text-sm text-gray-900 py-1">₹{item.total || (item.quantity * item.price)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                    {/* Customer Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Name</p>
+                                                <p className="text-base font-medium text-gray-900">
+                                                    {selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Mobile</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Address</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address || 'N/A'}
+                                                </p>
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <p className="text-sm text-gray-500">No items found</p>
+                                    </div>
+
+                                    {/* Delivery Boy Information */}
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Name</p>
+                                                    <p className="text-base font-medium text-gray-900">
+                                                        {selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Mobile</p>
+                                                    <p className="text-base text-gray-900">
+                                                        {selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Payment Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-sm text-gray-500">Total Amount</span>
+                                                <span className="text-lg font-bold text-gray-900">
+                                                    ₹{selectedOrder.amount || selectedOrder.total_amount || '0.00'}
+                                                </span>
+                                            </div>
+                                            {selectedOrder.paidAmount || selectedOrder.paid_amount ? (
+                                                <>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-sm text-gray-500">Paid Amount</span>
+                                                        <span className="text-base font-medium text-gray-900">
+                                                            ₹{selectedOrder.paidAmount || selectedOrder.paid_amount || '0.00'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-sm text-gray-500">Remaining</span>
+                                                        <span className="text-base font-medium text-gray-900">
+                                                            ₹{((selectedOrder.amount || selectedOrder.total_amount || 0) - (selectedOrder.paidAmount || selectedOrder.paid_amount || 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : null}
+                                            {selectedOrder.paymentMode || selectedOrder.payment_mode ? (
+                                                <div className="flex justify-between">
+                                                    <span className="text-sm text-gray-500">Payment Mode</span>
+                                                    <span className="text-base text-gray-900">
+                                                        {selectedOrder.paymentMode || selectedOrder.payment_mode}
+                                                    </span>
+                                                </div>
+                                            ) : null}
+                                            {selectedOrder.transactionReference || selectedOrder.transaction_reference ? (
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Transaction Reference</p>
+                                                    <p className="text-base text-gray-900">
+                                                        {selectedOrder.transactionReference || selectedOrder.transaction_reference}
+                                                    </p>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column - Items and Status Timeline */}
+                                <div className="space-y-6">
+                                    {/* Order Items */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Items</h3>
+                                        {selectedOrder.items && Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
+                                            <div className="bg-gray-50 rounded-lg overflow-hidden">
+                                                <table className="min-w-full">
+                                                    <thead className="bg-gray-100">
+                                                        <tr>
+                                                            <th className="text-left text-xs font-semibold text-gray-700 px-4 py-2">Item</th>
+                                                            <th className="text-center text-xs font-semibold text-gray-700 px-4 py-2">Qty</th>
+                                                            <th className="text-right text-xs font-semibold text-gray-700 px-4 py-2">Price</th>
+                                                            <th className="text-right text-xs font-semibold text-gray-700 px-4 py-2">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-gray-200">
+                                                        {selectedOrder.items.map((item, idx) => (
+                                                            <tr key={idx}>
+                                                                <td className="text-sm text-gray-900 px-4 py-2">{item.name}</td>
+                                                                <td className="text-sm text-gray-900 text-center px-4 py-2">{item.quantity}</td>
+                                                                <td className="text-sm text-gray-900 text-right px-4 py-2">₹{item.price}</td>
+                                                                <td className="text-sm font-medium text-gray-900 text-right px-4 py-2">
+                                                                    ₹{item.total || (item.quantity * item.price)}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">No items found</p>
+                                        )}
+                                    </div>
+
+                                    {/* Status Timeline */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Status Timeline</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <div className="space-y-4">
+                                                {/* Created */}
+                                                {selectedOrder.created_at || selectedOrder.createdTime ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Order Created</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.created_at || selectedOrder.createdTime).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Assigned */}
+                                                {selectedOrder.assigned_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Assigned to Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.assigned_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Accepted */}
+                                                {selectedOrder.accepted_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.accepted_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Picked Up */}
+                                                {selectedOrder.picked_up_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Picked Up</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.picked_up_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* In Transit */}
+                                                {selectedOrder.in_transit_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">In Transit</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.in_transit_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Payment Collection */}
+                                                {selectedOrder.payment_collection_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Payment Collected</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.payment_collection_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Delivered */}
+                                                {selectedOrder.delivered_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Delivered</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.delivered_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Cancelled */}
+                                                {selectedOrder.cancelled_at ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-red-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Cancelled</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.cancelled_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Customer Comments */}
+                                    {(selectedOrder.customerComments || selectedOrder.customer_comments) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Comments</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">
+                                                    {selectedOrder.customerComments || selectedOrder.customer_comments}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Notes */}
+                                    {selectedOrder.notes && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">{selectedOrder.notes}</p>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Total Amount</h3>
-                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount || selectedOrder.total_amount || '0.00'}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Status</h3>
-                                    <span
-                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                                            selectedOrder.status
-                                        )}`}
-                                    >
-                                        {selectedOrder.status.replace('_', ' ').toUpperCase()}
-                                    </span>
-                                </div>
-
-                                {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Delivery Boy</h3>
-                                        <p className="text-gray-900">{selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}</p>
-                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile || 'N/A'}</p>
-                                    </div>
-                                )}
-
-                                {(selectedOrder.customerComments || selectedOrder.customer_comments) && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Customer Comments</h3>
-                                        <p className="text-gray-900">{selectedOrder.customerComments || selectedOrder.customer_comments}</p>
-                                    </div>
-                                )}
-
-                                {(selectedOrder.notes) && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Notes</h3>
-                                        <p className="text-gray-900">{selectedOrder.notes}</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>

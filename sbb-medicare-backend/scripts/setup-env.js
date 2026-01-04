@@ -14,7 +14,7 @@ DB_PASSWORD=password
 
 # JWT Configuration
 JWT_SECRET=changeme-in-production-use-strong-secret-key-minimum-256-bits
-JWT_ACCESS_TOKEN_EXPIRY=15m
+JWT_ACCESS_TOKEN_EXPIRY=30m
 JWT_REFRESH_TOKEN_EXPIRY=7d
 
 # OTP Configuration
