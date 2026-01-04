@@ -300,8 +300,7 @@ exports.splitPayment = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
         }
 
-        // Check if payment amount exceeds remaining amount
-        const totalAmount = cash_amount + bank_amount;
+        // Check if payment amount exceeds remaining amount (totalAmount already declared above)
         if (totalAmount > paymentSummary.remaining_amount) {
             return res.status(400).json(errorResponse('INVALID_AMOUNT', `Payment amount (${totalAmount}) exceeds remaining amount (${paymentSummary.remaining_amount})`));
         }
