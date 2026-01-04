@@ -87,21 +87,6 @@ export default function DeliveryBoysPage() {
         }
     };
 
-    const handleApprove = async (userId) => {
-        if (!confirm('Approve this delivery boy?')) return;
-
-        try {
-            await deliveryBoysAPI.approve(userId);
-            loadDeliveryBoys();
-            alert('Delivery boy approved successfully');
-        } catch (error) {
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Error approving delivery boy';
-            alert(errorMsg);
-        }
-    };
-
     const handleToggleActive = async (userId, isActive) => {
         const action = isActive ? 'activate' : 'deactivate';
         if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this delivery boy?`)) return;
@@ -249,15 +234,6 @@ export default function DeliveryBoysPage() {
                                             >
                                                 <Edit className="w-5 h-5" />
                                             </button>
-                                            {boy.status === 'pending' && (
-                                                <button
-                                                    onClick={() => handleApprove(boy.id)}
-                                                    className="text-green-600 hover:text-green-900"
-                                                    title="Approve"
-                                                >
-                                                    <UserCheck className="w-5 h-5" />
-                                                </button>
-                                            )}
                                             {boy.isActive ? (
                                                 <button
                                                     onClick={() => handleToggleActive(boy.id, false)}
