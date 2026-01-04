@@ -65,19 +65,41 @@ exports.getAllOrders = async (req, res, next) => {
 
         // Get payment summary and items for each order
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
-            const items = await OrderItem.findByOrderId(order.id);
-            const paymentSummary = await Payment.getPaymentSummary(order.id);
-            return {
-                ...order,
-                items: items.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    quantity: item.quantity,
-                    price: parseFloat(item.price),
-                    total: parseFloat(item.total)
-                })),
-                payment_summary: paymentSummary
-            };
+            try {
+                const items = await OrderItem.findByOrderId(order.id);
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                return {
+                    ...order,
+                    items: items ? items.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: parseFloat(item.price),
+                        total: parseFloat(item.total)
+                    })) : [],
+                    payment_summary: paymentSummary || {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: parseFloat(order.total_amount || 0),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            } catch (err) {
+                // If payment summary fails, return order with default payment summary
+                logger.error('Error getting order details', { orderId: order.id, error: err.message });
+                return {
+                    ...order,
+                    items: [],
+                    payment_summary: {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: parseFloat(order.total_amount || 0),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            }
         }));
 
         const pagination = {
@@ -87,7 +109,7 @@ exports.getAllOrders = async (req, res, next) => {
             totalPages: Math.ceil(total / filters.limit)
         };
 
-        res.json(paginatedResponse({ orders: ordersWithItems }, pagination));
+        res.json(paginatedResponse({ orders: ordersWithDetails }, pagination));
     } catch (error) {
         next(error);
     }
@@ -110,9 +132,35 @@ exports.getTodayOrders = async (req, res, next) => {
         const orders = await Order.findAll(filters);
         const total = await Order.count(filters);
 
-        const ordersWithItems = await Promise.all(orders.map(async (order) => {
-            const items = await OrderItem.findByOrderId(order.id);
-            return { ...order, items };
+        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+            try {
+                const items = await OrderItem.findByOrderId(order.id);
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                return {
+                    ...order,
+                    items: items || [],
+                    payment_summary: paymentSummary || {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: parseFloat(order.total_amount || 0),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            } catch (err) {
+                logger.error('Error getting order details', { orderId: order.id, error: err.message });
+                return {
+                    ...order,
+                    items: [],
+                    payment_summary: {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: parseFloat(order.total_amount || 0),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            }
         }));
 
         const pagination = {
@@ -122,7 +170,7 @@ exports.getTodayOrders = async (req, res, next) => {
             totalPages: Math.ceil(total / filters.limit)
         };
 
-        res.json(paginatedResponse({ orders: ordersWithItems }, pagination));
+        res.json(paginatedResponse({ orders: ordersWithDetails }, pagination));
     } catch (error) {
         next(error);
     }
