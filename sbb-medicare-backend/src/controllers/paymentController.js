@@ -203,13 +203,12 @@ exports.collectPayment = async (req, res, next) => {
         }
 
         // Prepare payment data
-        const totalAmount = parseFloat(amount);
         let cash_amount = 0;
         let bank_amount = 0;
 
         if (payment_mode === 'CASH') {
             cash_amount = totalAmount;
-        } else if (payment_mode === 'BANK_TRANSFER') {
+        } else if (payment_mode === 'CARD' || payment_mode === 'UPI' || payment_mode === 'BANK_TRANSFER') {
             bank_amount = totalAmount;
         } else if (payment_mode === 'SPLIT') {
             // For split, expect cash_amount and bank_amount in request
