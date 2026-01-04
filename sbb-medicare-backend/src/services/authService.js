@@ -6,7 +6,7 @@ const OtpVerification = require('../models/OtpVerification');
 const RefreshToken = require('../models/RefreshToken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-production-use-strong-secret-key-minimum-256-bits';
-const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '15m';
+const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '30m';
 const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d';
 
 class AuthService {

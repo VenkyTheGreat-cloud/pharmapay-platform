@@ -23,7 +23,7 @@ PORT=5000
 NODE_ENV=development
 DATABASE_URL=postgresql://postgres:your_password@localhost:5432/sbb_medicare
 JWT_SECRET=changeme-in-production-use-strong-secret-key-minimum-256-bits
-JWT_ACCESS_TOKEN_EXPIRY=15m
+JWT_ACCESS_TOKEN_EXPIRY=30m
 JWT_REFRESH_TOKEN_EXPIRY=7d
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
