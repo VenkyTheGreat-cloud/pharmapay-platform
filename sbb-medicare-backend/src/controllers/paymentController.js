@@ -194,13 +194,22 @@ exports.collectPayment = async (req, res, next) => {
             return res.status(400).json(errorResponse('INVALID_AMOUNT', `Payment amount (${totalAmount}) exceeds remaining amount (${paymentSummary.remaining_amount})`));
         }
 
-        // Handle receipt photo from file upload or base64
+        // Handle receipt photo from file upload or base64/URL
         let receipt_photo_url = null;
         if (req.file) {
             receipt_photo_url = `/uploads/${req.file.filename}`;
+        } else if (req.body.receipt_photo_url) {
+            receipt_photo_url = req.body.receipt_photo_url;
         } else if (req.body.receipt_image) {
             receipt_photo_url = req.body.receipt_image;
         }
+        
+        logger.debug('Receipt photo handling in collectPayment', {
+            hasFile: !!req.file,
+            receipt_photo_url_from_body: req.body.receipt_photo_url,
+            receipt_image_from_body: req.body.receipt_image,
+            final_receipt_photo_url: receipt_photo_url
+        });
 
         // Prepare payment data
         let cash_amount = 0;
@@ -305,10 +314,12 @@ exports.splitPayment = async (req, res, next) => {
             return res.status(400).json(errorResponse('INVALID_AMOUNT', `Payment amount (${totalAmount}) exceeds remaining amount (${paymentSummary.remaining_amount})`));
         }
 
-        // Handle receipt photo
+        // Handle receipt photo from file upload or base64/URL
         let receipt_photo_url = null;
         if (req.file) {
             receipt_photo_url = `/uploads/${req.file.filename}`;
+        } else if (req.body.receipt_photo_url) {
+            receipt_photo_url = req.body.receipt_photo_url;
         } else if (req.body.receipt_image) {
             receipt_photo_url = req.body.receipt_image;
         }

@@ -300,3 +300,4 @@ const OrderForm = () => {
 ✅ **Payment Mode**: Required when `paidAmount > 0`  
 ✅ **Remaining Balance**: Automatically calculated as `totalAmount - paidAmount`
 
+

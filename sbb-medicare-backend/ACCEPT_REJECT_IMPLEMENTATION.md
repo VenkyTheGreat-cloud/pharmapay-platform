@@ -154,3 +154,4 @@ ALTER TABLE orders ADD CONSTRAINT orders_status_check
 - Status history tracks all accept/reject actions with delivery boy names
 - Accepted orders follow the normal delivery flow (PICKED_UP → IN_TRANSIT → etc.)
 
+

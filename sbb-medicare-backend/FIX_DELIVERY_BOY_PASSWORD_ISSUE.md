@@ -147,3 +147,4 @@ POST /api/auth/register
 3. **Password not saved during registration:**
    - Solution: Check database, manually set password_hash
 
+
