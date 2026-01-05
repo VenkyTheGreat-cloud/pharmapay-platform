@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Package, User, Truck, MapPin, CreditCard, MessageSquare, Calendar, CheckCircle } from 'lucide-react';
+import { X, Package, User, Truck, MapPin, CreditCard, MessageSquare, Calendar, CheckCircle, Image } from 'lucide-react';
 import { ordersAPI } from '../services/api';
 
 export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
@@ -55,6 +55,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     updatedAt: apiOrder.updated_at || apiOrder.updatedAt,
                     deliveredAt: apiOrder.delivered_at || apiOrder.deliveredAt || apiOrder.delivered_time,
                     items: apiOrder.items || apiOrder.medicines || [],
+                    receiptPhotoUrl: apiOrder.receipt_photo_url || apiOrder.receiptPhotoUrl || apiOrder.payment?.receipt_photo_url || apiOrder.payment?.receiptPhotoUrl,
                 };
                 setOrder(normalizedOrder);
             } else {
@@ -305,6 +306,35 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                         <h3 className="font-semibold text-gray-900">Customer Comments</h3>
                                     </div>
                                     <p className="text-sm text-gray-700">{order.customerComments}</p>
+                                </div>
+                            )}
+
+                            {/* Receipt Photo - Show for delivered orders */}
+                            {order.status === 'DELIVERED' && order.receiptPhotoUrl && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Image className="w-5 h-5 text-gray-600" />
+                                        <h3 className="font-semibold text-gray-900">Receipt Photo</h3>
+                                    </div>
+                                    <div className="mt-2">
+                                        <img
+                                            src={order.receiptPhotoUrl}
+                                            alt="Receipt"
+                                            className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                            onClick={() => window.open(order.receiptPhotoUrl, '_blank')}
+                                            onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                const errorDiv = e.target.nextSibling;
+                                                if (errorDiv) errorDiv.style.display = 'block';
+                                            }}
+                                        />
+                                        <div className="hidden text-sm text-red-600 mt-2">
+                                            Failed to load receipt image
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Click on the image to view in full size
+                                        </p>
+                                    </div>
                                 </div>
                             )}
 
