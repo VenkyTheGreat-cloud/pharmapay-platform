@@ -235,3 +235,4 @@ Now delivery boy registration works exactly like admin registration:
 
 The delivery boy can register with both email and mobile, and login with either one!
 
+

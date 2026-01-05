@@ -553,3 +553,4 @@ export default PendingDeliveryBoys;
 4. **Store assignment** - Admin can optionally assign delivery boy to a store during approval
 5. **Login after approval** - Delivery boy can login using mobile/email and password
 
+
