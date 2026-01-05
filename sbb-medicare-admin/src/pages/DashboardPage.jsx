@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye } from 'lucide-react';
+import { Package, CheckCircle, Clock, IndianRupee, Eye, Image } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
@@ -68,6 +68,7 @@ export default function DashboardPage() {
                 createdTime: order.created_time || order.createdTime || order.created_at || order.order_date,
                 deliveredAt: order.delivered_at || order.deliveredAt || order.delivered_time,
                 items: order.items || order.medicines || [],
+                receiptPhotoUrl: order.receipt_photo_url || order.receiptPhotoUrl || order.payment?.receipt_photo_url || order.payment?.receiptPhotoUrl,
             }));
             
             console.log('Normalized Orders:', normalizedOrders); // Debug log
@@ -259,16 +260,24 @@ export default function DashboardPage() {
                                                     ₹{parseFloat(order.amount || 0).toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                                        order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
-                                                        order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
-                                                        order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
-                                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                                        'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                        {order.status || 'N/A'}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                            order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                            order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                                                            order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                            order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
+                                                            order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {order.status || 'N/A'}
+                                                        </span>
+                                                        {order.status === 'DELIVERED' && order.receiptPhotoUrl && (
+                                                            <Image 
+                                                                className="w-5 h-5 text-green-600" 
+                                                                title="Receipt available"
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {order.createdTime
