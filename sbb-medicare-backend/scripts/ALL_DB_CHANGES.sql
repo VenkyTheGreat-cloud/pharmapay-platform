@@ -41,7 +41,11 @@ ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_mode_check;
 ALTER TABLE payments ADD CONSTRAINT payments_payment_mode_check 
     CHECK (payment_mode IN ('CASH', 'CARD', 'UPI', 'BANK_TRANSFER', 'SPLIT'));
 
--- 5. Add index for payment queries (optimize payment summary calculations)
+-- 5. Increase receipt_photo_url column size to support base64 images
+ALTER TABLE payments 
+ALTER COLUMN receipt_photo_url TYPE TEXT;
+
+-- 6. Add index for payment queries (optimize payment summary calculations)
 CREATE INDEX IF NOT EXISTS idx_payments_order_id_created_at 
     ON payments(order_id, created_at DESC);
 
@@ -99,6 +103,17 @@ SELECT
 FROM information_schema.columns
 WHERE table_name = 'orders' 
 AND column_name = 'delivery_photo_url';
+
+-- Verify receipt_photo_url column (should be TEXT now)
+SELECT 
+    'Payments Table Columns' as check_type,
+    column_name, 
+    data_type, 
+    character_maximum_length,
+    is_nullable
+FROM information_schema.columns
+WHERE table_name = 'payments' 
+AND column_name = 'receipt_photo_url';
 
 -- Verify index
 SELECT 
