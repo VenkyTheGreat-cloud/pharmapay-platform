@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS payments (
     cash_amount DECIMAL(10,2) DEFAULT 0,
     bank_amount DECIMAL(10,2) DEFAULT 0,
     transaction_reference VARCHAR(255),
-    receipt_photo_url VARCHAR(500),
+    receipt_photo_url TEXT,
     status VARCHAR(50) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'CONFIRMED')),
     created_by BIGINT REFERENCES delivery_boys(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
