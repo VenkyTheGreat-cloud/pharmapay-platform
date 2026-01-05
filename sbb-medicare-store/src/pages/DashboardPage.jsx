@@ -605,6 +605,27 @@ export default function DashboardPage() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Receipt Photo */}
+                                    {(selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Receipt Photo</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <img
+                                                    src={selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl}
+                                                    alt="Receipt"
+                                                    className="w-full h-auto rounded-lg border border-gray-200 shadow-sm max-h-96 object-contain"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextSibling.style.display = 'block';
+                                                    }}
+                                                />
+                                                <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
+                                                    Failed to load receipt image
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
