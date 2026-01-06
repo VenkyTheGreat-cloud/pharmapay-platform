@@ -608,22 +608,59 @@ export default function DashboardPage() {
 
                                     {/* Receipt Photo - Only for DELIVERED orders */}
                                     {((selectedOrder.status === 'DELIVERED' || selectedOrder.status === 'delivered') && 
-                                      (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl)) && (
+                                      (() => {
+                                        // Check for receipt photos in payments array
+                                        const payments = selectedOrder.payments || [];
+                                        const receiptPhotos = payments
+                                            .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
+                                            .filter(url => url && url.trim() && url.trim() !== ',');
+                                        
+                                        // Also check direct order level receipt_photo_url (fallback)
+                                        if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
+                                            const directUrl = selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl;
+                                            if (directUrl && directUrl.trim() && directUrl.trim() !== ',') {
+                                                receiptPhotos.push(directUrl);
+                                            }
+                                        }
+                                        
+                                        return receiptPhotos.length > 0;
+                                      })()) && (
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Receipt Photo</h3>
-                                            <div className="bg-gray-50 p-4 rounded-lg flex justify-center">
-                                                <img
-                                                    src={selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl}
-                                                    alt="Receipt"
-                                                    className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'block';
-                                                    }}
-                                                />
-                                                <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
-                                                    Failed to load receipt image
-                                                </p>
+                                            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                                                {(() => {
+                                                    // Get all valid receipt photos from payments array
+                                                    const payments = selectedOrder.payments || [];
+                                                    const receiptPhotos = payments
+                                                        .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
+                                                        .filter(url => url && url.trim() && url.trim() !== ',');
+                                                    
+                                                    // Also check direct order level receipt_photo_url (fallback)
+                                                    if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
+                                                        const directUrl = selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl;
+                                                        if (directUrl && directUrl.trim() && directUrl.trim() !== ',') {
+                                                            receiptPhotos.push(directUrl);
+                                                        }
+                                                    }
+                                                    
+                                                    return receiptPhotos.map((photoUrl, index) => (
+                                                        <div key={index} className="flex justify-center">
+                                                            <img
+                                                                src={photoUrl}
+                                                                alt={`Receipt ${index + 1}`}
+                                                                className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    const errorMsg = e.target.nextElementSibling;
+                                                                    if (errorMsg) errorMsg.style.display = 'block';
+                                                                }}
+                                                            />
+                                                            <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
+                                                                Failed to load receipt image
+                                                            </p>
+                                                        </div>
+                                                    ));
+                                                })()}
                                             </div>
                                         </div>
                                     )}
