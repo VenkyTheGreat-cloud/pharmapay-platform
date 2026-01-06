@@ -28,23 +28,53 @@ const formatImageUrl = (url) => {
         return trimmed;
     }
     
-    // If it starts with /, treat it as a relative path
-    if (trimmed.startsWith('/')) {
-        return trimmed;
-    }
+    // Check if it's a valid base64 string (BEFORE checking for relative paths)
+    // Base64 strings can start with / (like /9j/ for JPEG), so we need to check this first
+    // Base64 strings are typically long (at least 50+ characters for images)
+    // and contain only base64 characters: A-Z, a-z, 0-9, +, /, =
     
-    // If it's a long string without data:, http://, https://, or / prefix,
-    // assume it's base64 and format it as data URI
-    // Base64 strings are typically long (at least 100+ characters for images)
-    if (trimmed.length > 50 && !trimmed.includes(' ') && !trimmed.includes('\n')) {
-        // Check if it looks like base64 (alphanumeric, +, /, = characters)
-        const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-        if (base64Pattern.test(trimmed)) {
-            return `data:image/jpeg;base64,${trimmed}`;
+    // First, check for common base64 image prefixes (even if string starts with /)
+    const hasBase64ImagePrefix = /^(\/9j\/|iVBORw0KGgo|R0lGODlh|UklGR)/.test(trimmed);
+    
+    // Check if it's a valid base64 string
+    if (trimmed.length > 50 && !trimmed.includes(' ') && !trimmed.includes('\n') && !trimmed.includes('\r')) {
+        // More strict base64 pattern - must contain base64 characters and end with = or have proper padding
+        const base64Pattern = /^[A-Za-z0-9+/]+=*$/;
+        // Additional check: base64 strings for images are usually much longer and don't contain common URL characters
+        const hasUrlCharacters = /[?&#]/.test(trimmed);
+        
+        if (base64Pattern.test(trimmed) && !hasUrlCharacters) {
+            // If it has a base64 image prefix or is a long valid base64 string, treat it as base64
+            if (hasBase64ImagePrefix || trimmed.length > 100) {
+                return `data:image/jpeg;base64,${trimmed}`;
+            }
         }
     }
     
-    // Return as-is if none of the above conditions match
+    // For shorter strings that might be base64, check if they're valid base64
+    // This catches base64 strings that start with /9j/ or similar patterns
+    if (trimmed.length >= 20) {
+        const base64Pattern = /^[A-Za-z0-9+/]+=*$/;
+        
+        if (base64Pattern.test(trimmed) && !trimmed.includes(' ') && !trimmed.includes('.')) {
+            // If it has a base64 image prefix, definitely treat as base64
+            if (hasBase64ImagePrefix) {
+                return `data:image/jpeg;base64,${trimmed}`;
+            }
+            // If it's a medium-length valid base64 string without URL characters, treat as base64
+            if (trimmed.length > 50 && !/[?&#]/.test(trimmed)) {
+                return `data:image/jpeg;base64,${trimmed}`;
+            }
+        }
+    }
+    
+    // If it starts with / and is NOT a base64 string, treat it as a relative path
+    // But only if it's short or contains URL-like characters (not a base64 pattern)
+    if (trimmed.startsWith('/') && !hasBase64ImagePrefix && (trimmed.length < 50 || /[?&#]/.test(trimmed))) {
+        return trimmed;
+    }
+    
+    // Return as-is if none of the above conditions match (might be a relative path)
     return trimmed;
 };
 
@@ -60,9 +90,14 @@ const extractReceiptPhotos = (apiOrder) => {
     if (apiOrder.payments && Array.isArray(apiOrder.payments)) {
         apiOrder.payments.forEach((payment) => {
             const receiptUrl = payment.receipt_photo_url || payment.receiptPhotoUrl;
-            const formatted = formatImageUrl(receiptUrl);
-            if (formatted) {
-                receiptPhotos.push(formatted);
+            if (receiptUrl) {
+                const formatted = formatImageUrl(receiptUrl);
+                if (formatted) {
+                    console.log('Formatted receipt photo URL:', formatted.substring(0, 100) + '...');
+                    receiptPhotos.push(formatted);
+                } else {
+                    console.warn('Invalid receipt photo URL:', receiptUrl?.substring(0, 50));
+                }
             }
         });
     }
@@ -71,9 +106,14 @@ const extractReceiptPhotos = (apiOrder) => {
     if (receiptPhotos.length === 0) {
         const orderReceiptUrl = apiOrder.receipt_photo_url || apiOrder.receiptPhotoUrl || 
                                apiOrder.payment?.receipt_photo_url || apiOrder.payment?.receiptPhotoUrl;
-        const formatted = formatImageUrl(orderReceiptUrl);
-        if (formatted) {
-            receiptPhotos.push(formatted);
+        if (orderReceiptUrl) {
+            const formatted = formatImageUrl(orderReceiptUrl);
+            if (formatted) {
+                console.log('Formatted order-level receipt photo URL:', formatted.substring(0, 100) + '...');
+                receiptPhotos.push(formatted);
+            } else {
+                console.warn('Invalid order-level receipt photo URL:', orderReceiptUrl?.substring(0, 50));
+            }
         }
     }
     
