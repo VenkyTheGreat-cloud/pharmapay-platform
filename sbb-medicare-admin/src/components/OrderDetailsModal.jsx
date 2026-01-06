@@ -566,45 +566,6 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Timestamps */}
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Calendar className="w-4 h-4 text-gray-600" />
-                                            <span className="text-gray-600">Created:</span>
-                                        </div>
-                                        <p className="font-medium text-gray-900">
-                                            {order.createdTime
-                                                ? new Date(order.createdTime).toLocaleString()
-                                                : 'N/A'}
-                                        </p>
-                                    </div>
-                                    {order.updatedAt && (
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Calendar className="w-4 h-4 text-gray-600" />
-                                                <span className="text-gray-600">Updated:</span>
-                                            </div>
-                                            <p className="font-medium text-gray-900">
-                                                {new Date(order.updatedAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-                                    {order.deliveredAt && (
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                                <span className="text-gray-600">Delivered:</span>
-                                            </div>
-                                            <p className="font-medium text-gray-900">
-                                                {new Date(order.deliveredAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
                         </div>
                     ) : null}
                 </div>
