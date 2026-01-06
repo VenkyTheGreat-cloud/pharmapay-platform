@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
 import { Eye } from 'lucide-react';
+import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
@@ -10,8 +11,8 @@ export default function OrdersPage() {
         page: 1,
         limit: 20,
     });
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [showModal, setShowModal] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
+    const [showOrderDetails, setShowOrderDetails] = useState(false);
 
     useEffect(() => {
         loadOrders();
@@ -53,15 +54,9 @@ export default function OrdersPage() {
         }
     };
 
-    const viewOrderDetails = async (orderId) => {
-        try {
-            const response = await ordersAPI.getById(orderId);
-            const apiOrder = response.data?.data;
-            setSelectedOrder(normalizeOrder(apiOrder));
-            setShowModal(true);
-        } catch (error) {
-            console.error('Error loading order details:', error);
-        }
+    const handleViewOrderDetails = (orderId) => {
+        setSelectedOrderId(orderId);
+        setShowOrderDetails(true);
     };
 
     const getStatusColor = (status) => {
@@ -178,7 +173,7 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <button
-                                                onClick={() => viewOrderDetails(order.id)}
+                                                onClick={() => handleViewOrderDetails(order.id)}
                                                 className="text-blue-600 hover:text-blue-900"
                                                 title="View Details"
                                             >
@@ -194,75 +189,14 @@ export default function OrdersPage() {
             )}
 
             {/* Order Details Modal */}
-            {showModal && selectedOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex justify-between items-start mb-6">
-                                <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-                                <button
-                                    onClick={() => setShowModal(false)}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Order Number</h3>
-                                    <p className="text-gray-900">{selectedOrder.orderNumber}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Customer</h3>
-                                    <p className="text-gray-900">{selectedOrder.customerName}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.customerMobile}</p>
-                                    <p className="text-sm text-gray-600">{selectedOrder.address}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Items</h3>
-                                    <pre className="text-sm bg-gray-50 p-3 rounded">
-                                        {JSON.stringify(selectedOrder.items, null, 2)}
-                                    </pre>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Total Amount</h3>
-                                    <p className="text-xl font-bold text-gray-900">₹{selectedOrder.amount}</p>
-                                </div>
-
-                                <div>
-                                    <h3 className="font-semibold text-gray-700">Status</h3>
-                                    <span
-                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                                            selectedOrder.status
-                                        )}`}
-                                    >
-                                        {selectedOrder.status}
-                                    </span>
-                                </div>
-
-                                {selectedOrder.deliveryBoyName && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Delivery Boy</h3>
-                                        <p className="text-gray-900">{selectedOrder.deliveryBoyName}</p>
-                                        <p className="text-sm text-gray-600">{selectedOrder.deliveryBoyMobile}</p>
-                                    </div>
-                                )}
-
-                                {selectedOrder.customerComments && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-700">Customer Comments</h3>
-                                        <p className="text-gray-900">{selectedOrder.customerComments}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <OrderDetailsModal
+                isOpen={showOrderDetails}
+                onClose={() => {
+                    setShowOrderDetails(false);
+                    setSelectedOrderId(null);
+                }}
+                orderId={selectedOrderId}
+            />
         </div>
     );
 }
