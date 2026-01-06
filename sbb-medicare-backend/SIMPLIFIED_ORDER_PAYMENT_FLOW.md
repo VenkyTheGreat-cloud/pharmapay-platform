@@ -201,6 +201,11 @@ This document describes the updated order creation and payment collection flow t
       "payment_status": "PARTIAL",
       "is_fully_paid": false
     },
+    "initial_payment": {
+      "amount": 300.00,
+      "modes": ["CASH"],
+      "has_initial_payment": true
+    },
     "payments": [
       {
         "id": 5,

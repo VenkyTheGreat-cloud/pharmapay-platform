@@ -418,8 +418,8 @@ class Order {
 
             const order = orderResult.rows[0];
 
-            // Only ASSIGNED orders can be rejected
-            if (order.status !== 'ASSIGNED') {
+            // ASSIGNED or ACCEPTED orders can be rejected
+            if (order.status !== 'ASSIGNED' && order.status !== 'ACCEPTED') {
                 throw new Error('INVALID_STATUS_TRANSITION');
             }
 
@@ -472,7 +472,7 @@ class Order {
             // Validate status transition
             const validTransitions = {
                 'ASSIGNED': ['ACCEPTED', 'REJECTED', 'CANCELLED'], // Can accept, reject, or cancel
-                'ACCEPTED': ['PICKED_UP', 'CANCELLED'], // Once accepted, can pick up or cancel
+                'ACCEPTED': ['PICKED_UP', 'REJECTED', 'CANCELLED'], // Once accepted, can pick up, reject, or cancel
                 'REJECTED': ['ASSIGNED'], // Rejected orders can be reassigned
                 'PICKED_UP': ['IN_TRANSIT', 'CANCELLED'],
                 'IN_TRANSIT': ['PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'],

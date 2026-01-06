@@ -148,3 +148,4 @@ POST /api/auth/register
    - Solution: Check database, manually set password_hash
 
 
+

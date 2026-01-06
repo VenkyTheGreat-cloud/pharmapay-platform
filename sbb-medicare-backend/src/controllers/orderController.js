@@ -221,6 +221,17 @@ exports.getOrderById = async (req, res, next) => {
         const paymentSummary = await Payment.getPaymentSummary(order.id);
         const payments = await Payment.findByOrderId(order.id);
 
+        // Calculate initial (pre) payment made at order creation.
+        // By design, payments created during order creation have created_by = NULL
+        // (store-level payments), while delivery boy collections have created_by = delivery_boys.id.
+        const initialPayments = payments.filter(p => !p.created_by);
+        const initialPaidAmount = initialPayments.reduce((sum, p) => {
+            const cash = parseFloat(p.cash_amount || 0);
+            const bank = parseFloat(p.bank_amount || 0);
+            return sum + cash + bank;
+        }, 0);
+        const initialPaymentModes = [...new Set(initialPayments.map(p => p.payment_mode))];
+
         res.json(successResponse({
             ...order,
             items: items.map(item => ({
@@ -231,7 +242,12 @@ exports.getOrderById = async (req, res, next) => {
                 total: parseFloat(item.total)
             })),
             payment_summary: paymentSummary,
-            payments: payments
+            payments: payments,
+            initial_payment: {
+                amount: initialPaidAmount,
+                modes: initialPaymentModes,
+                has_initial_payment: initialPaidAmount > 0
+            }
         }));
     } catch (error) {
         next(error);
@@ -562,8 +578,8 @@ exports.rejectOrder = async (req, res, next) => {
         }
 
         // Check current order status before rejecting
-        if (order.status !== 'ASSIGNED') {
-            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', `Cannot reject order. Current status is: ${order.status}. Only orders with status ASSIGNED can be rejected.`));
+        if (order.status !== 'ASSIGNED' && order.status !== 'ACCEPTED') {
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', `Cannot reject order. Current status is: ${order.status}. Only orders with status ASSIGNED or ACCEPTED can be rejected.`));
         }
 
         // Reject order
