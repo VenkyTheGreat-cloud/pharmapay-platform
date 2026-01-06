@@ -316,24 +316,26 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                         <Image className="w-5 h-5 text-gray-600" />
                                         <h3 className="font-semibold text-gray-900">Receipt Photo</h3>
                                     </div>
-                                    <div className="mt-2">
-                                        <img
-                                            src={order.receiptPhotoUrl}
-                                            alt="Receipt"
-                                            className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                            onClick={() => window.open(order.receiptPhotoUrl, '_blank')}
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                const errorDiv = e.target.nextSibling;
-                                                if (errorDiv) errorDiv.style.display = 'block';
-                                            }}
-                                        />
-                                        <div className="hidden text-sm text-red-600 mt-2">
-                                            Failed to load receipt image
+                                    <div className="mt-2 flex justify-center">
+                                        <div className="max-w-md">
+                                            <img
+                                                src={order.receiptPhotoUrl}
+                                                alt="Receipt"
+                                                className="w-full max-w-md h-auto rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                                                onClick={() => window.open(order.receiptPhotoUrl, '_blank')}
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    const errorDiv = e.target.nextSibling;
+                                                    if (errorDiv) errorDiv.style.display = 'block';
+                                                }}
+                                            />
+                                            <div className="hidden text-sm text-red-600 mt-2 text-center">
+                                                Failed to load receipt image
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2 text-center">
+                                                Click on the image to view in full size
+                                            </p>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-2">
-                                            Click on the image to view in full size
-                                        </p>
                                     </div>
                                 </div>
                             )}

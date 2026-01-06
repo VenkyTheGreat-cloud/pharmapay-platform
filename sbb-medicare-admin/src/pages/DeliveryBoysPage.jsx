@@ -223,17 +223,17 @@ export default function DeliveryBoysPage() {
                                         {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(boy);
-                                                    setShowEditModal(true);
-                                                }}
-                                                className="text-blue-600 hover:text-blue-900"
-                                                title="Edit"
-                                            >
-                                                <Edit className="w-5 h-5" />
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedUser(boy);
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    className="text-blue-600 hover:text-blue-900"
+                                                    title="Edit"
+                                                >
+                                                    <Edit className="w-5 h-5" />
+                                                </button>
                                             {boy.isActive ? (
                                                 <button
                                                     onClick={() => handleToggleActive(boy.id, false)}
@@ -242,7 +242,7 @@ export default function DeliveryBoysPage() {
                                                 >
                                                     <UserX className="w-5 h-5" />
                                                 </button>
-                                            ) : (
+                                        ) : (
                                                 <button
                                                     onClick={() => handleToggleActive(boy.id, true)}
                                                     className="text-green-600 hover:text-green-900"
@@ -251,14 +251,14 @@ export default function DeliveryBoysPage() {
                                                     <UserCheck className="w-5 h-5" />
                                                 </button>
                                             )}
-                                            <button
-                                                onClick={() => handleDelete(boy.id)}
-                                                className="text-red-600 hover:text-red-900"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        </div>
+                                                <button
+                                                    onClick={() => handleDelete(boy.id)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                     </td>
                                 </tr>
                             ))
