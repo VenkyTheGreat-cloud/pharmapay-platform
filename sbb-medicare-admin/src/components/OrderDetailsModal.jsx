@@ -265,43 +265,19 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                 </div>
                                 <div className="space-y-3">
                                     {/* Current Status */}
-                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <div className="flex items-center gap-3">
-                                            <span
-                                                className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
-                                                    order.status
-                                                )}`}
-                                            >
-                                                {order.status || 'N/A'}
-                                            </span>
-                                            <span className="text-sm text-gray-600">Current Status</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {order.updatedAt
-                                                    ? new Date(order.updatedAt).toLocaleString()
-                                                    : order.createdTime
-                                                    ? new Date(order.createdTime).toLocaleString()
-                                                    : 'N/A'}
-                                            </p>
-                                            <p className="text-xs text-gray-500">Last Updated</p>
-                                        </div>
+                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                        <span className="text-sm text-gray-600">Current Status:</span>
+                                        <span
+                                            className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
+                                                order.status
+                                            )}`}
+                                        >
+                                            {order.status || 'N/A'}
+                                        </span>
                                     </div>
 
                                     {/* Status Timeline */}
                                     <div className="space-y-2 pl-4 border-l-2 border-gray-200">
-                                        {/* Created */}
-                                        {order.createdTime && (
-                                            <div className="flex items-center justify-between py-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                                    <span className="text-sm text-gray-700">Order Created</span>
-                                                </div>
-                                                <span className="text-sm text-gray-600">
-                                                    {new Date(order.createdTime).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        )}
 
                                         {/* Assigned */}
                                         {order.assignedAt && (
@@ -566,45 +542,6 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Timestamps */}
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Calendar className="w-4 h-4 text-gray-600" />
-                                            <span className="text-gray-600">Created:</span>
-                                        </div>
-                                        <p className="font-medium text-gray-900">
-                                            {order.createdTime
-                                                ? new Date(order.createdTime).toLocaleString()
-                                                : 'N/A'}
-                                        </p>
-                                    </div>
-                                    {order.updatedAt && (
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Calendar className="w-4 h-4 text-gray-600" />
-                                                <span className="text-gray-600">Updated:</span>
-                                            </div>
-                                            <p className="font-medium text-gray-900">
-                                                {new Date(order.updatedAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-                                    {order.deliveredAt && (
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                                <span className="text-gray-600">Delivered:</span>
-                                            </div>
-                                            <p className="font-medium text-gray-900">
-                                                {new Date(order.deliveredAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
                         </div>
                     ) : null}
                 </div>
