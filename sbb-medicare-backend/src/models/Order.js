@@ -469,14 +469,15 @@ class Order {
             }
             const order = orderResult.rows[0];
 
-            // Validate status transition
+            // Validate status transition (allows both forward and backward transitions)
             const validTransitions = {
                 'ASSIGNED': ['ACCEPTED', 'REJECTED', 'CANCELLED'], // Can accept, reject, or cancel
-                'ACCEPTED': ['PICKED_UP', 'REJECTED', 'CANCELLED'], // Once accepted, can pick up, reject, or cancel
+                'ACCEPTED': ['ASSIGNED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can go back to ASSIGNED, forward to PICKED_UP, reject, or cancel
                 'REJECTED': ['ASSIGNED'], // Rejected orders can be reassigned
-                'PICKED_UP': ['IN_TRANSIT', 'CANCELLED'],
-                'IN_TRANSIT': ['PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'],
-                'PAYMENT_COLLECTION': ['DELIVERED', 'CANCELLED']
+                'PICKED_UP': ['ACCEPTED', 'IN_TRANSIT', 'CANCELLED'], // Can go back to ACCEPTED, forward to IN_TRANSIT, or cancel
+                'IN_TRANSIT': ['PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'], // Can go back to PICKED_UP, forward to PAYMENT_COLLECTION/DELIVERED, or cancel
+                'PAYMENT_COLLECTION': ['IN_TRANSIT', 'DELIVERED', 'CANCELLED'], // Can go back to IN_TRANSIT, forward to DELIVERED, or cancel
+                'DELIVERED': ['PAYMENT_COLLECTION', 'CANCELLED'] // Can go back to PAYMENT_COLLECTION or cancel
             };
 
             if (!validTransitions[order.status] || !validTransitions[order.status].includes(status)) {
