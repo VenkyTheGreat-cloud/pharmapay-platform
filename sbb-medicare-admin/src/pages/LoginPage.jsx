@@ -86,10 +86,6 @@ export default function LoginPage() {
                             {loading ? 'Logging in...' : 'Login'}
                         </button>
                     </form>
-
-                    <div className="mt-6 text-center text-sm text-gray-500">
-                        <p>Use your SBB Medicare admin or store manager credentials.</p>
-                    </div>
                 </div>
             </div>
         </div>
