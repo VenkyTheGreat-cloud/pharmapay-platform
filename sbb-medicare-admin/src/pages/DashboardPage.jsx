@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye, Image } from 'lucide-react';
+import { Package, CheckCircle, Clock, IndianRupee, Eye } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
@@ -68,7 +68,6 @@ export default function DashboardPage() {
                 createdTime: order.created_time || order.createdTime || order.created_at || order.order_date,
                 deliveredAt: order.delivered_at || order.deliveredAt || order.delivered_time,
                 items: order.items || order.medicines || [],
-                receiptPhotoUrl: order.receipt_photo_url || order.receiptPhotoUrl || order.payment?.receipt_photo_url || order.payment?.receiptPhotoUrl,
             }));
             
             console.log('Normalized Orders:', normalizedOrders); // Debug log
@@ -133,29 +132,29 @@ export default function DashboardPage() {
         <div className="p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
                     <p className="text-gray-600 mt-1">Orders overview, filters, and details</p>
-                </div>
+            </div>
 
                 {/* Date filter for full orders table */}
                 <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
-                    <div>
+                <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-                        <input
-                            type="date"
+                    <input
+                        type="date"
                             value={filters.fromDate}
                             onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
                             className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
-                    </div>
-                    <div>
+                    />
+                </div>
+                <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                        <input
-                            type="date"
+                    <input
+                        type="date"
                             value={filters.toDate}
                             onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
                             className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
+                    />
                     </div>
                 </div>
             </div>
@@ -208,7 +207,7 @@ export default function DashboardPage() {
                             <p className="text-xs text-gray-500">
                                 Showing {filteredOrders.length} of {allOrders.length} orders
                             </p>
-                        </div>
+                            </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -260,24 +259,16 @@ export default function DashboardPage() {
                                                     ₹{parseFloat(order.amount || 0).toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                            order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                                            order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
-                                                            order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
-                                                            order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
-                                                            order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                                            'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {order.status || 'N/A'}
-                                                        </span>
-                                                        {order.status === 'DELIVERED' && order.receiptPhotoUrl && (
-                                                            <Image 
-                                                                className="w-5 h-5 text-green-600" 
-                                                                title="Receipt available"
-                                                            />
-                                                        )}
-                                                    </div>
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                        order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
+                                                        order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
+                                                        order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
+                                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {order.status || 'N/A'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {order.createdTime
@@ -299,10 +290,10 @@ export default function DashboardPage() {
                                     )}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
-                    </div>
                 </>
-            )}
+                    )}
 
             {/* Order Details Modal */}
             <OrderDetailsModal
