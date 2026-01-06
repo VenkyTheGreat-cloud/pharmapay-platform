@@ -682,14 +682,12 @@ export default function DashboardPage() {
                                                                         if (errorMsg) errorMsg.style.display = 'block';
                                                                     }}
                                                                 />
+                                                                <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
+                                                                    Failed to load receipt image
+                                                                </p>
                                                             </div>
                                                         );
                                                     }).filter(Boolean);
-                                                            <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
-                                                                Failed to load receipt image
-                                                            </p>
-                                                        </div>
-                                                    ));
                                                 })()}
                                             </div>
                                         </div>
