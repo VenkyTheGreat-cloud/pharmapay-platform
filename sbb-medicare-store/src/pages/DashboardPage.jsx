@@ -416,7 +416,8 @@ export default function DashboardPage() {
                                     {/* Payment Information */}
                                     <div>
                                         <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
-                                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                                            {/* Payment Summary */}
                                             {selectedOrder.payment_summary ? (
                                                 <>
                                                     <div className="flex justify-between items-center border-b pb-2">
@@ -426,7 +427,7 @@ export default function DashboardPage() {
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center border-b pb-2">
-                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-sm font-medium text-gray-700">Total Paid</span>
                                                         <span className="text-lg font-semibold text-gray-900">
                                                             ₹{(Number(selectedOrder.payment_summary.total_paid) || 0).toFixed(2)}
                                                         </span>
@@ -440,7 +441,7 @@ export default function DashboardPage() {
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Payment Status</span>
                                                         <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
-                                                            selectedOrder.payment_summary.payment_status === 'FULL' || selectedOrder.payment_summary.is_fully_paid
+                                                            selectedOrder.payment_summary.payment_status === 'FULL' || selectedOrder.payment_summary.is_fully_paid || selectedOrder.payment_summary.payment_status === 'PAID'
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : selectedOrder.payment_summary.payment_status === 'PARTIAL'
                                                                 ? 'bg-yellow-100 text-yellow-800'
@@ -486,24 +487,81 @@ export default function DashboardPage() {
                                                     )}
                                                 </>
                                             )}
-                                            {(selectedOrder.paymentMode || selectedOrder.payment_mode) && (
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium text-gray-700">Payment Mode</span>
-                                                    <span className="text-base font-semibold text-blue-600">
-                                                        {selectedOrder.paymentMode || selectedOrder.payment_mode}
-                                                    </span>
-                                    </div>
+
+                                            {/* Individual Payment Methods */}
+                                            {selectedOrder.payments && Array.isArray(selectedOrder.payments) && selectedOrder.payments.length > 0 && (
+                                                <div className="pt-3 border-t">
+                                                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Payment Methods</h4>
+                                                    <div className="space-y-3">
+                                                        {selectedOrder.payments.map((payment, index) => {
+                                                            const cashAmount = Number(payment.cash_amount || payment.cashAmount || 0);
+                                                            const bankAmount = Number(payment.bank_amount || payment.bankAmount || 0);
+                                                            const totalAmount = cashAmount + bankAmount;
+                                                            const paymentMode = payment.payment_mode || payment.paymentMode || 'N/A';
+                                                            const transactionRef = payment.transaction_reference || payment.transactionReference;
+                                                            const paymentStatus = payment.status || 'PENDING';
+                                                            const createdAt = payment.created_at || payment.createdAt;
+                                                            const createdByName = payment.created_by_name || payment.createdByName;
+
+                                                            return (
+                                                                <div key={payment.id || index} className="bg-white p-3 rounded-lg border border-gray-200">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div>
+                                                                            <span className="text-sm font-semibold text-gray-900">
+                                                                                {paymentMode.replace(/_/g, ' ')}
+                                                                            </span>
+                                                                            <span className={`ml-2 text-xs font-semibold rounded-full px-2 py-0.5 ${
+                                                                                paymentStatus === 'CONFIRMED'
+                                                                                    ? 'bg-green-100 text-green-800'
+                                                                                    : paymentStatus === 'PENDING'
+                                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                                    : 'bg-red-100 text-red-800'
+                                                                            }`}>
+                                                                                {paymentStatus}
+                                                                            </span>
+                                                                        </div>
+                                                                        <span className="text-base font-bold text-gray-900">
+                                                                            ₹{totalAmount.toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {cashAmount > 0 && bankAmount > 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Cash: ₹{cashAmount.toFixed(2)} + Bank: ₹{bankAmount.toFixed(2)}
+                                                                        </div>
+                                                                    )}
+                                                                    {cashAmount > 0 && bankAmount === 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Cash Payment
+                                                                        </div>
+                                                                    )}
+                                                                    {bankAmount > 0 && cashAmount === 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Bank/UPI Payment
+                                                                        </div>
+                                                                    )}
+                                                                    {transactionRef && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            <span className="font-medium">Txn Ref:</span> <span className="font-mono">{transactionRef}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {createdAt && (
+                                                                        <div className="text-xs text-gray-500">
+                                                                            {new Date(createdAt).toLocaleString()}
+                                                                        </div>
+                                                                    )}
+                                                                    {createdByName && (
+                                                                        <div className="text-xs text-gray-500 mt-1">
+                                                                            Collected by: {createdByName}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             )}
-                                            {(selectedOrder.transactionReference || selectedOrder.transaction_reference) && (
-                                                <div className="pt-2 border-t">
-                                                    <p className="text-sm text-gray-500 mb-1">Transaction Reference</p>
-                                                    <p className="text-base text-gray-900 font-mono">
-                                                        {selectedOrder.transactionReference || selectedOrder.transaction_reference}
-                                                    </p>
+                                        </div>
                                     </div>
-                                            )}
-                                    </div>
-                                </div>
                             </div>
 
                                 {/* Right Column - Status Timeline */}
