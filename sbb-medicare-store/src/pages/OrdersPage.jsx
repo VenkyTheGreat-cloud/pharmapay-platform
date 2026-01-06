@@ -735,6 +735,7 @@ export default function OrdersPage() {
                                                                 src={photoUrl}
                                                                 alt={`Receipt ${index + 1}`}
                                                                 className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
+                                                                // Using receipt_photo_url value as-is from API, no base URL prefix added
                                                                 onError={(e) => {
                                                                     e.target.style.display = 'none';
                                                                     const errorMsg = e.target.nextElementSibling;
