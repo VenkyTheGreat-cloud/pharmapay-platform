@@ -27,24 +27,15 @@ const formatImageUrl = (url) => {
         return trimmedUrl;
     }
     
-    // For anything else that's reasonably long (likely base64), treat as base64
-    // Base64 strings are typically long and contain only base64 characters (A-Z, a-z, 0-9, +, /, =)
-    // Note: forward slash (/) is a valid base64 character, so we check the pattern first
-    const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-    if (trimmedUrl.length > 20 && base64Pattern.test(trimmedUrl)) {
+    // For anything else that's reasonably long, treat as base64
+    // This is the safest approach - if it's not a recognized URL format and is long, it's likely base64
+    if (trimmedUrl.length > 20) {
         // Format as base64 data URI (assume JPEG)
+        // This will work for base64 strings like "9j/4AAQSkZJRgABAQAAA..."
         return `data:image/jpeg;base64,${trimmedUrl}`;
     }
     
-    // If it's a long string that doesn't look like a file path, treat as base64
-    // File paths typically start with ./ or have backslashes (Windows paths)
-    const looksLikeFilePath = trimmedUrl.startsWith('./') || /\\/.test(trimmedUrl);
-    if (trimmedUrl.length > 20 && !looksLikeFilePath) {
-        // Likely base64, format as data URI
-        return `data:image/jpeg;base64,${trimmedUrl}`;
-    }
-    
-    // For short strings or things that look like file paths, return as-is
+    // For short strings, return as-is (might be a filename or short identifier)
     return trimmedUrl;
 };
 
@@ -775,7 +766,14 @@ export default function OrdersPage() {
                                                     }
                                                     
                                                     return receiptPhotos.map((photoUrl, index) => {
-                                                        const formattedUrl = formatImageUrl(photoUrl);
+                                                        // Ensure we format the URL - treat any non-URL string longer than 20 chars as base64
+                                                        let formattedUrl = formatImageUrl(photoUrl);
+                                                        
+                                                        // Double-check: if it's still not a data URI or full URL, and it's long, format as base64
+                                                        if (formattedUrl && !formattedUrl.startsWith('data:') && !formattedUrl.startsWith('http') && formattedUrl.length > 20) {
+                                                            formattedUrl = `data:image/jpeg;base64,${formattedUrl}`;
+                                                        }
+                                                        
                                                         if (!formattedUrl) return null;
                                                         
                                                         return (
