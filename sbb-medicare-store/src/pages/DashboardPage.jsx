@@ -4,24 +4,46 @@ import { Package, DollarSign, CheckCircle, Truck, Calendar, IndianRupee, Eye } f
 
 // Helper function to format image URL - handles base64 data and regular URLs
 const formatImageUrl = (url) => {
-    if (!url || !url.trim() || url.trim() === ',') return null;
+    if (!url || typeof url !== 'string') return null;
     
     const trimmedUrl = url.trim();
     
-    // If it's already a data URI or full URL, use as-is
-    if (trimmedUrl.startsWith('data:') || trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    // Return null for empty or invalid URLs
+    if (!trimmedUrl || trimmedUrl === ',' || trimmedUrl.length === 0) return null;
+    
+    // If it's already a data URI, use as-is
+    if (trimmedUrl.startsWith('data:')) {
         return trimmedUrl;
     }
     
-    // If it looks like base64 data (doesn't start with http/https/data and contains base64 characters)
-    // Check if it's base64 by looking for base64-encoded JPEG pattern or general base64 characters
+    // If it's a full URL (http/https), use as-is
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+        return trimmedUrl;
+    }
+    
+    // If it starts with a forward slash, it's a relative path - use as-is
+    if (trimmedUrl.startsWith('/')) {
+        return trimmedUrl;
+    }
+    
+    // For anything else that's reasonably long (likely base64), treat as base64
+    // Base64 strings are typically long and contain only base64 characters (A-Z, a-z, 0-9, +, /, =)
+    // Note: forward slash (/) is a valid base64 character, so we check the pattern first
     const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-    if (base64Pattern.test(trimmedUrl) && trimmedUrl.length > 50) {
-        // Assume JPEG format for base64 images
+    if (trimmedUrl.length > 20 && base64Pattern.test(trimmedUrl)) {
+        // Format as base64 data URI (assume JPEG)
         return `data:image/jpeg;base64,${trimmedUrl}`;
     }
     
-    // Otherwise, return as-is (might be a relative path or other format)
+    // If it's a long string that doesn't look like a file path, treat as base64
+    // File paths typically start with ./ or have backslashes (Windows paths)
+    const looksLikeFilePath = trimmedUrl.startsWith('./') || /\\/.test(trimmedUrl);
+    if (trimmedUrl.length > 20 && !looksLikeFilePath) {
+        // Likely base64, format as data URI
+        return `data:image/jpeg;base64,${trimmedUrl}`;
+    }
+    
+    // For short strings or things that look like file paths, return as-is
     return trimmedUrl;
 };
 
