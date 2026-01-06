@@ -50,6 +50,77 @@ const formatImageUrl = (url) => {
 };
 
 /**
+ * Extract all payments from order data
+ * @param {object} apiOrder - The order object from API
+ * @returns {array} - Array of payment objects with mode, amount, and status
+ */
+const extractPayments = (apiOrder) => {
+    const payments = [];
+    
+    // Extract from payments array
+    if (apiOrder.payments && Array.isArray(apiOrder.payments)) {
+        apiOrder.payments.forEach((payment) => {
+            const paymentMode = payment.payment_mode || payment.paymentMode || payment.mode;
+            const cashAmount = parseFloat(payment.cash_amount || payment.cashAmount || 0);
+            const bankAmount = parseFloat(payment.bank_amount || payment.bankAmount || 0);
+            const totalAmount = parseFloat(payment.amount || payment.total_amount || 0);
+            const paymentStatus = payment.payment_status || payment.paymentStatus || payment.status;
+            const createdAt = payment.created_at || payment.createdAt || payment.created_time;
+            
+            // Handle split payments (SPLIT mode with both cash and bank amounts)
+            if (paymentMode === 'SPLIT' && (cashAmount > 0 || bankAmount > 0)) {
+                if (cashAmount > 0) {
+                    payments.push({
+                        mode: 'CASH',
+                        amount: cashAmount,
+                        status: paymentStatus,
+                        createdAt: createdAt,
+                    });
+                }
+                if (bankAmount > 0) {
+                    // Determine bank payment mode (UPI, BANK, ONLINE, etc.)
+                    const bankMode = payment.bank_payment_mode || 
+                                    payment.bankPaymentMode || 
+                                    payment.transaction_reference ? 'UPI' : 'BANK';
+                    payments.push({
+                        mode: bankMode,
+                        amount: bankAmount,
+                        status: paymentStatus,
+                        createdAt: createdAt,
+                        transactionReference: payment.transaction_reference || payment.transactionReference,
+                    });
+                }
+            } else if (paymentMode && (totalAmount > 0 || cashAmount > 0 || bankAmount > 0)) {
+                // Single payment mode
+                const amount = totalAmount || cashAmount || bankAmount;
+                payments.push({
+                    mode: paymentMode,
+                    amount: amount,
+                    status: paymentStatus,
+                    createdAt: createdAt,
+                    transactionReference: payment.transaction_reference || payment.transactionReference,
+                });
+            }
+        });
+    }
+    
+    // Fallback to order-level payment if no payments array
+    if (payments.length === 0 && apiOrder.payment_mode) {
+        const orderAmount = parseFloat(apiOrder.amount || apiOrder.total_amount || 0);
+        if (orderAmount > 0) {
+            payments.push({
+                mode: apiOrder.payment_mode || apiOrder.paymentMode,
+                amount: orderAmount,
+                status: apiOrder.payment_status || apiOrder.paymentStatus,
+                createdAt: apiOrder.created_at || apiOrder.createdAt,
+            });
+        }
+    }
+    
+    return payments;
+};
+
+/**
  * Extract receipt photos from order data
  * @param {object} apiOrder - The order object from API
  * @returns {string[]} - Array of valid receipt photo URLs
@@ -144,6 +215,35 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
             }
 
             if (apiOrder) {
+                // Extract address from various possible locations
+                const extractAddress = () => {
+                    // Check direct fields
+                    if (apiOrder.address) return apiOrder.address;
+                    if (apiOrder.delivery_address) return apiOrder.delivery_address;
+                    if (apiOrder.customer_address) return apiOrder.customer_address;
+                    if (apiOrder.customerAddress) return apiOrder.customerAddress;
+                    if (apiOrder.deliveryAddress) return apiOrder.deliveryAddress;
+                    
+                    // Check nested customer object
+                    if (apiOrder.customer) {
+                        if (apiOrder.customer.address) return apiOrder.customer.address;
+                        if (apiOrder.customer.customer_address) return apiOrder.customer.customer_address;
+                        if (apiOrder.customer.delivery_address) return apiOrder.customer.delivery_address;
+                    }
+                    
+                    // Check nested customer data
+                    if (apiOrder.customer_data) {
+                        if (apiOrder.customer_data.address) return apiOrder.customer_data.address;
+                        if (apiOrder.customer_data.customer_address) return apiOrder.customer_data.customer_address;
+                    }
+                    
+                    return null;
+                };
+                
+                const extractedAddress = extractAddress();
+                console.log('Extracted address:', extractedAddress);
+                console.log('Full API order object:', apiOrder);
+                
                 // Normalize order data
                 const normalizedOrder = {
                     id: apiOrder.id,
@@ -159,7 +259,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     paymentMode: apiOrder.payment_mode || apiOrder.paymentMode,
                     paymentStatus: apiOrder.payment_status || apiOrder.paymentStatus,
                     customerComments: apiOrder.customer_comments || apiOrder.customerComments || apiOrder.comments,
-                    address: apiOrder.address || apiOrder.delivery_address,
+                    address: extractedAddress,
                     createdTime: apiOrder.created_time || apiOrder.createdTime || apiOrder.created_at || apiOrder.order_date,
                     updatedAt: apiOrder.updated_at || apiOrder.updatedAt,
                     deliveredAt: apiOrder.delivered_at || apiOrder.deliveredAt || apiOrder.delivered_time,
@@ -168,6 +268,8 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     inTransitAt: apiOrder.in_transit_at || apiOrder.inTransitAt || apiOrder.in_transit_time,
                     cancelledAt: apiOrder.cancelled_at || apiOrder.cancelledAt || apiOrder.cancelled_time,
                     items: apiOrder.items || apiOrder.medicines || [],
+                    // Extract all payments
+                    payments: extractPayments(apiOrder),
                 };
                 setOrder(normalizedOrder);
                 
@@ -405,34 +507,87 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                                     <div className="flex items-center gap-2 mb-3">
                                         <CreditCard className="w-5 h-5 text-gray-600" />
-                                        <h3 className="font-semibold text-gray-900">Payment</h3>
+                                        <h3 className="font-semibold text-gray-900">Payment Details</h3>
                                     </div>
-                                    <div className="space-y-2 text-sm">
-                                        <p>
-                                            <span className="text-gray-600">Amount:</span>{' '}
-                                            <span className="font-medium text-lg">
+                                    <div className="space-y-3">
+                                        {/* Total Amount */}
+                                        <div className="pb-3 border-b border-gray-200">
+                                            <p className="text-sm text-gray-600">Total Order Amount</p>
+                                            <p className="text-xl font-bold text-gray-900">
                                                 ₹{order.amount.toFixed(2)}
-                                            </span>
-                                        </p>
-                                        <p>
-                                            <span className="text-gray-600">Mode:</span>{' '}
-                                            <span className="font-medium">{order.paymentMode || 'N/A'}</span>
-                                        </p>
-                                        <p>
-                                            <span className="text-gray-600">Status:</span>{' '}
-                                            <span
-                                                className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
-                                                    order.paymentStatus === 'PAID' ||
-                                                    order.paymentStatus === 'CONFIRMED'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : order.paymentStatus === 'PENDING'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : 'bg-gray-100 text-gray-800'
-                                                }`}
-                                            >
-                                                {order.paymentStatus || 'N/A'}
-                                            </span>
-                                        </p>
+                                            </p>
+                                        </div>
+                                        
+                                        {/* All Payments */}
+                                        {order.payments && order.payments.length > 0 ? (
+                                            <div className="space-y-3">
+                                                <p className="text-sm font-medium text-gray-700">Payment Methods:</p>
+                                                {order.payments.map((payment, index) => (
+                                                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm font-medium text-gray-900">
+                                                                    {payment.mode || 'N/A'}
+                                                                </span>
+                                                                <span
+                                                                    className={`px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
+                                                                        payment.status === 'PAID' ||
+                                                                        payment.status === 'CONFIRMED'
+                                                                            ? 'bg-green-100 text-green-800'
+                                                                            : payment.status === 'PENDING'
+                                                                            ? 'bg-yellow-100 text-yellow-800'
+                                                                            : 'bg-gray-100 text-gray-800'
+                                                                    }`}
+                                                                >
+                                                                    {payment.status || 'N/A'}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-lg font-bold text-gray-900">
+                                                                ₹{payment.amount.toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                        {payment.transactionReference && (
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                Ref: {payment.transactionReference}
+                                                            </p>
+                                                        )}
+                                                        {payment.createdAt && (
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                Paid: {new Date(payment.createdAt).toLocaleString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                
+                                                {/* Total Paid Amount */}
+                                                <div className="pt-2 border-t border-gray-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-semibold text-gray-700">Total Paid:</span>
+                                                        <span className="text-lg font-bold text-green-600">
+                                                            ₹{order.payments.reduce((sum, p) => sum + (p.amount || 0), 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-sm text-gray-600">
+                                                <p>Mode: {order.paymentMode || 'N/A'}</p>
+                                                <p>Status: 
+                                                    <span
+                                                        className={`px-2 py-1 ml-2 inline-flex text-xs font-semibold rounded-full ${
+                                                            order.paymentStatus === 'PAID' ||
+                                                            order.paymentStatus === 'CONFIRMED'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : order.paymentStatus === 'PENDING'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}
+                                                    >
+                                                        {order.paymentStatus || 'N/A'}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
