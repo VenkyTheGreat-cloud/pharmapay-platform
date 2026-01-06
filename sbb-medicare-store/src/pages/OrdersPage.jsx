@@ -3,6 +3,29 @@ import { ordersAPI, deliveryBoysAPI } from '../services/api';
 import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
 
+// Helper function to format image URL - handles base64 data and regular URLs
+const formatImageUrl = (url) => {
+    if (!url || !url.trim() || url.trim() === ',') return null;
+    
+    const trimmedUrl = url.trim();
+    
+    // If it's already a data URI or full URL, use as-is
+    if (trimmedUrl.startsWith('data:') || trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+        return trimmedUrl;
+    }
+    
+    // If it looks like base64 data (doesn't start with http/https/data and contains base64 characters)
+    // Check if it's base64 by looking for base64-encoded JPEG pattern or general base64 characters
+    const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+    if (base64Pattern.test(trimmedUrl) && trimmedUrl.length > 50) {
+        // Assume JPEG format for base64 images
+        return `data:image/jpeg;base64,${trimmedUrl}`;
+    }
+    
+    // Otherwise, return as-is (might be a relative path or other format)
+    return trimmedUrl;
+};
+
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -699,7 +722,7 @@ export default function OrdersPage() {
                                         const payments = selectedOrder.payments || [];
                                         const receiptPhotos = payments
                                             .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
-                                            .filter(url => url && url.trim() && url.trim() !== ',');
+                                            .filter(url => url && url.trim() && url.trim() !== ',' && formatImageUrl(url));
                                         
                                         // Also check direct order level receipt_photo_url (fallback)
                                         if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
@@ -719,7 +742,7 @@ export default function OrdersPage() {
                                                     const payments = selectedOrder.payments || [];
                                                     const receiptPhotos = payments
                                                         .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
-                                                        .filter(url => url && url.trim() && url.trim() !== ',');
+                                                        .filter(url => url && url.trim() && url.trim() !== ',' && formatImageUrl(url));
                                                     
                                                     // Also check direct order level receipt_photo_url (fallback)
                                                     if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
@@ -729,19 +752,25 @@ export default function OrdersPage() {
                                                         }
                                                     }
                                                     
-                                                    return receiptPhotos.map((photoUrl, index) => (
-                                                        <div key={index} className="flex justify-center">
-                                                            <img
-                                                                src={photoUrl}
-                                                                alt={`Receipt ${index + 1}`}
-                                                                className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
-                                                                // Using receipt_photo_url value as-is from API, no base URL prefix added
-                                                                onError={(e) => {
-                                                                    e.target.style.display = 'none';
-                                                                    const errorMsg = e.target.nextElementSibling;
-                                                                    if (errorMsg) errorMsg.style.display = 'block';
-                                                                }}
-                                                            />
+                                                    return receiptPhotos.map((photoUrl, index) => {
+                                                        const formattedUrl = formatImageUrl(photoUrl);
+                                                        if (!formattedUrl) return null;
+                                                        
+                                                        return (
+                                                            <div key={index} className="flex justify-center">
+                                                                <img
+                                                                    src={formattedUrl}
+                                                                    alt={`Receipt ${index + 1}`}
+                                                                    className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none';
+                                                                        const errorMsg = e.target.nextElementSibling;
+                                                                        if (errorMsg) errorMsg.style.display = 'block';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    }).filter(Boolean);
                                                             <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
                                                                 Failed to load receipt image
                                                             </p>
