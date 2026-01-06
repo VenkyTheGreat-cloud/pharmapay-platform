@@ -2,8 +2,87 @@ import { useState, useEffect } from 'react';
 import { X, Package, User, Truck, MapPin, CreditCard, MessageSquare, Calendar, CheckCircle, Image } from 'lucide-react';
 import { ordersAPI } from '../services/api';
 
+/**
+ * Helper function to format image URL, handling base64 strings
+ * @param {string} url - The image URL or base64 string
+ * @returns {string|null} - Formatted URL or null if invalid
+ */
+const formatImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    
+    // Trim whitespace
+    const trimmed = url.trim();
+    
+    // Filter out invalid URLs (null, empty, or just a comma)
+    if (!trimmed || trimmed === ',' || trimmed === 'null' || trimmed === 'undefined') {
+        return null;
+    }
+    
+    // If it's already a data URI, use it as-is
+    if (trimmed.startsWith('data:')) {
+        return trimmed;
+    }
+    
+    // If it's a full URL (http:// or https://), use it as-is
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+    
+    // If it starts with /, treat it as a relative path
+    if (trimmed.startsWith('/')) {
+        return trimmed;
+    }
+    
+    // If it's a long string without data:, http://, https://, or / prefix,
+    // assume it's base64 and format it as data URI
+    // Base64 strings are typically long (at least 100+ characters for images)
+    if (trimmed.length > 50 && !trimmed.includes(' ') && !trimmed.includes('\n')) {
+        // Check if it looks like base64 (alphanumeric, +, /, = characters)
+        const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+        if (base64Pattern.test(trimmed)) {
+            return `data:image/jpeg;base64,${trimmed}`;
+        }
+    }
+    
+    // Return as-is if none of the above conditions match
+    return trimmed;
+};
+
+/**
+ * Extract receipt photos from order data
+ * @param {object} apiOrder - The order object from API
+ * @returns {string[]} - Array of valid receipt photo URLs
+ */
+const extractReceiptPhotos = (apiOrder) => {
+    const receiptPhotos = [];
+    
+    // Extract from payments array
+    if (apiOrder.payments && Array.isArray(apiOrder.payments)) {
+        apiOrder.payments.forEach((payment) => {
+            const receiptUrl = payment.receipt_photo_url || payment.receiptPhotoUrl;
+            const formatted = formatImageUrl(receiptUrl);
+            if (formatted) {
+                receiptPhotos.push(formatted);
+            }
+        });
+    }
+    
+    // Fallback to order level receipt photo
+    if (receiptPhotos.length === 0) {
+        const orderReceiptUrl = apiOrder.receipt_photo_url || apiOrder.receiptPhotoUrl || 
+                               apiOrder.payment?.receipt_photo_url || apiOrder.payment?.receiptPhotoUrl;
+        const formatted = formatImageUrl(orderReceiptUrl);
+        if (formatted) {
+            receiptPhotos.push(formatted);
+        }
+    }
+    
+    return receiptPhotos;
+};
+
 export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
     const [order, setOrder] = useState(null);
+    const [receiptPhotos, setReceiptPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -55,9 +134,12 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     updatedAt: apiOrder.updated_at || apiOrder.updatedAt,
                     deliveredAt: apiOrder.delivered_at || apiOrder.deliveredAt || apiOrder.delivered_time,
                     items: apiOrder.items || apiOrder.medicines || [],
-                    receiptPhotoUrl: apiOrder.receipt_photo_url || apiOrder.receiptPhotoUrl || apiOrder.payment?.receipt_photo_url || apiOrder.payment?.receiptPhotoUrl,
                 };
                 setOrder(normalizedOrder);
+                
+                // Extract receipt photos from payments array or order level
+                const photos = extractReceiptPhotos(apiOrder);
+                setReceiptPhotos(photos);
             } else {
                 setError('Order details not found');
             }
@@ -309,33 +391,30 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                 </div>
                             )}
 
-                            {/* Receipt Photo - Show for delivered orders */}
-                            {order.status === 'DELIVERED' && order.receiptPhotoUrl && (
+                            {/* Receipt Photos - Show for delivered orders */}
+                            {order.status === 'DELIVERED' && receiptPhotos.length > 0 && (
                                 <div className="bg-white border border-gray-200 rounded-lg p-4">
                                     <div className="flex items-center gap-2 mb-3">
                                         <Image className="w-5 h-5 text-gray-600" />
-                                        <h3 className="font-semibold text-gray-900">Receipt Photo</h3>
+                                        <h3 className="font-semibold text-gray-900">
+                                            Receipt Photo{receiptPhotos.length > 1 ? 's' : ''}
+                                        </h3>
                                     </div>
-                                    <div className="mt-2 flex justify-center">
-                                        <div className="max-w-md">
-                                            <img
-                                                src={order.receiptPhotoUrl}
-                                                alt="Receipt"
-                                                className="w-full max-w-md h-auto rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                                onClick={() => window.open(order.receiptPhotoUrl, '_blank')}
-                                                onError={(e) => {
-                                                    e.target.style.display = 'none';
-                                                    const errorDiv = e.target.nextSibling;
-                                                    if (errorDiv) errorDiv.style.display = 'block';
-                                                }}
-                                            />
-                                            <div className="hidden text-sm text-red-600 mt-2 text-center">
-                                                Failed to load receipt image
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2 text-center">
-                                                Click on the image to view in full size
-                                            </p>
+                                    <div className="mt-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {receiptPhotos.map((photoUrl, index) => (
+                                                <ReceiptPhotoItem
+                                                    key={index}
+                                                    photoUrl={photoUrl}
+                                                    index={index}
+                                                />
+                                            ))}
                                         </div>
+                                        {receiptPhotos.length > 0 && (
+                                            <p className="text-xs text-gray-500 mt-3 text-center">
+                                                Click on any image to view in full size
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -382,6 +461,73 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     ) : null}
                 </div>
             </div>
+        </div>
+    );
+}
+
+/**
+ * Component to display a single receipt photo with error handling
+ */
+function ReceiptPhotoItem({ photoUrl, index }) {
+    const [imageError, setImageError] = useState(false);
+    const [imageLoading, setImageLoading] = useState(true);
+
+    const handleImageError = () => {
+        setImageError(true);
+        setImageLoading(false);
+    };
+
+    const handleImageLoad = () => {
+        setImageLoading(false);
+    };
+
+    const handleImageClick = () => {
+        // For base64 images, create a new window with the image
+        if (photoUrl.startsWith('data:')) {
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write(`
+                    <html>
+                        <head><title>Receipt Photo ${index + 1}</title></head>
+                        <body style="margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+                            <img src="${photoUrl}" alt="Receipt Photo ${index + 1}" style="max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);" />
+                        </body>
+                    </html>
+                `);
+            }
+        } else {
+            window.open(photoUrl, '_blank');
+        }
+    };
+
+    if (imageError) {
+        return (
+            <div className="flex items-center justify-center p-4 border border-red-200 rounded-lg bg-red-50">
+                <div className="text-center">
+                    <p className="text-sm text-red-600">Failed to load receipt image</p>
+                    <p className="text-xs text-red-500 mt-1">Image {index + 1}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="relative">
+            {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+            )}
+            <img
+                src={photoUrl}
+                alt={`Receipt ${index + 1}`}
+                className={`w-full max-w-md max-h-64 object-contain rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                    imageLoading ? 'opacity-0' : 'opacity-100'
+                }`}
+                onClick={handleImageClick}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+            />
         </div>
     );
 }
