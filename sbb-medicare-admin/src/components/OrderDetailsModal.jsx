@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Package, User, Truck, MapPin, CreditCard, MessageSquare, Calendar, CheckCircle, Image } from 'lucide-react';
+import { X, Package, User, Truck, MapPin, CreditCard, MessageSquare, Calendar, CheckCircle, Image, Clock } from 'lucide-react';
 import { ordersAPI } from '../services/api';
 
 /**
@@ -163,6 +163,10 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     createdTime: apiOrder.created_time || apiOrder.createdTime || apiOrder.created_at || apiOrder.order_date,
                     updatedAt: apiOrder.updated_at || apiOrder.updatedAt,
                     deliveredAt: apiOrder.delivered_at || apiOrder.deliveredAt || apiOrder.delivered_time,
+                    assignedAt: apiOrder.assigned_at || apiOrder.assignedAt || apiOrder.assigned_time,
+                    pickedUpAt: apiOrder.picked_up_at || apiOrder.pickedUpAt || apiOrder.picked_up_time,
+                    inTransitAt: apiOrder.in_transit_at || apiOrder.inTransitAt || apiOrder.in_transit_time,
+                    cancelledAt: apiOrder.cancelled_at || apiOrder.cancelledAt || apiOrder.cancelled_time,
                     items: apiOrder.items || apiOrder.medicines || [],
                 };
                 setOrder(normalizedOrder);
@@ -249,6 +253,120 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                         >
                                             {order.status || 'N/A'}
                                         </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Order Status with Timestamps */}
+                            <div className="bg-white border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Clock className="w-5 h-5 text-gray-600" />
+                                    <h3 className="font-semibold text-gray-900">Order Status Timeline</h3>
+                                </div>
+                                <div className="space-y-3">
+                                    {/* Current Status */}
+                                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <span
+                                                className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
+                                                    order.status
+                                                )}`}
+                                            >
+                                                {order.status || 'N/A'}
+                                            </span>
+                                            <span className="text-sm text-gray-600">Current Status</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {order.updatedAt
+                                                    ? new Date(order.updatedAt).toLocaleString()
+                                                    : order.createdTime
+                                                    ? new Date(order.createdTime).toLocaleString()
+                                                    : 'N/A'}
+                                            </p>
+                                            <p className="text-xs text-gray-500">Last Updated</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Status Timeline */}
+                                    <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                                        {/* Created */}
+                                        {order.createdTime && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                    <span className="text-sm text-gray-700">Order Created</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.createdTime).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Assigned */}
+                                        {order.assignedAt && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                    <span className="text-sm text-gray-700">Assigned</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.assignedAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Picked Up */}
+                                        {order.pickedUpAt && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                                    <span className="text-sm text-gray-700">Picked Up</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.pickedUpAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* In Transit */}
+                                        {order.inTransitAt && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                                                    <span className="text-sm text-gray-700">In Transit</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.inTransitAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Delivered */}
+                                        {order.deliveredAt && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                                    <span className="text-sm text-gray-700">Delivered</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.deliveredAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Cancelled */}
+                                        {order.cancelledAt && (
+                                            <div className="flex items-center justify-between py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                                    <span className="text-sm text-gray-700">Cancelled</span>
+                                                </div>
+                                                <span className="text-sm text-gray-600">
+                                                    {new Date(order.cancelledAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
