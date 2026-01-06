@@ -28,53 +28,24 @@ const formatImageUrl = (url) => {
         return trimmed;
     }
     
-    // Check if it's a valid base64 string (BEFORE checking for relative paths)
-    // Base64 strings can start with / (like /9j/ for JPEG), so we need to check this first
-    // Base64 strings are typically long (at least 50+ characters for images)
-    // and contain only base64 characters: A-Z, a-z, 0-9, +, /, =
-    
-    // First, check for common base64 image prefixes (even if string starts with /)
-    const hasBase64ImagePrefix = /^(\/9j\/|iVBORw0KGgo|R0lGODlh|UklGR)/.test(trimmed);
-    
-    // Check if it's a valid base64 string
-    if (trimmed.length > 50 && !trimmed.includes(' ') && !trimmed.includes('\n') && !trimmed.includes('\r')) {
-        // More strict base64 pattern - must contain base64 characters and end with = or have proper padding
-        const base64Pattern = /^[A-Za-z0-9+/]+=*$/;
-        // Additional check: base64 strings for images are usually much longer and don't contain common URL characters
-        const hasUrlCharacters = /[?&#]/.test(trimmed);
-        
-        if (base64Pattern.test(trimmed) && !hasUrlCharacters) {
-            // If it has a base64 image prefix or is a long valid base64 string, treat it as base64
-            if (hasBase64ImagePrefix || trimmed.length > 100) {
-                return `data:image/jpeg;base64,${trimmed}`;
-            }
+    // If it starts with /, check if it's a base64 string (like /9j/ for JPEG)
+    // Base64 strings starting with / are usually long (>100 chars), relative paths are usually short
+    if (trimmed.startsWith('/')) {
+        // If it's a long string starting with /, it's likely base64 (e.g., /9j/4AAQ...)
+        if (trimmed.length > 100) {
+            return `data:image/jpeg;base64,${trimmed}`;
         }
-    }
-    
-    // For shorter strings that might be base64, check if they're valid base64
-    // This catches base64 strings that start with /9j/ or similar patterns
-    if (trimmed.length >= 20) {
-        const base64Pattern = /^[A-Za-z0-9+/]+=*$/;
-        
-        if (base64Pattern.test(trimmed) && !trimmed.includes(' ') && !trimmed.includes('.')) {
-            // If it has a base64 image prefix, definitely treat as base64
-            if (hasBase64ImagePrefix) {
-                return `data:image/jpeg;base64,${trimmed}`;
-            }
-            // If it's a medium-length valid base64 string without URL characters, treat as base64
-            if (trimmed.length > 50 && !/[?&#]/.test(trimmed)) {
-                return `data:image/jpeg;base64,${trimmed}`;
-            }
-        }
-    }
-    
-    // If it starts with / and is NOT a base64 string, treat it as a relative path
-    // But only if it's short or contains URL-like characters (not a base64 pattern)
-    if (trimmed.startsWith('/') && !hasBase64ImagePrefix && (trimmed.length < 50 || /[?&#]/.test(trimmed))) {
+        // Short strings starting with / are relative paths
         return trimmed;
     }
     
-    // Return as-is if none of the above conditions match (might be a relative path)
+    // Simplified: Any string longer than 20 characters that doesn't start with data:, http://, https://, or / 
+    // is treated as base64 and formatted as a data URI
+    if (trimmed.length > 20) {
+        return `data:image/jpeg;base64,${trimmed}`;
+    }
+    
+    // Return as-is for short strings (might be relative paths or invalid)
     return trimmed;
 };
 
@@ -86,17 +57,35 @@ const formatImageUrl = (url) => {
 const extractReceiptPhotos = (apiOrder) => {
     const receiptPhotos = [];
     
+    // Helper function to ensure URL is properly formatted (double-check)
+    const ensureFormatted = (url) => {
+        if (!url) return null;
+        
+        // If it's already a data URI or full URL, use it as-is
+        if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        
+        // Double-check: If it's longer than 20 characters and not a data URI or full URL, format as base64
+        if (url.length > 20) {
+            return `data:image/jpeg;base64,${url}`;
+        }
+        
+        return url;
+    };
+    
     // Extract from payments array
     if (apiOrder.payments && Array.isArray(apiOrder.payments)) {
         apiOrder.payments.forEach((payment) => {
             const receiptUrl = payment.receipt_photo_url || payment.receiptPhotoUrl;
             if (receiptUrl) {
-                const formatted = formatImageUrl(receiptUrl);
+                let formatted = formatImageUrl(receiptUrl);
+                // Double-check: ensure it's formatted as base64 if needed
                 if (formatted) {
-                    console.log('Formatted receipt photo URL:', formatted.substring(0, 100) + '...');
-                    receiptPhotos.push(formatted);
-                } else {
-                    console.warn('Invalid receipt photo URL:', receiptUrl?.substring(0, 50));
+                    formatted = ensureFormatted(formatted);
+                    if (formatted) {
+                        receiptPhotos.push(formatted);
+                    }
                 }
             }
         });
@@ -107,12 +96,13 @@ const extractReceiptPhotos = (apiOrder) => {
         const orderReceiptUrl = apiOrder.receipt_photo_url || apiOrder.receiptPhotoUrl || 
                                apiOrder.payment?.receipt_photo_url || apiOrder.payment?.receiptPhotoUrl;
         if (orderReceiptUrl) {
-            const formatted = formatImageUrl(orderReceiptUrl);
+            let formatted = formatImageUrl(orderReceiptUrl);
+            // Double-check: ensure it's formatted as base64 if needed
             if (formatted) {
-                console.log('Formatted order-level receipt photo URL:', formatted.substring(0, 100) + '...');
-                receiptPhotos.push(formatted);
-            } else {
-                console.warn('Invalid order-level receipt photo URL:', orderReceiptUrl?.substring(0, 50));
+                formatted = ensureFormatted(formatted);
+                if (formatted) {
+                    receiptPhotos.push(formatted);
+                }
             }
         }
     }
