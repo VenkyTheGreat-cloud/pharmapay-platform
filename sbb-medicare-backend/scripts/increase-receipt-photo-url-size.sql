@@ -25,3 +25,4 @@ AND column_name = 'receipt_photo_url';
 -- character_maximum_length: null (unlimited)
 -- is_nullable: YES
 
+

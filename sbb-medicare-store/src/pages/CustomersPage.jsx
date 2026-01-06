@@ -337,7 +337,6 @@ export default function CustomersPage() {
                                                     <tr>
                                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
                                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
                                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
@@ -380,27 +379,6 @@ export default function CustomersPage() {
                                                                 </td>
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                                                                 {(order.created_at || order.createdTime) ? new Date(order.created_at || order.createdTime).toLocaleString() : '-'}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-sm text-gray-700">
-                                                                {order.items && Array.isArray(order.items) && order.items.length > 0 ? (
-                                                                    <div className="space-y-1 max-w-xs">
-                                                                        {order.items.map((item, idx) => (
-                                                                            <div key={item.id || idx} className="text-xs border-b pb-1 last:border-0">
-                                                                                <span className="font-medium">{item.name}</span>
-                                                                                <span className="text-gray-500"> x{item.quantity}</span>
-                                                                                <span className="text-gray-500"> @ ₹{item.price}</span>
-                                                                                <span className="text-gray-600 font-semibold"> = ₹{item.total || (item.quantity * item.price)}</span>
-                                                                            </div>
-                                                                        ))}
-                                                                        {order.item_count && (
-                                                                            <div className="text-xs text-gray-500 mt-1 pt-1 border-t">
-                                                                                Total Items: {order.item_count}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="text-gray-400">No items</span>
-                                                                )}
                                                             </td>
                                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
                                                                 ₹{order.total_amount || order.amount || '0.00'}
