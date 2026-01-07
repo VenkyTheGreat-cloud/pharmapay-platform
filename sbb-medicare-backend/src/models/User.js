@@ -3,7 +3,7 @@ const { query } = require('../config/database');
 class User {
     // Create a new user
     static async create(userData) {
-        const { name, store_name, mobile, email, password_hash, address, role, is_active } = userData;
+        const { name, store_name, mobile, email, password_hash, address, role, is_active, admin_id } = userData;
         
         // Ensure role is valid (must be exactly 'admin' or 'store_manager' for database constraint)
         // Database constraint: CHECK (role IN ('admin', 'store_manager'))
@@ -41,10 +41,10 @@ class User {
         });
         
         const result = await query(
-            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at`,
-            [name, store_name, mobile, email, password_hash, address, validRole, activeStatus, statusValue]
+            `INSERT INTO users (name, store_name, mobile, email, password_hash, address, role, is_active, status, admin_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, admin_id, created_at, updated_at`,
+            [name, store_name, mobile, email, password_hash, address, validRole, activeStatus, statusValue, admin_id || null]
         );
         
         // Log what was actually inserted
@@ -137,6 +137,18 @@ class User {
     // Get all store managers (for admin)
     static async getAllStoreManagers() {
         return this.findByRole('store_manager');
+    }
+
+    // Get all store and admin user IDs in an admin group
+    // For a given adminId (top-level admin user ID), returns:
+    // - the admin's own ID
+    // - all store_manager IDs where admin_id = adminId
+    static async getStoreIdsForAdmin(adminId) {
+        const result = await query(
+            `SELECT id FROM users WHERE id = $1 OR admin_id = $1`,
+            [adminId]
+        );
+        return result.rows.map(row => row.id);
     }
 
     // Get all admins and store managers for registration dropdown (public)

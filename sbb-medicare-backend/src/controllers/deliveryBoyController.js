@@ -13,9 +13,14 @@ exports.getAllDeliveryBoys = async (req, res, next) => {
         if (is_active !== undefined) filters.isActive = is_active === 'true';
         
         // Restrict by store_id based on user role
-        if (req.user.role === 'admin' || req.user.role === 'store_manager') {
-            // Admin/Store manager sees only delivery boys linked to their own user ID
-            filters.store_id = req.user.userId;
+        if (req.user.role === 'admin') {
+            // Admin: see delivery boys linked to any store in their group (admin + its stores)
+            // Delivery boys table uses store_id referencing users.id (store/admin)
+            filters.store_id = req.user.userId; // anchor at admin; public registration uses admin's ID
+        } else if (req.user.role === 'store_manager') {
+            // Store manager: use adminId from token to see all delivery boys under that admin
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            filters.store_id = anchorAdminId;
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys don't see other delivery boys
             return res.status(403).json(errorResponse('FORBIDDEN', 'Access denied'));

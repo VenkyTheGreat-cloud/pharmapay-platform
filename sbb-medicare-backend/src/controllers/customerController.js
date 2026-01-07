@@ -7,16 +7,29 @@ exports.getAllCustomers = async (req, res, next) => {
     try {
         const { limit = 100, offset = 0, search } = req.query;
 
-        // Get store_id from authenticated user
+        // Get grouping info from authenticated user
         const storeId = req.user.userId;
         const userRole = req.user.role;
+        const adminIdFromToken = req.user.adminId || null;
 
-        // Build filters - each admin/store manager sees only their own customers
+        // Build filters - admin + all its stores share customers, same for stores under that admin
         const filters = {
             limit: parseInt(limit),
-            offset: parseInt(offset),
-            store_id: userRole === 'admin' || userRole === 'store_manager' ? storeId : null
+            offset: parseInt(offset)
         };
+
+        if (userRole === 'admin') {
+            // Admin: anchor is their own ID
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(storeId);
+            filters.store_ids = storeIds;
+        } else if (userRole === 'store_manager') {
+            // Store manager: anchor is adminId from token (group admin)
+            const User = require('../models/User');
+            const anchorAdminId = adminIdFromToken || storeId;
+            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
+            filters.store_ids = storeIds;
+        }
 
         if (search) {
             filters.search = search;

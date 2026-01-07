@@ -88,6 +88,7 @@ exports.createStoreManager = async (req, res, next) => {
 
         // Create store manager
         // Use exact string literal for role to match database constraint
+        // Link this store manager to the current admin via admin_id
         userData = {
             name: name.trim(),
             store_name: store_name ? store_name.trim() : null,
@@ -96,7 +97,8 @@ exports.createStoreManager = async (req, res, next) => {
             password_hash,
             address: address ? address.trim() : null,
             role: 'store_manager', // Exact string - matches CHECK (role IN ('admin', 'store_manager'))
-            is_active: true
+            is_active: true,
+            admin_id: req.user?.userId || null
         };
         
         // Double-check role value before sending to database
