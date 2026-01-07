@@ -142,11 +142,13 @@ class User {
     // Get all admins and store managers for registration dropdown (public)
     // Returns only super admins (not store managers) since delivery boys are created by super admin
     static async getAdminsAndStores() {
+        // Handle both boolean and string types for is_active
+        // Use COALESCE and text comparison to handle type mismatches
         const result = await query(
             `SELECT id, name, store_name, mobile, email, role, is_active, status 
              FROM users 
              WHERE role = 'admin' 
-             AND is_active = true 
+             AND COALESCE(is_active::text, 'false') IN ('true', 't', '1')
              AND status = 'active'
              ORDER BY name ASC`
         );
