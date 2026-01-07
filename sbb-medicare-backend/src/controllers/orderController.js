@@ -45,9 +45,17 @@ exports.getAllOrders = async (req, res, next) => {
         };
 
         // Filter based on user role
-        if (req.user.role === 'admin' || req.user.role === 'store_manager') {
-            // Each admin/store manager sees only orders for their own store (user ID)
-            filters.store_id = req.user.userId;
+        if (req.user.role === 'admin') {
+            // Admin: see orders for all stores in their group (admin + its stores)
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
+            filters.store_ids = storeIds;
+        } else if (req.user.role === 'store_manager') {
+            // Store manager: use adminId from token to get group, fallback to own ID
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
+            filters.store_ids = storeIds;
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys see only orders assigned to them
             filters.assigned_delivery_boy_id = req.user.userId;

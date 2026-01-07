@@ -68,9 +68,17 @@ class Customer {
         const params = [];
         let paramCount = 1;
 
+        // Single store_id filter (legacy)
         if (filters.store_id) {
             queryText += ` AND c.store_id = $${paramCount}`;
             params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group) - takes precedence if provided
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND c.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
             paramCount++;
         }
 
@@ -104,9 +112,17 @@ class Customer {
         const params = [];
         let paramCount = 1;
 
+        // Single store_id filter (legacy)
         if (filters.store_id) {
             queryText += ` AND store_id = $${paramCount}`;
             params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
             paramCount++;
         }
 

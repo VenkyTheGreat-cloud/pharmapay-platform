@@ -17,7 +17,9 @@ class AuthService {
             sub: user.id.toString(),
             userId: user.id,
             email: user.email,
-            role: user.role
+            role: user.role,
+            // Include admin_id in token (for grouping stores under an admin)
+            adminId: user.admin_id || null
         };
 
         const accessToken = jwt.sign(payload, JWT_SECRET, {

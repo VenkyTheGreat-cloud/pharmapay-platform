@@ -87,9 +87,17 @@ class Order {
         const params = [];
         let paramCount = 1;
 
+        // Single store_id (legacy)
         if (filters.store_id) {
             queryText += ` AND o.store_id = $${paramCount}`;
             params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
             paramCount++;
         }
 
@@ -138,9 +146,17 @@ class Order {
         const params = [];
         let paramCount = 1;
 
+        // Single store_id (legacy)
         if (filters.store_id) {
             queryText += ` AND store_id = $${paramCount}`;
             params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
             paramCount++;
         }
 
