@@ -8,7 +8,12 @@ exports.getAllStoreManagers = async (req, res, next) => {
     try {
         const { filter } = req.query; // filter: 'all', 'active', 'inactive'
         
+        // Get all store managers, then restrict to current admin's group
         let storeManagers = await User.findByRole('store_manager');
+
+        // Only show store managers that belong to this admin
+        const currentAdminId = req.user.userId;
+        storeManagers = storeManagers.filter(manager => manager.admin_id === currentAdminId);
 
         // Filter based on query parameter
         if (filter === 'active') {
