@@ -3,28 +3,22 @@ const logger = require('../config/logger');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
 // Get all delivery boys
+// Each admin/store should see only its own delivery boys
 exports.getAllDeliveryBoys = async (req, res, next) => {
     try {
-        const { status, is_active, store_id } = req.query;
+        const { status, is_active } = req.query;
         
         const filters = {};
         if (status) filters.status = status;
         if (is_active !== undefined) filters.isActive = is_active === 'true';
         
-        // Filter by store_id based on user role
-        if (req.user.role === 'admin') {
-            // Super Admin sees ALL delivery boys (no filtering)
-            // Optional: can filter by store_id if provided in query
-            if (store_id) filters.store_id = store_id;
-        } else if (req.user.role === 'store_manager') {
-            // Store managers see ALL delivery boys (created by super admin)
-            // No filtering by store_id
+        // Restrict by store_id based on user role
+        if (req.user.role === 'admin' || req.user.role === 'store_manager') {
+            // Admin/Store manager sees only delivery boys linked to their own user ID
+            filters.store_id = req.user.userId;
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys don't see other delivery boys
             return res.status(403).json(errorResponse('FORBIDDEN', 'Access denied'));
-        } else if (store_id) {
-            // If store_id is explicitly provided in query, use it
-            filters.store_id = store_id;
         }
 
         const deliveryBoys = await DeliveryBoy.findAll(filters);
