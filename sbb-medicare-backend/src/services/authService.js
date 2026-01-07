@@ -6,8 +6,8 @@ const OtpVerification = require('../models/OtpVerification');
 const RefreshToken = require('../models/RefreshToken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-production-use-strong-secret-key-minimum-256-bits';
-const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '30m';
-const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_TOKEN_EXPIRY || '7d';
+const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '2h';
+const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_TOKEN_EXPIRY || '30d';
 
 class AuthService {
     // Generate JWT tokens
@@ -46,7 +46,7 @@ class AuthService {
 
     // Register delivery boy
     static async registerDeliveryBoy(data) {
-        const { name, mobile, email, password, address } = data;
+        const { name, mobile, email, password, address, store_id } = data;
 
         // Check if mobile already exists
         const existingDeliveryBoyByMobile = await DeliveryBoy.findByMobile(mobile);
@@ -65,13 +65,13 @@ class AuthService {
         // Hash password
         const password_hash = await this.hashPassword(password);
 
-        // Create delivery boy (no store_id for public registration)
+        // Create delivery boy with store_id (admin/store selection)
         const deliveryBoy = await DeliveryBoy.create({
             name,
             mobile,
             email: email || null,
             address,
-            store_id: null,
+            store_id: store_id || null,
             password_hash
         });
 

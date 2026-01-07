@@ -10,6 +10,7 @@ const registerValidation = [
     body('mobile').trim().notEmpty().withMessage('Mobile is required'),
     body('email').trim().notEmpty().withMessage('Email is required').isEmail().normalizeEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('store_id').notEmpty().withMessage('Store/Admin selection is required'),
 ];
 
 const loginValidation = [
@@ -27,6 +28,7 @@ const otpVerifyValidation = [
 ];
 
 // Public routes
+router.get('/admins-stores', authController.getAdminsAndStores);
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
 router.post('/otp/send', otpSendValidation, authController.sendOTP);

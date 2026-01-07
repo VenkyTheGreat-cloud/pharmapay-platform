@@ -46,12 +46,13 @@ exports.getAllOrders = async (req, res, next) => {
 
         // Filter based on user role
         if (req.user.role === 'admin') {
-            // Admin can see all orders, optionally filtered by store
+            // Super Admin sees ALL orders (no filtering)
+            // Optional: can filter by store_id if provided in query
             const storeId = req.query.storeId;
             if (storeId) filters.store_id = storeId;
         } else if (req.user.role === 'store_manager') {
-            // Store managers see only their store's orders
-            filters.store_id = req.user.userId;
+            // Store managers see ALL orders from all stores (no filtering)
+            // No store_id filter applied
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys see only orders assigned to them
             filters.assigned_delivery_boy_id = req.user.userId;
@@ -232,8 +233,12 @@ exports.getOrderById = async (req, res, next) => {
         }, 0);
         const initialPaymentModes = [...new Set(initialPayments.map(p => p.payment_mode))];
 
+        // Remove payment_status and payment_mode from order object to avoid duplication
+        // since payment_summary already contains this information
+        const { payment_status, payment_mode, ...orderWithoutPaymentFields } = order;
+
         res.json(successResponse({
-            ...order,
+            ...orderWithoutPaymentFields,
             items: items.map(item => ({
                 id: item.id,
                 name: item.name,
