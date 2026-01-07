@@ -106,7 +106,7 @@ class User {
     // Get all users by role
     static async findByRole(role) {
         const result = await query(
-            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, admin_id, created_at, updated_at FROM users WHERE role = $1 ORDER BY created_at DESC',
             [role]
         );
         
