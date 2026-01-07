@@ -60,15 +60,8 @@ class Payment {
                 [paymentStatus, payment_mode, order_id]
             );
 
-            // If fully paid, mark order as DELIVERED
-            if (paymentStatus === 'PAID') {
-                await client.query(
-                    `UPDATE orders 
-                     SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP
-                     WHERE id = $1 AND status != 'DELIVERED'`,
-                    [order_id]
-                );
-            }
+            // NOTE: Do NOT auto-mark order as DELIVERED here.
+            // Order status will change via the normal status flow (ASSIGNED -> ... -> DELIVERED).
 
             return result.rows[0];
         });
