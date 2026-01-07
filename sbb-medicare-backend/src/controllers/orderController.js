@@ -186,11 +186,20 @@ exports.getOngoingOrders = async (req, res, next) => {
         // For delivery boys, filter by assigned_delivery_boy_id
         if (req.user.role === 'delivery_boy') {
             const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId);
-            const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const ordersWithDetails = await Promise.all(orders.map(async (order) => {
                 const items = await OrderItem.findByOrderId(order.id);
-                return { ...order, items };
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                const isFullyPaid = paymentSummary?.is_fully_paid || false;
+
+                return { 
+                    ...order, 
+                    items,
+                    payment_summary: paymentSummary,
+                    // Frontend can use this flag to hide the "collect payment" option
+                    can_collect_payment: !isFullyPaid
+                };
             }));
-            return res.json(successResponse({ orders: ordersWithItems, count: ordersWithItems.length }));
+            return res.json(successResponse({ orders: ordersWithDetails, count: ordersWithDetails.length }));
         }
 
         // For admin and store managers
@@ -652,6 +661,11 @@ exports.updateLocation = async (req, res, next) => {
         const { latitude, longitude, source } = req.body;
         const orderId = req.params.id;
 
+        // Validation
+        if (!latitude || !longitude) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Latitude and longitude are required'));
+        }
+
         // Get order
         const order = await Order.findById(orderId);
         if (!order) {
@@ -663,7 +677,34 @@ exports.updateLocation = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
         }
 
-        // Create location update
+        // Only update tracking link if order is IN_TRANSIT
+        if (order.status === 'IN_TRANSIT') {
+            // Generate Google Maps link
+            const googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+            
+            // Update order with tracking link
+            await Order.update(orderId, {
+                tracking_link: googleMapsLink
+            });
+
+            // Update customer's address field with Google Maps link
+            if (order.customer_id) {
+                const Customer = require('../models/Customer');
+                await Customer.update(order.customer_id, {
+                    address: googleMapsLink
+                });
+            }
+
+            logger.info('Tracking link updated for IN_TRANSIT order and customer address', { 
+                orderId, 
+                customerId: order.customer_id,
+                latitude, 
+                longitude, 
+                trackingLink: googleMapsLink 
+            });
+        }
+
+        // Create location update (always store location history)
         await LocationUpdate.create({
             order_id: orderId,
             latitude,
@@ -672,9 +713,11 @@ exports.updateLocation = async (req, res, next) => {
             source: source || 'MANUAL'
         });
 
-        logger.info('Location updated', { orderId, latitude, longitude });
+        logger.info('Location updated', { orderId, latitude, longitude, status: order.status });
 
-        res.json(successResponse(null, 'Location updated successfully'));
+        res.json(successResponse({
+            tracking_link: order.status === 'IN_TRANSIT' ? `https://www.google.com/maps?q=${latitude},${longitude}` : null
+        }, 'Location updated successfully'));
     } catch (error) {
         next(error);
     }
