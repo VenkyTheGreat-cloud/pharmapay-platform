@@ -682,20 +682,29 @@ exports.updateLocation = async (req, res, next) => {
             // Generate Google Maps link
             const googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
             
-            // Update order with tracking link
+            // Update current order with tracking link
             await Order.update(orderId, {
                 tracking_link: googleMapsLink
             });
 
-            // Update customer's address field with Google Maps link
+            // Update customer_address in ALL orders for this customer
             if (order.customer_id) {
+                const { query } = require('../config/database');
+                await query(
+                    `UPDATE orders 
+                     SET customer_address = $1 
+                     WHERE customer_id = $2`,
+                    [googleMapsLink, order.customer_id]
+                );
+
+                // Also update customer's address field with Google Maps link
                 const Customer = require('../models/Customer');
                 await Customer.update(order.customer_id, {
                     address: googleMapsLink
                 });
             }
 
-            logger.info('Tracking link updated for IN_TRANSIT order and customer address', { 
+            logger.info('Tracking link updated for IN_TRANSIT order and all customer orders', { 
                 orderId, 
                 customerId: order.customer_id,
                 latitude, 
