@@ -45,14 +45,9 @@ exports.getAllOrders = async (req, res, next) => {
         };
 
         // Filter based on user role
-        if (req.user.role === 'admin') {
-            // Super Admin sees ALL orders (no filtering)
-            // Optional: can filter by store_id if provided in query
-            const storeId = req.query.storeId;
-            if (storeId) filters.store_id = storeId;
-        } else if (req.user.role === 'store_manager') {
-            // Store managers see ALL orders from all stores (no filtering)
-            // No store_id filter applied
+        if (req.user.role === 'admin' || req.user.role === 'store_manager') {
+            // Each admin/store manager sees only orders for their own store (user ID)
+            filters.store_id = req.user.userId;
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys see only orders assigned to them
             filters.assigned_delivery_boy_id = req.user.userId;

@@ -11,22 +11,12 @@ exports.getAllCustomers = async (req, res, next) => {
         const storeId = req.user.userId;
         const userRole = req.user.role;
 
-        // Build filters
+        // Build filters - each admin/store manager sees only their own customers
         const filters = {
             limit: parseInt(limit),
-            offset: parseInt(offset)
+            offset: parseInt(offset),
+            store_id: userRole === 'admin' || userRole === 'store_manager' ? storeId : null
         };
-        
-        // Super Admin sees all customers, store managers see only their own
-        if (userRole === 'admin') {
-            // Super Admin sees ALL customers (no filtering)
-            // Optional: can filter by store_id if provided in query
-            const queryStoreId = req.query.storeId;
-            if (queryStoreId) filters.store_id = queryStoreId;
-        } else if (userRole === 'store_manager') {
-            // Store managers see only their own store's customers
-            filters.store_id = storeId;
-        }
 
         if (search) {
             filters.search = search;
