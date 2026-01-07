@@ -139,6 +139,20 @@ class User {
         return this.findByRole('store_manager');
     }
 
+    // Get all admins and store managers for registration dropdown (public)
+    // Returns only super admins (not store managers) since delivery boys are created by super admin
+    static async getAdminsAndStores() {
+        const result = await query(
+            `SELECT id, name, store_name, mobile, email, role, is_active, status 
+             FROM users 
+             WHERE role = 'admin' 
+             AND is_active = true 
+             AND status = 'active'
+             ORDER BY name ASC`
+        );
+        return result.rows;
+    }
+
     // Update user
     static async update(id, updates) {
         const fields = [];

@@ -7,16 +7,26 @@ exports.getAllCustomers = async (req, res, next) => {
     try {
         const { limit = 100, offset = 0, search } = req.query;
 
-        // Get store_id from authenticated user (store managers see only their store's customers)
+        // Get store_id from authenticated user
         const storeId = req.user.userId;
         const userRole = req.user.role;
 
-        // Build filters - admin sees all stores, store managers see only their store
+        // Build filters
         const filters = {
             limit: parseInt(limit),
-            offset: parseInt(offset),
-            store_id: userRole === 'admin' ? null : storeId
+            offset: parseInt(offset)
         };
+        
+        // Super Admin sees all customers, store managers see only their own
+        if (userRole === 'admin') {
+            // Super Admin sees ALL customers (no filtering)
+            // Optional: can filter by store_id if provided in query
+            const queryStoreId = req.query.storeId;
+            if (queryStoreId) filters.store_id = queryStoreId;
+        } else if (userRole === 'store_manager') {
+            // Store managers see only their own store's customers
+            filters.store_id = storeId;
+        }
 
         if (search) {
             filters.search = search;

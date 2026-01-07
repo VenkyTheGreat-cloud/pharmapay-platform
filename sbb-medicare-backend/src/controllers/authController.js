@@ -3,14 +3,32 @@ const User = require('../models/User');
 const logger = require('../config/logger');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
+// Get admins and stores for registration dropdown (public endpoint)
+exports.getAdminsAndStores = async (req, res, next) => {
+    try {
+        const adminsAndStores = await User.getAdminsAndStores();
+        
+        res.json(successResponse({
+            admins_and_stores: adminsAndStores,
+            count: adminsAndStores.length
+        }));
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Register delivery boy (public endpoint)
 exports.register = async (req, res, next) => {
     try {
-        const { name, mobile, email, password, address } = req.body;
+        const { name, mobile, email, password, address, store_id } = req.body;
 
         // Validation
         if (!name || !mobile || !email || !password) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, email, and password are required'));
+        }
+
+        if (!store_id) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Store/Admin selection is required'));
         }
 
         if (password.length < 6) {
@@ -23,15 +41,29 @@ exports.register = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
         }
 
+        // Validate that store_id exists and is a super admin (not store_manager)
+        // Delivery boys are created by super admin only
+        const store = await User.findById(store_id);
+        if (!store) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Selected admin not found'));
+        }
+        if (store.role !== 'admin') {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Only super admin can be selected for delivery boy registration'));
+        }
+        if (!store.is_active || store.status !== 'active') {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Selected admin is not active'));
+        }
+
         const result = await AuthService.registerDeliveryBoy({
             name,
             mobile,
             email,
             password,
-            address
+            address,
+            store_id
         });
 
-        logger.info('Delivery boy registered', { deliveryBoyId: result.id });
+        logger.info('Delivery boy registered', { deliveryBoyId: result.id, store_id });
 
         res.status(201).json(successResponse(result, 'Registration successful. Pending approval.'));
     } catch (error) {
