@@ -18,6 +18,7 @@ export default function CustomersPage() {
         id: apiCustomer.id,
         name: apiCustomer.name || 'N/A',
         mobile: apiCustomer.mobile || 'N/A',
+        area: apiCustomer.area || apiCustomer.area_name || apiCustomer.customer_area || null,
         address: apiCustomer.address || 'N/A',
         landmark: apiCustomer.landmark || null,
         orderCount: parseInt(apiCustomer.order_count || apiCustomer.orderCount || apiCustomer.total_orders || 0),
@@ -199,6 +200,9 @@ export default function CustomersPage() {
                                     Mobile
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Area Name
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Address
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -212,7 +216,7 @@ export default function CustomersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                         No customers found
                                     </td>
                                 </tr>
@@ -224,6 +228,9 @@ export default function CustomersPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">{customer.mobile}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{customer.area || 'N/A'}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900 max-w-xs truncate">
@@ -317,6 +324,14 @@ export default function CustomersPage() {
                                                 {selectedCustomer.address || 'N/A'}
                                             </p>
                                         </div>
+                                        {selectedCustomer.area && (
+                                            <div>
+                                                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                                                    Area Name
+                                                </h3>
+                                                <p className="text-base text-gray-900">{selectedCustomer.area}</p>
+                                            </div>
+                                        )}
                                         {selectedCustomer.landmark && (
                                             <div>
                                                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">

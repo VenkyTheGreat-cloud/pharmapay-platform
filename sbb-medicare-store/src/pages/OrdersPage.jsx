@@ -224,9 +224,9 @@ export default function OrdersPage() {
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-white rounded-lg shadow">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
+                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
@@ -250,7 +250,7 @@ export default function OrdersPage() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Date
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                                     Actions
                                 </th>
                             </tr>
@@ -320,7 +320,7 @@ export default function OrdersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ minWidth: '150px' }}>
                                             <div className="flex items-center justify-start gap-3">
                                                 <button
                                                     onClick={() => viewOrderDetails(order.id)}
