@@ -38,6 +38,21 @@ const formatImageUrl = (url) => {
     return trimmedUrl;
 };
 
+// Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
+const getTodayIST = () => {
+    const now = new Date();
+    // Convert to IST: Get UTC time and add IST offset (UTC+5:30)
+    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+    const istDate = new Date(utcTime + istOffset);
+    
+    // Format as YYYY-MM-DD
+    const year = istDate.getUTCFullYear();
+    const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(istDate.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export default function DashboardPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,7 +60,7 @@ export default function DashboardPage() {
     const [showViewModal, setShowViewModal] = useState(false);
     const [dateRange, setDateRange] = useState({
         from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        to: new Date().toISOString().split('T')[0],
+        to: getTodayIST(),
     });
 
     useEffect(() => {

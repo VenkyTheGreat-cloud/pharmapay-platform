@@ -9,12 +9,31 @@ export default function DashboardPage() {
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [filters, setFilters] = useState(() => {
-        const today = new Date();
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const fmt = (d) => d.toISOString().split('T')[0];
+        // Get current date in IST (UTC+5:30)
+        const getISTDate = () => {
+            const now = new Date();
+            // Convert to IST: UTC+5:30
+            const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            // Format as YYYY-MM-DD
+            const year = istTime.getFullYear();
+            const month = String(istTime.getMonth() + 1).padStart(2, '0');
+            const day = String(istTime.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        const todayIST = getISTDate();
+        // Calculate 7 days ago from today in IST
+        const now = new Date();
+        const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        istTime.setDate(istTime.getDate() - 7);
+        const year = istTime.getFullYear();
+        const month = String(istTime.getMonth() + 1).padStart(2, '0');
+        const day = String(istTime.getDate()).padStart(2, '0');
+        const sevenDaysAgo = `${year}-${month}-${day}`;
+        
         return {
-            fromDate: fmt(sevenDaysAgo),
-            toDate: fmt(today),
+            fromDate: sevenDaysAgo,
+            toDate: todayIST,
         };
     });
 

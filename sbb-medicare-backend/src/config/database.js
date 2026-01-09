@@ -29,6 +29,7 @@ const query = async (text, params, timeout = 30000) => {
     let queryCancelled = false;
     
     try {
+
         // Create a promise that rejects after timeout
         const timeoutPromise = new Promise((_, reject) => {
             timeoutId = setTimeout(() => {
