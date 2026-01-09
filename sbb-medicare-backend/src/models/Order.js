@@ -112,16 +112,19 @@ class Order {
         }
 
         // Date range filter (uses created_at - for orders created in date range)
+        // Convert to IST timezone for accurate date comparison
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND o.created_at >= $${paramCount}::date AND o.created_at < ($${paramCount + 1}::date + INTERVAL '1 day')`;
+            queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                          AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
         // Single date filter (treats value as a calendar day, regardless of time)
         // Business definition: \"today's orders\" = orders ASSIGNED on that day
+        // Convert to IST timezone for accurate date comparison
         else if (filters.date) {
             // Accept either 'YYYY-MM-DD' or full ISO datetime; we cast to ::date
-            queryText += ` AND o.assigned_at >= $${paramCount}::date AND o.assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
+            queryText += ` AND (o.assigned_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
             params.push(filters.date);
             paramCount++;
         }
@@ -177,14 +180,17 @@ class Order {
         }
 
         // Date range filter (uses created_at - for orders created in date range)
+        // Convert to IST timezone for accurate date comparison
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND created_at >= $${paramCount}::date AND created_at < ($${paramCount + 1}::date + INTERVAL '1 day')`;
+            queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                          AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
         // Single date filter (based on assigned_at for backward compatibility)
+        // Convert to IST timezone for accurate date comparison
         else if (filters.date) {
-            queryText += ` AND assigned_at >= $${paramCount}::date AND assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
+            queryText += ` AND (assigned_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
             params.push(filters.date);
             paramCount++;
         }
