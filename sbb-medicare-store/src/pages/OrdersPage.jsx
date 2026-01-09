@@ -225,7 +225,8 @@ export default function OrdersPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
@@ -357,6 +358,7 @@ export default function OrdersPage() {
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             )}
 

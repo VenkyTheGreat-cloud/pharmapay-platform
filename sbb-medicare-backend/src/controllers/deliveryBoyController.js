@@ -46,7 +46,26 @@ exports.getAllDeliveryBoys = async (req, res, next) => {
 // Get approved delivery boys
 exports.getApprovedDeliveryBoys = async (req, res, next) => {
     try {
-        const deliveryBoys = await DeliveryBoy.getApproved();
+        // Apply same filtering as getAllDeliveryBoys - only show current admin's delivery boys
+        const filters = {
+            status: 'approved',
+            isActive: true
+        };
+        
+        // Restrict by store_id based on user role
+        if (req.user.role === 'admin') {
+            // Admin: see delivery boys linked to their store (admin's user ID)
+            filters.store_id = req.user.userId;
+        } else if (req.user.role === 'store_manager') {
+            // Store manager: use adminId from token to see all delivery boys under that admin
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            filters.store_id = anchorAdminId;
+        } else if (req.user.role === 'delivery_boy') {
+            // Delivery boys don't see other delivery boys
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Access denied'));
+        }
+
+        const deliveryBoys = await DeliveryBoy.findAll(filters);
 
         res.json(successResponse({
             delivery_boys: deliveryBoys,
