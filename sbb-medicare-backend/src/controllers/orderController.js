@@ -367,6 +367,9 @@ exports.createOrder = async (req, res, next) => {
                 throw new Error('DUPLICATE_ORDER_NUMBER');
             }
 
+            // Use customer address if available, otherwise use area as fallback
+            const customerAddress = customer.address || customer.area || '';
+
             // Create order with provided order number
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
@@ -375,7 +378,7 @@ exports.createOrder = async (req, res, next) => {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
                 [orderNumber.trim(), customerId, deliveryBoyId, storeId,
-                 customer.name, customer.mobile, customer.address, customer.customer_lat, customer.customer_lng,
+                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
                  totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments]
             );
 
