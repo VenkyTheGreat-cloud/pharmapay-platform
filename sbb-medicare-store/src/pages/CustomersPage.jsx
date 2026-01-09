@@ -145,8 +145,9 @@ export default function CustomersPage() {
                     <p className="text-gray-600 mt-4">Loading customers...</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
+                <div className="bg-white rounded-lg shadow">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -156,12 +157,15 @@ export default function CustomersPage() {
                                     Mobile
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Area
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Address
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Registered
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
                                     Actions
                                 </th>
                             </tr>
@@ -169,7 +173,7 @@ export default function CustomersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
                                         No customers found
                                     </td>
                                 </tr>
@@ -184,6 +188,9 @@ export default function CustomersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">{customer.mobile}</div>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{customer.area || customer.areaName || '-'}</div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm text-gray-900 max-w-xs truncate">
                                                 {customer.address}
@@ -192,7 +199,7 @@ export default function CustomersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {customer.created_at || customer.createdAt ? new Date(customer.created_at || customer.createdAt).toLocaleDateString() : '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ minWidth: '120px' }}>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => viewCustomerDetails(customer.id)}
@@ -222,6 +229,7 @@ export default function CustomersPage() {
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             )}
 
@@ -276,6 +284,11 @@ export default function CustomersPage() {
                                     <div>
                                         <h3 className="font-semibold text-gray-700 text-sm">Mobile Number</h3>
                                         <p className="text-gray-900 mt-1">{selectedCustomer.mobile || selectedCustomer.mobile_number || 'N/A'}</p>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-semibold text-gray-700 text-sm">Area</h3>
+                                        <p className="text-gray-900 mt-1">{selectedCustomer.area || 'N/A'}</p>
                                     </div>
 
                                     <div className="col-span-2">
