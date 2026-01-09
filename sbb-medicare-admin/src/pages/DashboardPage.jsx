@@ -57,6 +57,7 @@ export default function DashboardPage() {
                 orderNumber: order.order_number || order.orderNumber,
                 customerName: order.customer_name || order.customerName,
                 customerMobile: order.customer_mobile || order.customerMobile,
+                customerArea: order.customer_area || order.customerArea,
                 deliveryBoyName: order.delivery_boy_name || order.deliveryBoyName,
                 deliveryBoyMobile: order.delivery_boy_mobile || order.deliveryBoyMobile,
                 status: order.status,
@@ -219,6 +220,9 @@ export default function DashboardPage() {
                                             Customer
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Area
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Delivery Boy
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -238,7 +242,7 @@ export default function DashboardPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                                                 No orders in this date range
                                             </td>
                                         </tr>
@@ -251,6 +255,9 @@ export default function DashboardPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div>{order.customerName || 'N/A'}</div>
                                                     <div className="text-gray-500 text-xs">{order.customerMobile || ''}</div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {order.customerArea || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     <div>{order.deliveryBoyName || 'Not assigned'}</div>

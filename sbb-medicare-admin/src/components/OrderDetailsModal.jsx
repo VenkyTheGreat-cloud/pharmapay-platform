@@ -251,6 +251,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     customerId: apiOrder.customer_id || apiOrder.customerId,
                     customerName: apiOrder.customer_name || apiOrder.customerName,
                     customerMobile: apiOrder.customer_mobile || apiOrder.customerMobile,
+                    customerArea: apiOrder.customer_area || apiOrder.customerArea,
                     deliveryBoyId: apiOrder.delivery_boy_id || apiOrder.deliveryBoyId,
                     deliveryBoyName: apiOrder.delivery_boy_name || apiOrder.deliveryBoyName,
                     deliveryBoyMobile: apiOrder.delivery_boy_mobile || apiOrder.deliveryBoyMobile,
@@ -466,6 +467,12 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                             <span className="text-gray-600">Mobile:</span>{' '}
                                             <span className="font-medium">{order.customerMobile || 'N/A'}</span>
                                         </p>
+                                        {order.customerArea && (
+                                            <p>
+                                                <span className="text-gray-600">Area:</span>{' '}
+                                                <span className="font-medium">{order.customerArea}</span>
+                                            </p>
+                                        )}
                                         {order.customerId && (
                                             <p>
                                                 <span className="text-gray-600">ID:</span>{' '}
