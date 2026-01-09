@@ -36,8 +36,10 @@ const normalizeDateParam = (rawDate) => {
 // Get all orders with pagination
 exports.getAllOrders = async (req, res, next) => {
     try {
-        const { status, date: rawDate, page = 1, limit = 20 } = req.query;
+        const { status, date: rawDate, date_from, date_to, page = 1, limit = 20 } = req.query;
         const date = normalizeDateParam(rawDate);
+        const dateFrom = normalizeDateParam(date_from);
+        const dateTo = normalizeDateParam(date_to);
 
         const filters = {
             limit: Math.min(parseInt(limit), 50),
@@ -62,7 +64,15 @@ exports.getAllOrders = async (req, res, next) => {
         }
 
         if (status) filters.status = status;
-        if (date) filters.date = date;
+        // Support both single date and date range
+        if (dateFrom && dateTo) {
+            // Date range filter (uses created_at)
+            filters.date_from = dateFrom;
+            filters.date_to = dateTo;
+        } else if (date) {
+            // Single date filter (uses assigned_at for backward compatibility)
+            filters.date = date;
+        }
 
         const orders = await Order.findAll(filters);
         const total = await Order.count(filters);
