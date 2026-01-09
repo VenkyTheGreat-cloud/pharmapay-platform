@@ -244,6 +244,9 @@ export default function DashboardPage() {
                                                 Customer
                                             </th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Area
+                                            </th>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Delivery Boy
                                             </th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -290,6 +293,9 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2 whitespace-nowrap">
                                                     <div className="text-gray-900">{order.customerName || order.customer_name}</div>
                                                     <div className="text-xs text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
+                                                </td>
+                                                <td className="px-4 py-2 whitespace-nowrap">
+                                                    <div className="text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
                                                 </td>
                                                 <td className="px-4 py-2 whitespace-nowrap">
                                                     <div className="text-gray-900">
@@ -381,6 +387,12 @@ export default function DashboardPage() {
                                                 <p className="text-sm text-gray-500">Mobile</p>
                                                 <p className="text-base text-gray-900">
                                                     {selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Area</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customer_area || selectedOrder.customerArea || 'N/A'}
                                                 </p>
                                             </div>
                                             <div>

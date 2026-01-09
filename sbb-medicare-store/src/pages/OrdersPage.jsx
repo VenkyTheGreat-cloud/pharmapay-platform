@@ -235,6 +235,9 @@ export default function OrdersPage() {
                                     Customer
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Area
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Delivery Boy
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -254,7 +257,7 @@ export default function OrdersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                                         No orders found
                                     </td>
                                 </tr>
@@ -289,6 +292,9 @@ export default function OrdersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">{order.customerName || order.customer_name}</div>
                                             <div className="text-sm text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
@@ -467,6 +473,12 @@ export default function OrdersPage() {
                                                 <p className="text-sm text-gray-500">Mobile</p>
                                                 <p className="text-base text-gray-900">
                                                     {selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Area</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customer_area || selectedOrder.customerArea || 'N/A'}
                                                 </p>
                                             </div>
                                             <div>

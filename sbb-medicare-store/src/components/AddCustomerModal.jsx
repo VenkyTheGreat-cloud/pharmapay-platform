@@ -6,6 +6,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
+        areaName: '',
         address: '',
         landmark: '',
         customerLat: '',
@@ -35,8 +36,8 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             newErrors.mobile = 'Mobile number must be 10 digits';
         }
 
-        if (!formData.address.trim()) {
-            newErrors.address = 'Address is required';
+        if (!formData.areaName || !formData.areaName.trim()) {
+            newErrors.areaName = 'Area Name is required';
         }
 
         return newErrors;
@@ -57,11 +58,16 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             const submitData = {
                 name: formData.name.trim(),
                 mobile: formData.mobile.trim(),
-                address: formData.address.trim(),
+                area: formData.areaName.trim(),
                 landmark: formData.landmark.trim() || null,
                 customerLat: formData.customerLat ? parseFloat(formData.customerLat) : null,
                 customerLng: formData.customerLng ? parseFloat(formData.customerLng) : null
             };
+
+            // Add address if provided (optional)
+            if (formData.address && formData.address.trim()) {
+                submitData.address = formData.address.trim();
+            }
 
             await customersAPI.create(submitData);
             alert('Customer added successfully!');
@@ -70,6 +76,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             setFormData({
                 name: '',
                 mobile: '',
+                areaName: '',
                 address: '',
                 landmark: '',
                 customerLat: '',
@@ -151,22 +158,37 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Address <span className="text-red-500">*</span>
+                                Area Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="areaName"
+                                value={formData.areaName}
+                                onChange={handleChange}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    errors.areaName ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                                placeholder="Enter area name"
+                                disabled={isSubmitting}
+                            />
+                            {errors.areaName && (
+                                <p className="text-red-500 text-sm mt-1">{errors.areaName}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Address (Optional)
                             </label>
                             <textarea
                                 name="address"
                                 value={formData.address}
                                 onChange={handleChange}
                                 rows="3"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                    errors.address ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                                placeholder="Enter complete delivery address"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter complete delivery address (optional)"
                                 disabled={isSubmitting}
                             />
-                            {errors.address && (
-                                <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-                            )}
                         </div>
 
                         <div>
