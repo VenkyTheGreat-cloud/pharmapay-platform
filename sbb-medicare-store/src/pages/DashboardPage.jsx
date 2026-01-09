@@ -41,16 +41,16 @@ const formatImageUrl = (url) => {
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
     const now = new Date();
-    // Convert to IST: Get UTC time and add IST offset (UTC+5:30)
-    const utcTime = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
-    const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
-    const istDate = new Date(utcTime + istOffset);
+    // Use Intl.DateTimeFormat to get date in IST timezone
+    const istDateString = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(now);
     
-    // Format as YYYY-MM-DD
-    const year = istDate.getUTCFullYear();
-    const month = String(istDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(istDate.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    // Return in YYYY-MM-DD format (en-CA locale already returns this format)
+    return istDateString;
 };
 
 export default function DashboardPage() {
