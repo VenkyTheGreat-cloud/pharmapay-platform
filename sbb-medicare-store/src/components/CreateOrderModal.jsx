@@ -1,15 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ordersAPI, customersAPI, deliveryBoysAPI } from '../services/api';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+    const [selectedCustomerName, setSelectedCustomerName] = useState('');
+    const customerSearchRef = useRef(null);
+    const customerDropdownRef = useRef(null);
     const [formData, setFormData] = useState({
         orderNumber: '',
         customerId: '',
         deliveryBoyId: '',
+        areaName: '',
         totalAmount: '',
         paidAmount: '',
         paymentMode: '',
@@ -24,8 +30,32 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             setLoading(true);
             Promise.all([loadCustomers(), loadDeliveryBoys()])
                 .finally(() => setLoading(false));
+        } else {
+            // Reset form when modal closes
+            setCustomerSearchQuery('');
+            setSelectedCustomerName('');
+            setShowCustomerDropdown(false);
         }
     }, [isOpen]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                customerDropdownRef.current &&
+                !customerDropdownRef.current.contains(event.target) &&
+                customerSearchRef.current &&
+                !customerSearchRef.current.contains(event.target)
+            ) {
+                setShowCustomerDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const loadCustomers = async () => {
         try {
@@ -60,6 +90,35 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         }
     };
 
+    // Filter customers based on search query (name or mobile)
+    const filteredCustomers = customers.filter(customer => {
+        if (!customerSearchQuery.trim()) return true;
+        const query = customerSearchQuery.toLowerCase();
+        const name = (customer.name || customer.full_name || '').toLowerCase();
+        const mobile = (customer.mobile || customer.mobile_number || '').toLowerCase();
+        return name.includes(query) || mobile.includes(query);
+    });
+
+    const handleCustomerSearch = (e) => {
+        const query = e.target.value;
+        setCustomerSearchQuery(query);
+        setShowCustomerDropdown(true);
+        if (!query) {
+            setFormData(prev => ({ ...prev, customerId: '' }));
+            setSelectedCustomerName('');
+        }
+    };
+
+    const handleCustomerSelect = (customer) => {
+        setFormData(prev => ({ ...prev, customerId: customer.id.toString() }));
+        setSelectedCustomerName(`${customer.name || customer.full_name} - ${customer.mobile || customer.mobile_number}`);
+        setCustomerSearchQuery('');
+        setShowCustomerDropdown(false);
+        if (errors.customerId) {
+            setErrors(prev => ({ ...prev, customerId: '' }));
+        }
+    };
+
     const calculateRemainingAmount = () => {
         const total = parseFloat(formData.totalAmount) || 0;
         const paid = parseFloat(formData.paidAmount) || 0;
@@ -79,6 +138,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         if (!formData.deliveryBoyId) {
             newErrors.deliveryBoyId = 'Delivery Boy is required';
+        }
+
+        if (!formData.areaName || !formData.areaName.trim()) {
+            newErrors.areaName = 'Area Name is required';
         }
 
         if (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0) {
@@ -119,6 +182,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 orderNumber: formData.orderNumber.trim(),
                 customerId: parseInt(formData.customerId),
                 deliveryBoyId: parseInt(formData.deliveryBoyId),
+                areaName: formData.areaName.trim(),
                 totalAmount: parseFloat(formData.totalAmount),
             };
 
@@ -143,6 +207,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 orderNumber: '',
                 customerId: '',
                 deliveryBoyId: '',
+                areaName: '',
                 totalAmount: '',
                 paidAmount: '',
                 paymentMode: '',
@@ -150,6 +215,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 customerComments: ''
             });
             setErrors({});
+            setCustomerSearchQuery('');
+            setSelectedCustomerName('');
+            setShowCustomerDropdown(false);
 
             if (onSuccess) onSuccess();
             onClose();
@@ -207,26 +275,65 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             </div>
 
                             {/* Customer Selection */}
-                            <div>
+                            <div className="relative">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Customer <span className="text-red-500">*</span>
                                 </label>
-                                <select
-                                    name="customerId"
-                                    value={formData.customerId}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.customerId ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    disabled={isSubmitting}
-                                >
-                                    <option value="">Select a customer</option>
-                                    {customers.map(customer => (
-                                        <option key={customer.id} value={customer.id}>
-                                            {customer.name || customer.full_name} - {customer.mobile || customer.mobile_number}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Search className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        ref={customerSearchRef}
+                                        type="text"
+                                        value={selectedCustomerName || customerSearchQuery}
+                                        onChange={handleCustomerSearch}
+                                        onFocus={() => {
+                                            setShowCustomerDropdown(true);
+                                            if (selectedCustomerName) {
+                                                setCustomerSearchQuery('');
+                                                setSelectedCustomerName('');
+                                                setFormData(prev => ({ ...prev, customerId: '' }));
+                                            }
+                                        }}
+                                        placeholder="Search by customer name or mobile number"
+                                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                            errors.customerId ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                                {showCustomerDropdown && filteredCustomers.length > 0 && (
+                                    <div
+                                        ref={customerDropdownRef}
+                                        className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+                                    >
+                                        {filteredCustomers.map(customer => (
+                                            <div
+                                                key={customer.id}
+                                                onClick={() => handleCustomerSelect(customer)}
+                                                className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                            >
+                                                <div className="font-medium text-gray-900">
+                                                    {customer.name || customer.full_name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {customer.mobile || customer.mobile_number}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {showCustomerDropdown && customerSearchQuery && filteredCustomers.length === 0 && (
+                                    <div
+                                        ref={customerDropdownRef}
+                                        className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg"
+                                    >
+                                        <div className="px-4 py-2 text-gray-500 text-sm">
+                                            No customers found
+                                        </div>
+                                    </div>
+                                )}
                                 {errors.customerId && (
                                     <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
                                 )}
@@ -262,6 +369,27 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 )}
                                 {deliveryBoys.length === 0 && !loading && (
                                     <p className="text-sm text-gray-500 mt-1">No approved and active delivery boys found</p>
+                                )}
+                            </div>
+
+                            {/* Area Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Area Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="areaName"
+                                    value={formData.areaName}
+                                    onChange={handleChange}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                        errors.areaName ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    placeholder="Enter area name"
+                                    disabled={isSubmitting}
+                                />
+                                {errors.areaName && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.areaName}</p>
                                 )}
                             </div>
 
