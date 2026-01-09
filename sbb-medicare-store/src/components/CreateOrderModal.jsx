@@ -15,7 +15,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         orderNumber: '',
         customerId: '',
         deliveryBoyId: '',
-        areaName: '',
         totalAmount: '',
         paidAmount: '',
         paymentMode: '',
@@ -140,10 +139,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             newErrors.deliveryBoyId = 'Delivery Boy is required';
         }
 
-        if (!formData.areaName || !formData.areaName.trim()) {
-            newErrors.areaName = 'Area Name is required';
-        }
-
         if (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0) {
             newErrors.totalAmount = 'Total Amount must be greater than 0';
         }
@@ -182,7 +177,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 orderNumber: formData.orderNumber.trim(),
                 customerId: parseInt(formData.customerId),
                 deliveryBoyId: parseInt(formData.deliveryBoyId),
-                areaName: formData.areaName.trim(),
                 totalAmount: parseFloat(formData.totalAmount),
             };
 
@@ -207,7 +201,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 orderNumber: '',
                 customerId: '',
                 deliveryBoyId: '',
-                areaName: '',
                 totalAmount: '',
                 paidAmount: '',
                 paymentMode: '',
@@ -369,27 +362,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 )}
                                 {deliveryBoys.length === 0 && !loading && (
                                     <p className="text-sm text-gray-500 mt-1">No approved and active delivery boys found</p>
-                                )}
-                            </div>
-
-                            {/* Area Name */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Area Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="areaName"
-                                    value={formData.areaName}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.areaName ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Enter area name"
-                                    disabled={isSubmitting}
-                                />
-                                {errors.areaName && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.areaName}</p>
                                 )}
                             </div>
 

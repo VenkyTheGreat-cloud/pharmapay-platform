@@ -54,10 +54,12 @@ class Order {
         const result = await query(
             `SELECT o.*, 
                     db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
-                    u.name as store_name, u.store_name as store_store_name
+                    u.name as store_name, u.store_name as store_store_name,
+                    c.area as customer_area
              FROM orders o
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
+             LEFT JOIN customers c ON o.customer_id = c.id
              WHERE o.id = $1`,
             [id]
         );
@@ -78,10 +80,12 @@ class Order {
         let queryText = `
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
-                   u.name as store_name
+                   u.name as store_name,
+                   c.area as customer_area
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN users u ON o.store_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
             WHERE 1=1
         `;
         const params = [];
@@ -199,9 +203,11 @@ class Order {
         
         let queryText = `
             SELECT o.*, 
-                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile
+                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
+                   c.area as customer_area
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+            LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
         `;
         const params = [];
@@ -222,10 +228,12 @@ class Order {
         const result = await query(
             `SELECT o.*, 
                     db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
-                    u.name as store_name, u.store_name as store_store_name
+                    u.name as store_name, u.store_name as store_store_name,
+                    c.area as customer_area
              FROM orders o
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
+             LEFT JOIN customers c ON o.customer_id = c.id
              WHERE o.assigned_delivery_boy_id = $1
                AND o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
              ORDER BY o.created_at DESC`,
@@ -277,10 +285,12 @@ class Order {
             SELECT o.*,
                    db.name as delivery_boy_name,
                    db.mobile as delivery_boy_mobile,
-                   u.name as store_name
+                   u.name as store_name,
+                   c.area as customer_area
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN users u ON o.store_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.created_at >= $1::date
               AND o.created_at < ($2::date + INTERVAL '1 day')
               AND o.status IN ('ASSIGNED', 'PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED')
@@ -304,9 +314,11 @@ class Order {
     static async getByCustomerMobile(mobile, storeId = null) {
         let queryText = `
             SELECT o.*, 
-                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile
+                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
+                   c.area as customer_area
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+            LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.customer_phone = $1
         `;
         const params = [mobile];

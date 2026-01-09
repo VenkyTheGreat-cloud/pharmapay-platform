@@ -3,12 +3,12 @@ const { query } = require('../config/database');
 class Customer {
     // Create a new customer
     static async create(customerData) {
-        const { name, mobile, address, landmark, customer_lat, customer_lng, store_id } = customerData;
+        const { name, mobile, address, area, landmark, customer_lat, customer_lng, store_id } = customerData;
         const result = await query(
-            `INSERT INTO customers (name, mobile, address, landmark, customer_lat, customer_lng, store_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO customers (name, mobile, address, area, landmark, customer_lat, customer_lng, store_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING *`,
-            [name, mobile, address, landmark, customer_lat, customer_lng, store_id]
+            [name, mobile, address || null, area, landmark, customer_lat, customer_lng, store_id]
         );
         return result.rows[0];
     }

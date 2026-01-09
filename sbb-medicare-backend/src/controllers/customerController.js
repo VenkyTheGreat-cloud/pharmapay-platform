@@ -150,15 +150,25 @@ exports.createCustomer = async (req, res, next) => {
         // Support both field name formats: name/full_name, mobile/mobile_number
         const name = req.body.name || req.body.full_name;
         const mobile = req.body.mobile || req.body.mobile_number;
-        const { address, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
+        const { address, area, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
 
-        // Validation
-        if (!name || !mobile || !address) {
+        // Validation - Area is mandatory, Address is optional for new customers
+        if (!name || !mobile) {
             return res.status(400).json({
                 success: false,
                 error: {
                     code: 'VALIDATION_ERROR',
-                    message: 'Name, mobile, and address are required'
+                    message: 'Name and mobile are required'
+                }
+            });
+        }
+
+        if (!area) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Area is required'
                 }
             });
         }
@@ -186,7 +196,8 @@ exports.createCustomer = async (req, res, next) => {
         const customer = await Customer.create({
             name: name.trim(),
             mobile: mobile.trim(),
-            address: address.trim(),
+            address: address ? address.trim() : null, // Address is optional
+            area: area.trim(), // Area is mandatory
             landmark: landmark ? landmark.trim() : null,
             customer_lat: lat,
             customer_lng: lng,
@@ -222,12 +233,13 @@ exports.updateCustomer = async (req, res, next) => {
         // Support both field name formats
         const name = req.body.name || req.body.full_name;
         const mobile = req.body.mobile || req.body.mobile_number;
-        const { address, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
+        const { address, area, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
 
         const updates = {};
         if (name) updates.name = name.trim();
         if (mobile) updates.mobile = mobile.trim();
-        if (address) updates.address = address.trim();
+        if (address !== undefined) updates.address = address ? address.trim() : null; // Address can be set to null
+        if (area !== undefined) updates.area = area ? area.trim() : null; // Area can be updated
         if (landmark !== undefined) updates.landmark = landmark ? landmark.trim() : null;
         
         // Handle coordinates from any field name
