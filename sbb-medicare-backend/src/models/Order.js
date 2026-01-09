@@ -111,9 +111,15 @@ class Order {
             paramCount++;
         }
 
-        // Date filter (treats value as a calendar day, regardless of time)
+        // Date range filter (uses created_at - for orders created in date range)
+        if (filters.date_from && filters.date_to) {
+            queryText += ` AND o.created_at >= $${paramCount}::date AND o.created_at < ($${paramCount + 1}::date + INTERVAL '1 day')`;
+            params.push(filters.date_from, filters.date_to);
+            paramCount += 2;
+        }
+        // Single date filter (treats value as a calendar day, regardless of time)
         // Business definition: \"today's orders\" = orders ASSIGNED on that day
-        if (filters.date) {
+        else if (filters.date) {
             // Accept either 'YYYY-MM-DD' or full ISO datetime; we cast to ::date
             queryText += ` AND o.assigned_at >= $${paramCount}::date AND o.assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
             params.push(filters.date);
@@ -170,8 +176,14 @@ class Order {
             paramCount++;
         }
 
-        // Same date handling as in findAll (based on assigned_at)
-        if (filters.date) {
+        // Date range filter (uses created_at - for orders created in date range)
+        if (filters.date_from && filters.date_to) {
+            queryText += ` AND created_at >= $${paramCount}::date AND created_at < ($${paramCount + 1}::date + INTERVAL '1 day')`;
+            params.push(filters.date_from, filters.date_to);
+            paramCount += 2;
+        }
+        // Single date filter (based on assigned_at for backward compatibility)
+        else if (filters.date) {
             queryText += ` AND assigned_at >= $${paramCount}::date AND assigned_at < ($${paramCount}::date + INTERVAL '1 day')`;
             params.push(filters.date);
             paramCount++;
