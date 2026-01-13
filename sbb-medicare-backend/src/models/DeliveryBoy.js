@@ -17,7 +17,7 @@ class DeliveryBoy {
     static async findById(id) {
         const result = await query(
             `SELECT db.id, db.name, db.mobile, db.email, db.address, db.photo_url, 
-                    db.status, db.is_active, db.store_id, db.password_hash,
+                    db.status, db.is_active, db.store_id, db.password_hash, db.device_token,
                     db.created_at, db.updated_at,
                     u.name as store_name, u.store_name as store_store_name
              FROM delivery_boys db
@@ -109,6 +109,33 @@ class DeliveryBoy {
              ORDER BY db.name ASC`
         );
         return result.rows;
+    }
+
+    // Get all delivery boys for an admin group (all stores under admin)
+    static async getByStoreIds(storeIds) {
+        if (!storeIds || storeIds.length === 0) {
+            return [];
+        }
+        const result = await query(
+            `SELECT db.*, u.name as store_name, u.store_name as store_store_name
+             FROM delivery_boys db
+             LEFT JOIN users u ON db.store_id = u.id
+             WHERE db.store_id = ANY($1::uuid[])
+               AND db.status = 'approved' 
+               AND db.is_active = true
+             ORDER BY db.name ASC`,
+            [storeIds]
+        );
+        return result.rows;
+    }
+
+    // Update device token for a delivery boy
+    static async updateDeviceToken(id, deviceToken) {
+        const result = await query(
+            'UPDATE delivery_boys SET device_token = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, device_token',
+            [deviceToken, id]
+        );
+        return result.rows[0];
     }
 
     // Update delivery boy

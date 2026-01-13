@@ -7,6 +7,10 @@ const path = require('path');
 const logger = require('./config/logger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
+// Initialize Firebase Admin SDK (for push notifications)
+const { initializeFirebase } = require('./config/firebase');
+initializeFirebase();
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');

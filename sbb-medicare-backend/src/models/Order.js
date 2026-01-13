@@ -242,9 +242,12 @@ class Order {
     }
 
     // Get ongoing orders for a specific delivery boy
-    static async getOngoingOrdersForDeliveryBoy(deliveryBoyId) {
-        const result = await query(
-            `SELECT o.*, 
+    // Shows:
+    // 1. Unassigned orders (assigned_delivery_boy_id IS NULL) for the delivery boy's admin group
+    // 2. Orders assigned to this delivery boy (assigned_delivery_boy_id = deliveryBoyId)
+    static async getOngoingOrdersForDeliveryBoy(deliveryBoyId, storeIds = null) {
+        let queryText = `
+            SELECT o.*, 
                     db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                     u.name as store_name, u.store_name as store_store_name,
                     c.area as customer_area
@@ -252,11 +255,27 @@ class Order {
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
              LEFT JOIN customers c ON o.customer_id = c.id
-             WHERE o.assigned_delivery_boy_id = $1
-               AND o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
-             ORDER BY o.created_at DESC`,
-            [deliveryBoyId]
-        );
+             WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        if (storeIds && storeIds.length > 0) {
+            // Show unassigned orders for this admin group OR orders assigned to this delivery boy
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(storeIds, deliveryBoyId);
+        } else {
+            // Fallback: only show orders assigned to this delivery boy
+            queryText += ` AND o.assigned_delivery_boy_id = $${paramCount}`;
+            params.push(deliveryBoyId);
+        }
+
+        queryText += ' ORDER BY o.created_at DESC';
+
+        const result = await query(queryText, params);
         return result.rows;
     }
 
@@ -395,12 +414,12 @@ class Order {
         });
     }
 
-    // Accept order (delivery boy accepts assigned order)
+    // Accept order (delivery boy accepts order - can be unassigned or already assigned to them)
     static async accept(orderId, deliveryBoyId, notes = null) {
         return transaction(async (client) => {
-            // Verify order is assigned to this delivery boy
+            // Get order - can be unassigned (assigned_delivery_boy_id IS NULL) or assigned to this delivery boy
             const orderResult = await client.query(
-                'SELECT * FROM orders WHERE id = $1 AND assigned_delivery_boy_id = $2',
+                'SELECT * FROM orders WHERE id = $1 AND (assigned_delivery_boy_id IS NULL OR assigned_delivery_boy_id = $2)',
                 [orderId, deliveryBoyId]
             );
 
@@ -415,10 +434,13 @@ class Order {
                 throw new Error('INVALID_STATUS_TRANSITION');
             }
 
-            // Update status to ACCEPTED
+            // Update order: assign to delivery boy and set status to ACCEPTED
             const result = await client.query(
-                `UPDATE orders SET status = 'ACCEPTED' WHERE id = $1 RETURNING *`,
-                [orderId]
+                `UPDATE orders 
+                 SET assigned_delivery_boy_id = $1, status = 'ACCEPTED', assigned_at = CURRENT_TIMESTAMP 
+                 WHERE id = $2 
+                 RETURNING *`,
+                [deliveryBoyId, orderId]
             );
 
             // Create status history
@@ -450,6 +472,7 @@ class Order {
     }
 
     // Reject order (delivery boy rejects assigned order)
+    // When rejected, unassign the order (set assigned_delivery_boy_id to NULL) so it becomes available again
     static async reject(orderId, deliveryBoyId, reason = null) {
         return transaction(async (client) => {
             // Verify order is assigned to this delivery boy
@@ -469,9 +492,13 @@ class Order {
                 throw new Error('INVALID_STATUS_TRANSITION');
             }
 
-            // Update status to REJECTED
+            // Update order: unassign (set assigned_delivery_boy_id to NULL) and set status to ASSIGNED
+            // This makes the order available again to all delivery boys under the admin
             const result = await client.query(
-                `UPDATE orders SET status = 'REJECTED' WHERE id = $1 RETURNING *`,
+                `UPDATE orders 
+                 SET assigned_delivery_boy_id = NULL, status = 'ASSIGNED', assigned_at = CURRENT_TIMESTAMP 
+                 WHERE id = $1 
+                 RETURNING *`,
                 [orderId]
             );
 

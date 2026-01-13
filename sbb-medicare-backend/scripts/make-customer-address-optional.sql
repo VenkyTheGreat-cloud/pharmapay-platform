@@ -3,3 +3,5 @@
 ALTER TABLE orders 
 ALTER COLUMN customer_address DROP NOT NULL;
 
+
+
