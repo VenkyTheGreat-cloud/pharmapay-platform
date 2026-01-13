@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { ordersAPI, customersAPI, deliveryBoysAPI } from '../services/api';
+import { ordersAPI, customersAPI } from '../services/api';
 import { X, Search } from 'lucide-react';
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
-    const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [loading, setLoading] = useState(false);
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -27,7 +26,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
-            Promise.all([loadCustomers(), loadDeliveryBoys()])
+            loadCustomers()
                 .finally(() => setLoading(false));
         } else {
             // Reset form when modal closes
@@ -65,19 +64,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         } catch (error) {
             console.error('Error loading customers:', error);
             setCustomers([]);
-        }
-    };
-
-    const loadDeliveryBoys = async () => {
-        try {
-            const response = await deliveryBoysAPI.listApproved();
-            // Backend format: { success, data: { delivery_boys: [...], count: ... } }
-            const list = response.data?.data?.delivery_boys || response.data?.data || [];
-            const deliveryBoysList = Array.isArray(list) ? list : [];
-            setDeliveryBoys(deliveryBoysList);
-        } catch (error) {
-            console.error('Error loading delivery boys:', error);
-            setDeliveryBoys([]);
         }
     };
 
@@ -135,10 +121,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             newErrors.customerId = 'Customer is required';
         }
 
-        if (!formData.deliveryBoyId) {
-            newErrors.deliveryBoyId = 'Delivery Boy is required';
-        }
-
         if (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0) {
             newErrors.totalAmount = 'Total Amount must be greater than 0';
         }
@@ -176,9 +158,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             const submitData = {
                 orderNumber: formData.orderNumber.trim(),
                 customerId: parseInt(formData.customerId),
-                deliveryBoyId: parseInt(formData.deliveryBoyId),
                 totalAmount: parseFloat(formData.totalAmount),
             };
+
+            // Add deliveryBoyId only if provided (optional)
+            if (formData.deliveryBoyId) {
+                submitData.deliveryBoyId = parseInt(formData.deliveryBoyId);
+            }
 
             const paidAmount = parseFloat(formData.paidAmount) || 0;
             if (paidAmount > 0) {
@@ -329,39 +315,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 )}
                                 {errors.customerId && (
                                     <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
-                                )}
-                            </div>
-
-                            {/* Delivery Boy Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Delivery Boy <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    name="deliveryBoyId"
-                                    value={formData.deliveryBoyId}
-                                    onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                        errors.deliveryBoyId ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    disabled={isSubmitting}
-                                >
-                                    <option value="">Select a delivery boy</option>
-                                    {deliveryBoys.length === 0 ? (
-                                        <option value="" disabled>No approved delivery boys available</option>
-                                    ) : (
-                                        deliveryBoys.map(boy => (
-                                            <option key={boy.id} value={boy.id}>
-                                                {boy.name} - {boy.mobile}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                                {errors.deliveryBoyId && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.deliveryBoyId}</p>
-                                )}
-                                {deliveryBoys.length === 0 && !loading && (
-                                    <p className="text-sm text-gray-500 mt-1">No approved and active delivery boys found</p>
                                 )}
                             </div>
 

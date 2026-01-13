@@ -271,3 +271,30 @@ exports.toggleActiveStatus = async (req, res, next) => {
     }
 };
 
+// Update device token (delivery boy only)
+exports.updateDeviceToken = async (req, res, next) => {
+    try {
+        const { device_token } = req.body;
+        const deliveryBoyId = req.user.userId; // Delivery boy's own ID from token
+
+        if (!device_token || typeof device_token !== 'string' || device_token.trim() === '') {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Device token is required'));
+        }
+
+        // Verify delivery boy exists
+        const deliveryBoy = await DeliveryBoy.findById(deliveryBoyId);
+        if (!deliveryBoy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
+        }
+
+        // Update device token
+        const updated = await DeliveryBoy.updateDeviceToken(deliveryBoyId, device_token.trim());
+
+        logger.info('Device token updated', { deliveryBoyId, updatedBy: req.user?.userId });
+
+        res.json(successResponse({ device_token: updated.device_token }, 'Device token updated successfully'));
+    } catch (error) {
+        next(error);
+    }
+};
+

@@ -62,7 +62,16 @@ router.patch(
     deliveryBoyController.toggleActiveStatus
 );
 
+// Update device token (delivery boy only - updates their own token)
+router.put(
+    '/device-token',
+    authorizeRoles('delivery_boy'),
+    deliveryBoyController.updateDeviceToken
+);
+
 module.exports = router;
+
+
 
 
 

@@ -13,3 +13,5 @@ SHOW timezone;
 -- Note: The application will also set timezone on each connection
 -- This SQL ensures the database default is IST
 
+
+

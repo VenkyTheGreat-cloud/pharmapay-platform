@@ -24,6 +24,7 @@ router.get('/dashboard', checkStoreAccess, orderController.getDashboardStats);
 router.get('/:id', checkStoreAccess, orderController.getOrderById);
 
 // Create order (simplified - no items, only total amount)
+// Note: deliveryBoyId is no longer required - order will be assigned to all delivery boys under admin
 router.post(
     '/',
     checkStoreAccess,
@@ -31,7 +32,6 @@ router.post(
     [
         body('orderNumber').notEmpty().trim().withMessage('Order number is required'),
         body('customerId').notEmpty().withMessage('Customer ID is required'),
-        body('deliveryBoyId').notEmpty().withMessage('Delivery boy ID is required'),
         body('totalAmount').isFloat({ min: 0.01 }).withMessage('Total amount is required and must be greater than 0'),
         body('paidAmount').optional().isFloat({ min: 0 }).withMessage('Paid amount must be a positive number'),
         body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'BANK_TRANSFER']).withMessage('Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'),

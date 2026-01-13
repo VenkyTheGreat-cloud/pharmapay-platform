@@ -193,9 +193,22 @@ exports.getTodayOrders = async (req, res, next) => {
 // Get ongoing orders
 exports.getOngoingOrders = async (req, res, next) => {
     try {
-        // For delivery boys, filter by assigned_delivery_boy_id
+        // For delivery boys, show unassigned orders for their admin group + orders assigned to them
         if (req.user.role === 'delivery_boy') {
-            const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId);
+            // Get delivery boy's store_id to find admin group
+            const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
+            if (!deliveryBoy || !deliveryBoy.store_id) {
+                return res.json(successResponse({ orders: [], count: 0 }));
+            }
+
+            // Get all store IDs for the admin group
+            const User = require('../models/User');
+            // Find the admin ID (could be the store_id itself if it's an admin, or find the admin via admin_id)
+            const storeUser = await User.findById(deliveryBoy.store_id);
+            const adminId = storeUser?.role === 'admin' ? storeUser.id : storeUser?.admin_id || deliveryBoy.store_id;
+            const storeIds = await User.getStoreIdsForAdmin(adminId);
+
+            const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId, storeIds);
             const ordersWithDetails = await Promise.all(orders.map(async (order) => {
                 const items = await OrderItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
@@ -206,7 +219,9 @@ exports.getOngoingOrders = async (req, res, next) => {
                     items,
                     payment_summary: paymentSummary,
                     // Frontend can use this flag to hide the "collect payment" option
-                    can_collect_payment: !isFullyPaid
+                    can_collect_payment: !isFullyPaid,
+                    // Add flag to indicate if order is unassigned (available for acceptance)
+                    is_unassigned: order.assigned_delivery_boy_id === null
                 };
             }));
             return res.json(successResponse({ orders: ordersWithDetails, count: ordersWithDetails.length }));
@@ -287,7 +302,6 @@ exports.createOrder = async (req, res, next) => {
         const { 
             orderNumber, 
             customerId, 
-            deliveryBoyId, 
             totalAmount, 
             paidAmount,           // Optional: Amount already paid
             paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, BANK_TRANSFER)
@@ -341,19 +355,10 @@ exports.createOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Customer does not belong to your store'));
         }
 
-        // Get delivery boy
-        const deliveryBoy = await DeliveryBoy.findById(deliveryBoyId);
-        if (!deliveryBoy) {
-            return res.status(404).json(errorResponse('NOT_FOUND', 'Delivery boy not found'));
-        }
-
-        if (deliveryBoy.status !== 'approved') {
-            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
-        }
-
-        if (!deliveryBoy.is_active) {
-            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_AVAILABLE', 'Delivery boy is not active'));
-        }
+        // Determine admin ID for push notifications
+        // If user is admin, use their ID; if store_manager, use their adminId
+        const User = require('../models/User');
+        const adminId = req.user.role === 'admin' ? req.user.userId : (req.user.adminId || req.user.userId);
 
         // Determine payment status based on paid amount
         let initialPaymentStatus = 'PENDING';
@@ -381,13 +386,14 @@ exports.createOrder = async (req, res, next) => {
             const customerAddress = customer.address || customer.area || '';
 
             // Create order with provided order number
+            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
                                     total_amount, status, payment_status, payment_mode, customer_comments, assigned_at)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
-                [orderNumber.trim(), customerId, deliveryBoyId, storeId,
+                [orderNumber.trim(), customerId, null, storeId,
                  customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
                  totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments]
             );
@@ -443,6 +449,23 @@ exports.createOrder = async (req, res, next) => {
 
         // Calculate payment summary
         const paymentSummary = await Payment.getPaymentSummary(order.id);
+
+        // Send push notification to all delivery boys under admin
+        try {
+            const PushNotificationService = require('../services/pushNotificationService');
+            await PushNotificationService.notifyNewOrder(adminId, {
+                id: order.id,
+                order_number: order.order_number,
+                customer_area: customer.area || ''
+            });
+        } catch (notificationError) {
+            // Log error but don't fail order creation
+            logger.error('Failed to send push notification', {
+                orderId: order.id,
+                adminId,
+                error: notificationError.message
+            });
+        }
 
         logger.info('Order created', { orderId: order.id, orderNumber: order.order_number, createdBy: storeId, totalAmount });
 
@@ -561,9 +584,25 @@ exports.acceptOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Only delivery boys can accept orders'));
         }
 
-        // Verify order is assigned to this delivery boy
-        if (order.assigned_delivery_boy_id !== req.user.userId) {
-            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
+        // Verify order is unassigned or assigned to this delivery boy
+        // Also check if order belongs to delivery boy's admin group
+        if (order.assigned_delivery_boy_id !== null && order.assigned_delivery_boy_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order not available for you'));
+        }
+
+        // Check if order belongs to delivery boy's admin group
+        const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
+        if (!deliveryBoy || !deliveryBoy.store_id) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Delivery boy not found or not linked to a store'));
+        }
+
+        const User = require('../models/User');
+        const storeUser = await User.findById(deliveryBoy.store_id);
+        const adminId = storeUser?.role === 'admin' ? storeUser.id : storeUser?.admin_id || deliveryBoy.store_id;
+        const storeIds = await User.getStoreIdsForAdmin(adminId);
+
+        if (!storeIds.includes(order.store_id)) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your admin group'));
         }
 
         // Accept order
@@ -619,7 +658,7 @@ exports.rejectOrder = async (req, res, next) => {
 
         res.json(successResponse({
             ...updatedOrder
-        }, 'Order rejected. Store manager can reassign to another delivery boy.'));
+        }, 'Order rejected. Order is now available for all delivery boys to accept.'));
     } catch (error) {
         if (error.message === 'INVALID_STATUS_TRANSITION') {
             return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Order must be in ASSIGNED status to reject'));
