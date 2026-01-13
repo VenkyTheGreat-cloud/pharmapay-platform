@@ -269,10 +269,24 @@ class Order {
             )`;
             params.push(storeIds, deliveryBoyId);
         } else {
-            // Fallback: show orders assigned to this delivery boy
-            // If no storeIds provided, still show unassigned orders that match this delivery boy's store (if provided)
-            queryText += ` AND (o.assigned_delivery_boy_id = $${paramCount})`;
-            params.push(deliveryBoyId);
+            // Fallback: show orders assigned to this delivery boy OR unassigned orders for their store
+            // Get delivery boy's store_id for fallback
+            const { query: dbQuery } = require('../config/database');
+            const dbResult = await dbQuery('SELECT store_id FROM delivery_boys WHERE id = $1', [deliveryBoyId]);
+            const deliveryBoyStoreId = dbResult.rows[0]?.store_id;
+            
+            if (deliveryBoyStoreId) {
+                // Show unassigned orders for this store OR orders assigned to this delivery boy
+                queryText += ` AND (
+                    (o.assigned_delivery_boy_id IS NULL AND o.store_id = $${paramCount})
+                    OR o.assigned_delivery_boy_id = $${paramCount + 1}
+                )`;
+                params.push(deliveryBoyStoreId, deliveryBoyId);
+            } else {
+                // Last resort: only show orders assigned to this delivery boy
+                queryText += ` AND o.assigned_delivery_boy_id = $${paramCount}`;
+                params.push(deliveryBoyId);
+            }
         }
 
         queryText += ' ORDER BY o.created_at DESC';
