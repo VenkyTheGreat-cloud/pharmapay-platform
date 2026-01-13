@@ -21,35 +21,24 @@ export default function DashboardPage() {
             return `${year}-${month}-${day}`;
         };
         
-        const todayIST = getISTDate();
-        // Calculate 7 days ago from today in IST
-        const now = new Date();
-        const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        istTime.setDate(istTime.getDate() - 7);
-        const year = istTime.getFullYear();
-        const month = String(istTime.getMonth() + 1).padStart(2, '0');
-        const day = String(istTime.getDate()).padStart(2, '0');
-        const sevenDaysAgo = `${year}-${month}-${day}`;
-        
         return {
-            fromDate: sevenDaysAgo,
-            toDate: todayIST,
+            selectedDate: getISTDate(),
         };
     });
 
     useEffect(() => {
         loadDashboardData();
-    }, [filters.fromDate, filters.toDate]); // Reload when date filters change
+    }, [filters.selectedDate]); // Reload when date filter changes
 
     const loadDashboardData = async () => {
         try {
             setLoading(true);
-            // Build params with date filters if API supports them
+            // Build params with date filter - use the same date for from and to (00:00:00 to 23:59:59)
             const params = {
                 page: 1,
                 limit: 500,
-                date_from: filters.fromDate,
-                date_to: filters.toDate,
+                date_from: filters.selectedDate,
+                date_to: filters.selectedDate,
             };
             const allRes = await ordersAPI.getAll(params);
             console.log('Dashboard Orders API Response:', allRes.data); // Debug log
@@ -105,23 +94,27 @@ export default function DashboardPage() {
 
     const filteredOrders = allOrders.filter((order) => {
         if (!order.createdTime) {
-            // If no createdTime, include it (might be a data issue)
-            return true;
+            // If no createdTime, exclude it
+            return false;
         }
         
-        // Handle different date formats
+        // Handle different date formats and filter by selected date (00:00:00 to 23:59:59 IST)
         let orderDate;
         if (typeof order.createdTime === 'string') {
             orderDate = order.createdTime.split('T')[0];
         } else if (order.createdTime instanceof Date) {
-            orderDate = order.createdTime.toISOString().split('T')[0];
+            // Convert to IST date
+            const istTime = new Date(order.createdTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            const year = istTime.getFullYear();
+            const month = String(istTime.getMonth() + 1).padStart(2, '0');
+            const day = String(istTime.getDate()).padStart(2, '0');
+            orderDate = `${year}-${month}-${day}`;
         } else {
-            return true; // Include if date format is unknown
+            return false; // Exclude if date format is unknown
         }
         
-        if (filters.fromDate && orderDate < filters.fromDate) return false;
-        if (filters.toDate && orderDate > filters.toDate) return false;
-        return true;
+        // Filter orders for the selected date only
+        return orderDate === filters.selectedDate;
     });
 
     // Stats for the selected date range
@@ -148,6 +141,16 @@ export default function DashboardPage() {
         return `${start}...${end}`;
     };
 
+    // Get max date (today in IST) for date picker
+    const getMaxDate = () => {
+        const now = new Date();
+        const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+        const year = istTime.getFullYear();
+        const month = String(istTime.getMonth() + 1).padStart(2, '0');
+        const day = String(istTime.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     return (
         <div className="p-6">
             <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -156,25 +159,17 @@ export default function DashboardPage() {
                     <p className="text-gray-600 mt-1">Orders overview, filters, and details</p>
             </div>
 
-                {/* Date filter for full orders table */}
+                {/* Date filter for orders table */}
                 <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
-                <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
-                    <input
-                        type="date"
-                            value={filters.fromDate}
-                            onChange={(e) => setFilters({ ...filters, fromDate: e.target.value })}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Select Date</label>
+                        <input
+                            type="date"
+                            value={filters.selectedDate}
+                            onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
+                            max={getMaxDate()}
                             className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
-                </div>
-                <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
-                    <input
-                        type="date"
-                            value={filters.toDate}
-                            onChange={(e) => setFilters({ ...filters, toDate: e.target.value })}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
+                        />
                     </div>
                 </div>
             </div>
@@ -220,18 +215,21 @@ export default function DashboardPage() {
                         />
                     </div>
 
-                    {/* Orders Table for selected date range */}
+                    {/* Orders Table for selected date */}
                     <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
                         <div className="px-6 py-4 border-b flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">Orders in Date Range</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">Orders for {filters.selectedDate}</h2>
                             <p className="text-xs text-gray-500">
-                                Showing {filteredOrders.length} of {allOrders.length} orders
+                                Showing {filteredOrders.length} orders
                             </p>
                             </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Sl.No
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Order #
                                         </th>
@@ -261,13 +259,16 @@ export default function DashboardPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                                                No orders in this date range
+                                            <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
+                                                No orders for selected date
                                             </td>
                                         </tr>
                                     ) : (
-                                        filteredOrders.map((order) => (
+                                        filteredOrders.map((order, index) => (
                                             <tr key={order.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {index + 1}
+                                                </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                     {trimOrderId(order.orderNumber || order.id || 'N/A')}
                                                 </td>
