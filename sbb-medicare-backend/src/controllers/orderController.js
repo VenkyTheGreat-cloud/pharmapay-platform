@@ -365,6 +365,21 @@ exports.getOrderById = async (req, res, next) => {
 // Create order (simplified - no items list, only total amount)
 exports.createOrder = async (req, res, next) => {
     try {
+        // Log at the very start to verify function is called
+        logger.info('=== ORDER CREATION STARTED ===', {
+            orderNumber: req.body.orderNumber,
+            customerId: req.body.customerId,
+            userId: req.user.userId,
+            userRole: req.user.role,
+            timestamp: new Date().toISOString()
+        });
+        console.log('[ORDER CREATE] Function called', {
+            orderNumber: req.body.orderNumber,
+            customerId: req.body.customerId,
+            userId: req.user.userId,
+            userRole: req.user.role
+        });
+
         const { 
             orderNumber, 
             customerId, 
@@ -425,6 +440,14 @@ exports.createOrder = async (req, res, next) => {
         // If user is admin, use their ID; if store_manager, use their adminId
         const User = require('../models/User');
         const adminId = req.user.role === 'admin' ? req.user.userId : (req.user.adminId || req.user.userId);
+        
+        logger.info('Admin ID determined for push notification', {
+            adminId,
+            userRole: req.user.role,
+            userId: req.user.userId,
+            userAdminId: req.user.adminId
+        });
+        console.log('[ORDER CREATE] Admin ID:', adminId, 'Role:', req.user.role);
 
         // Determine payment status based on paid amount
         let initialPaymentStatus = 'PENDING';
@@ -523,9 +546,15 @@ exports.createOrder = async (req, res, next) => {
             adminId: adminId,
             customerArea: customer.area || ''
         });
+        console.log('[PUSH NOTIFICATION] About to send', {
+            orderId: order.id,
+            orderNumber: order.order_number,
+            adminId: adminId
+        });
 
         try {
             const PushNotificationService = require('../services/pushNotificationService');
+            console.log('[PUSH NOTIFICATION] Calling notifyNewOrder...');
             const notificationResult = await PushNotificationService.notifyNewOrder(adminId, {
                 id: order.id,
                 order_number: order.order_number,
@@ -537,6 +566,7 @@ exports.createOrder = async (req, res, next) => {
                 adminId: adminId,
                 result: notificationResult
             });
+            console.log('[PUSH NOTIFICATION] Result:', JSON.stringify(notificationResult));
         } catch (notificationError) {
             // Log error but don't fail order creation
             logger.error('Failed to send push notification', {
@@ -545,6 +575,8 @@ exports.createOrder = async (req, res, next) => {
                 error: notificationError.message,
                 stack: notificationError.stack
             });
+            console.error('[PUSH NOTIFICATION] ERROR:', notificationError.message);
+            console.error('[PUSH NOTIFICATION] Stack:', notificationError.stack);
         }
 
         logger.info('Order created', { orderId: order.id, orderNumber: order.order_number, createdBy: storeId, totalAmount });

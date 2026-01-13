@@ -60,6 +60,11 @@ class PushNotificationService {
                     title,
                     body
                 });
+                console.log('[PUSH SERVICE] Sending FCM to delivery boy', {
+                    deliveryBoyId,
+                    name: deliveryBoy.name,
+                    tokenPreview: deliveryBoy.device_token ? `${deliveryBoy.device_token.substring(0, 20)}...` : 'NULL'
+                });
 
                 const message = {
                     notification: {
@@ -100,6 +105,11 @@ class PushNotificationService {
                     messageId: response,
                     fcmResponse: response
                 });
+                console.log('[PUSH SERVICE] ✅ Notification sent successfully', {
+                    deliveryBoyId,
+                    name: deliveryBoy.name,
+                    messageId: response
+                });
 
                 return { success: true, message: 'Notification sent', messageId: response };
             } catch (fcmError) {
@@ -109,6 +119,12 @@ class PushNotificationService {
                     error: fcmError.message,
                     errorCode: fcmError.code,
                     errorStack: fcmError.stack
+                });
+                console.error('[PUSH SERVICE] ❌ FCM send error', {
+                    deliveryBoyId,
+                    name: deliveryBoy.name,
+                    error: fcmError.message,
+                    code: fcmError.code
                 });
                 // Handle FCM errors
                 if (fcmError.code === 'messaging/invalid-registration-token' || 
@@ -145,6 +161,7 @@ class PushNotificationService {
                 title,
                 body
             });
+            console.log('[PUSH SERVICE] sendToAdminDeliveryBoys started', { adminId, title, body });
 
             // Get all store IDs for this admin (admin + all stores)
             const storeIds = await User.getStoreIdsForAdmin(adminId);
@@ -180,6 +197,11 @@ class PushNotificationService {
                 deliveryBoyIds: deliveryBoys.map(db => db.id),
                 deliveryBoyNames: deliveryBoys.map(db => db.name)
             });
+            console.log('[PUSH SERVICE] Delivery boys found:', {
+                count: deliveryBoys.length,
+                ids: deliveryBoys.map(db => db.id),
+                names: deliveryBoys.map(db => db.name)
+            });
             
             if (deliveryBoys.length === 0) {
                 logger.warn(`No delivery boys with device tokens found for admin: ${adminId}`, {
@@ -201,6 +223,11 @@ class PushNotificationService {
 
             logger.info('Bulk push notification sent', {
                 adminId,
+                total: deliveryBoys.length,
+                successful,
+                failed
+            });
+            console.log('[PUSH SERVICE] Bulk notification complete', {
                 total: deliveryBoys.length,
                 successful,
                 failed
@@ -233,6 +260,11 @@ class PushNotificationService {
             orderId: orderData.id,
             orderNumber: orderData.order_number,
             customerArea: orderData.customer_area
+        });
+        console.log('[PUSH SERVICE] notifyNewOrder called', {
+            adminId,
+            orderId: orderData.id,
+            orderNumber: orderData.order_number
         });
 
         const title = 'New Order Available';
