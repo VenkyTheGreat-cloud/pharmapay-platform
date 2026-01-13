@@ -111,6 +111,16 @@ class Order {
             paramCount++;
         }
 
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
+        }
+
         // Date range filter (uses created_at - for orders created in date range)
         // Convert to IST timezone for accurate date comparison
         if (filters.date_from && filters.date_to) {
@@ -178,6 +188,16 @@ class Order {
             queryText += ` AND status = $${paramCount}`;
             params.push(filters.status);
             paramCount++;
+        }
+
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (assigned_delivery_boy_id IS NULL AND store_id = ANY($${paramCount}::uuid[]))
+                OR assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
         }
 
         // Date range filter (uses created_at - for orders created in date range)
@@ -263,11 +283,23 @@ class Order {
 
         if (storeIds && storeIds.length > 0) {
             // Show unassigned orders for this admin group OR orders assigned to this delivery boy
+            // IMPORTANT: Unassigned orders (assigned_delivery_boy_id IS NULL) should be visible to ALL delivery boys
+            // under the same admin, regardless of which store created the order
             queryText += ` AND (
                 (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
                 OR o.assigned_delivery_boy_id = $${paramCount + 1}
             )`;
             params.push(storeIds, deliveryBoyId);
+            
+            // Log for debugging
+            const logger = require('../config/logger');
+            logger.info('Delivery boy order query - with storeIds', {
+                deliveryBoyId,
+                storeIds,
+                storeIdsCount: storeIds.length,
+                query: queryText,
+                params: params
+            });
         } else {
             // Fallback: show orders assigned to this delivery boy OR unassigned orders for their store
             // Get delivery boy's store_id for fallback

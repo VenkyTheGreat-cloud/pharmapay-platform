@@ -59,8 +59,31 @@ exports.getAllOrders = async (req, res, next) => {
             const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
             filters.store_ids = storeIds;
         } else if (req.user.role === 'delivery_boy') {
-            // Delivery boys see only orders assigned to them
-            filters.assigned_delivery_boy_id = req.user.userId;
+            // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
+            const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
+            if (!deliveryBoy || !deliveryBoy.store_id) {
+                return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
+            }
+
+            const User = require('../models/User');
+            const storeUser = await User.findById(deliveryBoy.store_id);
+
+            let storeIds = [];
+            if (storeUser) {
+                const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
+                storeIds = await User.getStoreIdsForAdmin(adminId);
+            }
+            // Always include delivery boy's own store_id
+            if (!storeIds || storeIds.length === 0) {
+                storeIds = [deliveryBoy.store_id];
+            } else if (!storeIds.includes(deliveryBoy.store_id)) {
+                storeIds.push(deliveryBoy.store_id);
+            }
+
+            // Special filter: include unassigned + assigned to this delivery boy
+            filters.store_ids = storeIds;
+            filters.include_unassigned_for_delivery_boy = true;
+            filters.delivery_boy_id = req.user.userId;
         }
 
         if (status) filters.status = status;
@@ -215,18 +238,43 @@ exports.getOngoingOrders = async (req, res, next) => {
             // Always include delivery boy's store_id to ensure they see orders from their store
             if (!storeIds || storeIds.length === 0) {
                 storeIds = [deliveryBoy.store_id];
-            } else if (!storeIds.includes(deliveryBoy.store_id)) {
-                // Ensure delivery boy's store_id is in the list
-                storeIds.push(deliveryBoy.store_id);
+                logger.warn('No store IDs found for admin group, using delivery boy store_id only', {
+                    deliveryBoyId: req.user.userId,
+                    storeId: deliveryBoy.store_id
+                });
+            } else {
+                // Ensure delivery boy's store_id is in the list (convert to string for comparison)
+                const storeIdStr = String(deliveryBoy.store_id);
+                const storeIdsStr = storeIds.map(id => String(id));
+                if (!storeIdsStr.includes(storeIdStr)) {
+                    storeIds.push(deliveryBoy.store_id);
+                    logger.info('Added delivery boy store_id to storeIds list', {
+                        deliveryBoyId: req.user.userId,
+                        addedStoreId: deliveryBoy.store_id,
+                        storeIds: storeIds
+                    });
+                }
             }
 
-            logger.info('Delivery boy order query', {
+            logger.info('Delivery boy order query - controller', {
                 deliveryBoyId: req.user.userId,
+                deliveryBoyName: deliveryBoy.name,
                 storeId: deliveryBoy.store_id,
-                storeIds: storeIds
+                storeIds: storeIds,
+                storeIdsCount: storeIds.length,
+                storeUserFound: !!storeUser,
+                storeUserRole: storeUser?.role,
+                storeUserAdminId: storeUser?.admin_id
             });
 
             const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId, storeIds);
+            
+            logger.info('Delivery boy orders result', {
+                deliveryBoyId: req.user.userId,
+                ordersCount: orders.length,
+                unassignedCount: orders.filter(o => o.assigned_delivery_boy_id === null).length,
+                assignedCount: orders.filter(o => o.assigned_delivery_boy_id === req.user.userId).length
+            });
             const ordersWithDetails = await Promise.all(orders.map(async (order) => {
                 const items = await OrderItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
