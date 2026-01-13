@@ -3,6 +3,21 @@ import { ordersAPI, deliveryBoysAPI } from '../services/api';
 import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
 
+// Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
+const getTodayIST = () => {
+    const now = new Date();
+    // Use Intl.DateTimeFormat to get date in IST timezone
+    const istDateString = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(now);
+    
+    // Return in YYYY-MM-DD format (en-CA locale already returns this format)
+    return istDateString;
+};
+
 // Helper function to format image URL - handles base64 data and regular URLs
 const formatImageUrl = (url) => {
     if (!url || typeof url !== 'string') return null;
@@ -44,8 +59,7 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: '',
-        dateFrom: '',
-        dateTo: '',
+        selectedDate: getTodayIST(),
     });
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
@@ -63,15 +77,36 @@ export default function OrdersPage() {
             setLoading(true);
             const params = {};
             if (filters.status) params.status = filters.status.toUpperCase();
-            if (filters.dateFrom) params.dateFrom = filters.dateFrom;
-            if (filters.dateTo) params.dateTo = filters.dateTo;
+            // Filter by selected date (from 00:00:00 to 23:59:59)
+            if (filters.selectedDate) {
+                params.dateFrom = filters.selectedDate;
+                params.dateTo = filters.selectedDate;
+            }
             params.page = 1;
-            params.limit = 20;
+            params.limit = 1000; // Increased limit to get all orders for the day
             
             const response = await ordersAPI.getAll(params);
             // Backend: { success, data: { orders: [...], pagination: {...} } }
             const list = response.data?.data?.orders || response.data?.data || [];
-            setOrders(Array.isArray(list) ? list : []);
+            
+            // Filter orders for the selected date (00:00:00 to 23:59:59)
+            let filteredOrders = Array.isArray(list) ? list : [];
+            if (filters.selectedDate) {
+                const selectedDateObj = new Date(filters.selectedDate);
+                const startOfDay = new Date(selectedDateObj);
+                startOfDay.setHours(0, 0, 0, 0);
+                
+                const endOfDay = new Date(selectedDateObj);
+                endOfDay.setHours(23, 59, 59, 999);
+                
+                filteredOrders = filteredOrders.filter((order) => {
+                    const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
+                    if (!created) return false;
+                    return created >= startOfDay && created <= endOfDay;
+                });
+            }
+            
+            setOrders(filteredOrders);
         } catch (error) {
             console.error('Error loading orders:', error);
             setOrders([]);
@@ -198,23 +233,22 @@ export default function OrdersPage() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">From</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
                         <input
                             type="date"
-                            value={filters.dateFrom}
-                            onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                            value={filters.selectedDate}
+                            onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">To</label>
-                        <input
-                            type="date"
-                            value={filters.dateTo}
-                            onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                            className="border border-gray-300 rounded px-3 py-2"
-                        />
-                    </div>
+                    <button
+                        type="button"
+                        onClick={loadOrders}
+                        className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    >
+                        <Calendar className="w-4 h-4" />
+                        Refresh
+                    </button>
                 </div>
             </div>
 
