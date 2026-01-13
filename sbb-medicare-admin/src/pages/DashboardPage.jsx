@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye } from 'lucide-react';
+import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
@@ -170,6 +170,17 @@ export default function DashboardPage() {
                             max={getMaxDate()}
                             className="border border-gray-300 rounded px-2 py-1 text-sm"
                         />
+                    </div>
+                    <div className="flex items-end">
+                        <button
+                            onClick={loadDashboardData}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                            title="Refresh orders for selected date"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
                     </div>
                 </div>
             </div>
