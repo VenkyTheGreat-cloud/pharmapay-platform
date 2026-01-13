@@ -53,6 +53,14 @@ class PushNotificationService {
 
             // Send FCM push notification
             try {
+                logger.info('Sending FCM notification to delivery boy', {
+                    deliveryBoyId,
+                    deliveryBoyName: deliveryBoy.name,
+                    deviceToken: deliveryBoy.device_token ? `${deliveryBoy.device_token.substring(0, 20)}...` : 'NULL',
+                    title,
+                    body
+                });
+
                 const message = {
                     notification: {
                         title: title,
@@ -75,6 +83,13 @@ class PushNotificationService {
                     }
                 };
 
+                logger.info('FCM message prepared', {
+                    deliveryBoyId,
+                    messageTitle: message.notification.title,
+                    messageBody: message.notification.body,
+                    dataKeys: Object.keys(message.data)
+                });
+
                 const response = await admin.messaging().send(message);
                 
                 logger.info('Push notification sent successfully', {
@@ -82,11 +97,19 @@ class PushNotificationService {
                     deliveryBoyName: deliveryBoy.name,
                     title,
                     body,
-                    messageId: response
+                    messageId: response,
+                    fcmResponse: response
                 });
 
                 return { success: true, message: 'Notification sent', messageId: response };
             } catch (fcmError) {
+                logger.error('FCM send error', {
+                    deliveryBoyId,
+                    deliveryBoyName: deliveryBoy.name,
+                    error: fcmError.message,
+                    errorCode: fcmError.code,
+                    errorStack: fcmError.stack
+                });
                 // Handle FCM errors
                 if (fcmError.code === 'messaging/invalid-registration-token' || 
                     fcmError.code === 'messaging/registration-token-not-registered') {
@@ -117,8 +140,20 @@ class PushNotificationService {
      */
     static async sendToAdminDeliveryBoys(adminId, title, body, data = {}) {
         try {
+            logger.info('sendToAdminDeliveryBoys started', {
+                adminId,
+                title,
+                body
+            });
+
             // Get all store IDs for this admin (admin + all stores)
             const storeIds = await User.getStoreIdsForAdmin(adminId);
+            
+            logger.info('Store IDs retrieved for admin', {
+                adminId,
+                storeIds,
+                storeIdsCount: storeIds.length
+            });
             
             if (storeIds.length === 0) {
                 logger.warn(`No stores found for admin: ${adminId}`);
@@ -139,8 +174,18 @@ class PushNotificationService {
 
             const deliveryBoys = result.rows;
             
+            logger.info('Delivery boys with tokens found', {
+                adminId,
+                deliveryBoysCount: deliveryBoys.length,
+                deliveryBoyIds: deliveryBoys.map(db => db.id),
+                deliveryBoyNames: deliveryBoys.map(db => db.name)
+            });
+            
             if (deliveryBoys.length === 0) {
-                logger.warn(`No delivery boys with device tokens found for admin: ${adminId}`);
+                logger.warn(`No delivery boys with device tokens found for admin: ${adminId}`, {
+                    adminId,
+                    storeIds
+                });
                 return { success: false, error: 'No delivery boys with device tokens found' };
             }
 
@@ -183,6 +228,13 @@ class PushNotificationService {
      * @param {object} orderData - Order data (id, order_number, customer_area, etc.)
      */
     static async notifyNewOrder(adminId, orderData) {
+        logger.info('notifyNewOrder called', {
+            adminId,
+            orderId: orderData.id,
+            orderNumber: orderData.order_number,
+            customerArea: orderData.customer_area
+        });
+
         const title = 'New Order Available';
         const body = `New order created for ${orderData.customer_area || 'this area'}. Please accept it.`;
         const data = {
@@ -192,7 +244,22 @@ class PushNotificationService {
             customer_area: orderData.customer_area || ''
         };
 
-        return await this.sendToAdminDeliveryBoys(adminId, title, body, data);
+        logger.info('Calling sendToAdminDeliveryBoys', {
+            adminId,
+            title,
+            body,
+            data
+        });
+
+        const result = await this.sendToAdminDeliveryBoys(adminId, title, body, data);
+        
+        logger.info('notifyNewOrder completed', {
+            adminId,
+            orderId: orderData.id,
+            result
+        });
+
+        return result;
     }
 }
 
