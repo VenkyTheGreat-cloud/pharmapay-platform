@@ -120,11 +120,12 @@ class Order {
             paramCount += 2;
         }
         // Single date filter (treats value as a calendar day, regardless of time)
-        // Business definition: \"today's orders\" = orders ASSIGNED on that day
+        // Business definition: \"today's orders\" = orders CREATED on that day
         // Convert to IST timezone for accurate date comparison
         else if (filters.date) {
             // Accept either 'YYYY-MM-DD' or full ISO datetime; we cast to ::date
-            queryText += ` AND (o.assigned_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
+            // Use created_at for consistency with date range filter
+            queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
             params.push(filters.date);
             paramCount++;
         }
@@ -187,10 +188,10 @@ class Order {
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
-        // Single date filter (based on assigned_at for backward compatibility)
+        // Single date filter (based on created_at for consistency)
         // Convert to IST timezone for accurate date comparison
         else if (filters.date) {
-            queryText += ` AND (assigned_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
+            queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${paramCount}::date`;
             params.push(filters.date);
             paramCount++;
         }
