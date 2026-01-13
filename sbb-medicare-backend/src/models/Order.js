@@ -268,8 +268,9 @@ class Order {
             )`;
             params.push(storeIds, deliveryBoyId);
         } else {
-            // Fallback: only show orders assigned to this delivery boy
-            queryText += ` AND o.assigned_delivery_boy_id = $${paramCount}`;
+            // Fallback: show orders assigned to this delivery boy
+            // If no storeIds provided, still show unassigned orders that match this delivery boy's store (if provided)
+            queryText += ` AND (o.assigned_delivery_boy_id = $${paramCount})`;
             params.push(deliveryBoyId);
         }
 
