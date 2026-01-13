@@ -20,6 +20,14 @@ router.get(
     deliveryBoyController.getApprovedDeliveryBoys
 );
 
+// Update device token (delivery boy only - updates their own token)
+// IMPORTANT: This route must be BEFORE /:id to avoid route conflict
+router.put(
+    '/device-token',
+    authorizeRoles('delivery_boy'),
+    deliveryBoyController.updateDeviceToken
+);
+
 // Get delivery boy by ID
 router.get(
     '/:id',
@@ -60,13 +68,6 @@ router.patch(
     '/:id/toggle-active',
     authorizeRoles('admin'),
     deliveryBoyController.toggleActiveStatus
-);
-
-// Update device token (delivery boy only - updates their own token)
-router.put(
-    '/device-token',
-    authorizeRoles('delivery_boy'),
-    deliveryBoyController.updateDeviceToken
 );
 
 module.exports = router;
