@@ -70,7 +70,7 @@ exports.getAllOrders = async (req, res, next) => {
             filters.date_from = dateFrom;
             filters.date_to = dateTo;
         } else if (date) {
-            // Single date filter (uses assigned_at for backward compatibility)
+            // Single date filter (uses created_at for consistency)
             filters.date = date;
         }
 
