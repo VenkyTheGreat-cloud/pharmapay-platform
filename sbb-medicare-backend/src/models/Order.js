@@ -632,6 +632,12 @@ class Order {
             const updateParams = [status];
             let paramCount = 2;
 
+            // If status is being changed to ASSIGNED and order is currently assigned to a delivery boy,
+            // unassign it (set assigned_delivery_boy_id to NULL) so it becomes available to all delivery boys
+            if (status === 'ASSIGNED' && order.assigned_delivery_boy_id !== null) {
+                updateQuery += `, assigned_delivery_boy_id = NULL, assigned_at = CURRENT_TIMESTAMP`;
+            }
+
             if (timestampField) {
                 updateQuery += `, ${timestampField} = CURRENT_TIMESTAMP`;
             }
@@ -647,6 +653,27 @@ class Order {
             let changedByValue = null;
             let historyNotes = notes || '';
             
+            // If status changed to ASSIGNED and order was unassigned, add note
+            if (status === 'ASSIGNED' && order.assigned_delivery_boy_id !== null) {
+                try {
+                    const deliveryBoyResult = await client.query(
+                        'SELECT name FROM delivery_boys WHERE id = $1',
+                        [order.assigned_delivery_boy_id]
+                    );
+                    if (deliveryBoyResult.rows.length > 0) {
+                        const dbName = deliveryBoyResult.rows[0].name;
+                        historyNotes = notes 
+                            ? `${notes} (Order unassigned from ${dbName} - now available to all delivery boys)`
+                            : `Order status changed to ASSIGNED. Unassigned from ${dbName} - now available to all delivery boys.`;
+                    }
+                } catch (err) {
+                    // Ignore error, use default notes
+                    if (!historyNotes) {
+                        historyNotes = 'Order status changed to ASSIGNED. Order unassigned and available to all delivery boys.';
+                    }
+                }
+            }
+            
             // UUIDs contain dashes, delivery boy IDs are just numbers
             const changedByStr = String(changedBy || '');
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changedByStr);
@@ -657,19 +684,22 @@ class Order {
             } else if (/^\d+$/.test(changedByStr)) {
                 // This is a numeric ID (delivery boy)
                 // Set changed_by to NULL and add delivery boy name to notes
-                try {
-                    const deliveryBoyResult = await client.query(
-                        'SELECT name FROM delivery_boys WHERE id = $1',
-                        [changedBy]
-                    );
-                    if (deliveryBoyResult.rows.length > 0) {
-                        const dbName = deliveryBoyResult.rows[0].name;
-                        historyNotes = notes ? `${notes} (Changed by delivery boy: ${dbName})` : `Changed by delivery boy: ${dbName}`;
-                    } else {
+                // But don't override the unassignment note we just set
+                if (!historyNotes || !historyNotes.includes('unassigned')) {
+                    try {
+                        const deliveryBoyResult = await client.query(
+                            'SELECT name FROM delivery_boys WHERE id = $1',
+                            [changedBy]
+                        );
+                        if (deliveryBoyResult.rows.length > 0) {
+                            const dbName = deliveryBoyResult.rows[0].name;
+                            historyNotes = notes ? `${notes} (Changed by delivery boy: ${dbName})` : `Changed by delivery boy: ${dbName}`;
+                        } else {
+                            historyNotes = notes || 'Changed by delivery boy';
+                        }
+                    } catch (err) {
                         historyNotes = notes || 'Changed by delivery boy';
                     }
-                } catch (err) {
-                    historyNotes = notes || 'Changed by delivery boy';
                 }
             }
 
