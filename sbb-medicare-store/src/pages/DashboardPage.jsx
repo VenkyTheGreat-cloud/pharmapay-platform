@@ -195,6 +195,7 @@ export default function DashboardPage() {
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
+                        max={getTodayIST()}
                         className="border border-gray-300 rounded px-3 py-2"
                     />
                 </div>
@@ -259,6 +260,9 @@ export default function DashboardPage() {
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
+                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                                Sl.No
+                                            </th>
                                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                                 Order ID
                                             </th>
@@ -286,7 +290,7 @@ export default function DashboardPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
-                                        {filteredForList.map((order) => {
+                                        {filteredForList.map((order, index) => {
                                             const orderNumber = order.orderNumber || order.order_number || '';
 
                                             const formatOrderNumber = (orderNum) => {
@@ -309,6 +313,9 @@ export default function DashboardPage() {
 
                                             return (
                                             <tr key={order.id}>
+                                                <td className="px-4 py-2 whitespace-nowrap text-gray-900 text-center">
+                                                    {index + 1}
+                                                </td>
                                                 <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 max-w-[160px]">
                                                     {formatOrderNumber(orderNumber)}
                                                 </td>

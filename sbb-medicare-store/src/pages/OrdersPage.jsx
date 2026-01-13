@@ -238,6 +238,7 @@ export default function OrdersPage() {
                             type="date"
                             value={filters.selectedDate}
                             onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
+                            max={getTodayIST()}
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
@@ -263,6 +264,9 @@ export default function OrdersPage() {
                         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                    Sl.No
+                                </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
                                     Order #
                                 </th>
@@ -292,12 +296,12 @@ export default function OrdersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                                         No orders found
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map((order) => {
+                                orders.map((order, index) => {
                                     const orderNumber = order.orderNumber || order.order_number || '';
 
                                     // Format order number by trimming the middle for long IDs
@@ -321,6 +325,9 @@ export default function OrdersPage() {
 
                                     return (
                                         <tr key={order.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-4 text-sm text-gray-900 text-center">
+                                                {index + 1}
+                                            </td>
                                             <td className="px-4 py-4 text-sm text-gray-900 max-w-[150px]">
                                                 {formatOrderNumber(orderNumber)}
                                             </td>
