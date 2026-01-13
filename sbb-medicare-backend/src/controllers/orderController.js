@@ -517,19 +517,33 @@ exports.createOrder = async (req, res, next) => {
         const paymentSummary = await Payment.getPaymentSummary(order.id);
 
         // Send push notification to all delivery boys under admin
+        logger.info('About to send push notification for new order', {
+            orderId: order.id,
+            orderNumber: order.order_number,
+            adminId: adminId,
+            customerArea: customer.area || ''
+        });
+
         try {
             const PushNotificationService = require('../services/pushNotificationService');
-            await PushNotificationService.notifyNewOrder(adminId, {
+            const notificationResult = await PushNotificationService.notifyNewOrder(adminId, {
                 id: order.id,
                 order_number: order.order_number,
                 customer_area: customer.area || ''
+            });
+            
+            logger.info('Push notification result', {
+                orderId: order.id,
+                adminId: adminId,
+                result: notificationResult
             });
         } catch (notificationError) {
             // Log error but don't fail order creation
             logger.error('Failed to send push notification', {
                 orderId: order.id,
                 adminId,
-                error: notificationError.message
+                error: notificationError.message,
+                stack: notificationError.stack
             });
         }
 
