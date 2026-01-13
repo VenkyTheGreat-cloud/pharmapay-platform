@@ -206,7 +206,11 @@ exports.getOngoingOrders = async (req, res, next) => {
             // Find the admin ID (could be the store_id itself if it's an admin, or find the admin via admin_id)
             const storeUser = await User.findById(deliveryBoy.store_id);
             const adminId = storeUser?.role === 'admin' ? storeUser.id : storeUser?.admin_id || deliveryBoy.store_id;
-            const storeIds = await User.getStoreIdsForAdmin(adminId);
+            let storeIds = await User.getStoreIdsForAdmin(adminId);
+            // Fallback: if no stores found, at least use the delivery boy's store_id
+            if (!storeIds || storeIds.length === 0) {
+                storeIds = [deliveryBoy.store_id];
+            }
 
             const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId, storeIds);
             const ordersWithDetails = await Promise.all(orders.map(async (order) => {
