@@ -58,10 +58,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
-    const [dateRange, setDateRange] = useState({
-        from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        to: getTodayIST(),
-    });
+    const [selectedDate, setSelectedDate] = useState(getTodayIST());
 
     useEffect(() => {
         loadOrders();
@@ -128,15 +125,34 @@ export default function DashboardPage() {
             };
         }
 
-        const fromDate = dateRange.from ? new Date(dateRange.from) : null;
-        const toDate = dateRange.to ? new Date(`${dateRange.to}T23:59:59`) : null;
+        // Filter orders for the selected date (00:00:00 to 23:59:59)
+        const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
+        if (!selectedDateObj) {
+            return {
+                filteredByDate: [],
+                summary: {
+                    totalCreated: 0,
+                    totalDelivered: 0,
+                    totalAssigned: 0,
+                    totalPickedUp: 0,
+                    totalCollectedAmount: 0,
+                },
+                filteredForList: [],
+            };
+        }
+
+        // Set start of day (00:00:00) and end of day (23:59:59) in IST
+        const startOfDay = new Date(selectedDateObj);
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(selectedDateObj);
+        endOfDay.setHours(23, 59, 59, 999);
 
         const inRange = orders.filter((order) => {
             const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
             if (!created) return false;
-            if (fromDate && created < fromDate) return false;
-            if (toDate && created > toDate) return false;
-            return true;
+            // Check if order was created on the selected date (between start and end of day)
+            return created >= startOfDay && created <= endOfDay;
         });
 
         const totalCreated = inRange.length;
@@ -162,32 +178,23 @@ export default function DashboardPage() {
             },
             filteredForList: list,
         };
-    }, [orders, dateRange]);
+    }, [orders, selectedDate]);
 
     return (
         <div className="p-6">
             <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">Orders and collections for the selected date range</p>
+                <p className="text-gray-600 mt-1">Orders and collections for the selected date</p>
             </div>
 
-            {/* Date Range Filter */}
+            {/* Date Filter */}
             <div className="mb-6 bg-white rounded-lg shadow p-4 flex gap-4 items-end">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
                     <input
                         type="date"
-                        value={dateRange.from}
-                        onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
-                        className="border border-gray-300 rounded px-3 py-2"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                    <input
-                        type="date"
-                        value={dateRange.to}
-                        onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
                         className="border border-gray-300 rounded px-3 py-2"
                     />
                 </div>
@@ -242,11 +249,11 @@ export default function DashboardPage() {
                         />
                     </div>
 
-                    {/* Orders List for selected date range (non-ongoing only) */}
+                    {/* Orders List for selected date */}
                     <div className="bg-white rounded-lg shadow p-6 mt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders in Date Range</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders for Selected Date</h3>
                         {filteredForList.length === 0 ? (
-                            <p className="text-gray-600 text-sm">No orders found for the selected date range.</p>
+                            <p className="text-gray-600 text-sm">No orders found for the selected date.</p>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
