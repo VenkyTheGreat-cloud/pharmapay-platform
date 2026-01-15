@@ -17,7 +17,7 @@ services:
         value: "18"
 
   # 2. THE ADMIN PANEL
-  - type: web
+  - type: static  # Changed from 'web' to 'static'
     name: sbb-medicare-admin
     runtime: static
     region: oregon
@@ -26,7 +26,7 @@ services:
     publishDir: dist
 
   # 3. THE STOREFRONT (Nested)
-  - type: web
+  - type: static  # Changed from 'web' to 'static'
     name: sbb-medicare-store
     runtime: static
     region: oregon
