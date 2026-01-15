@@ -19,6 +19,6 @@ services:
 databases:
   - name: sbb-medicare-db
     databaseName: sbb_medicare
-    plan: starter
+    plan: basic-256mb  # This is the modern equivalent of the $7 plan
     region: oregon
     postgresMajorVersion: "17"
