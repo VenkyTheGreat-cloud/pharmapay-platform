@@ -1,11 +1,11 @@
 services:
+  # 1. THE BACKEND API
   - type: web
     name: sbb-medicare-api
     runtime: node
     plan: starter
     region: oregon
     rootDir: sbb-medicare-backend
-    # Safe Command: Tries to build, but won't fail if the script is missing
     buildCommand: npm install && npm run build --if-present
     startCommand: npm start
     envVars:
@@ -16,9 +16,29 @@ services:
       - key: NODE_VERSION
         value: "18"
 
+  # 2. THE ADMIN PANEL
+  - type: web
+    name: sbb-medicare-admin
+    runtime: static
+    region: oregon
+    rootDir: sbb-medicare-admin
+    buildCommand: npm install && npm run build
+    publishDir: dist
+
+  # 3. THE STOREFRONT (Nested)
+  - type: web
+    name: sbb-medicare-store
+    runtime: static
+    region: oregon
+    # Path is relative to repo root
+    rootDir: sbb-medicare-admin/sbb-medicare-store 
+    buildCommand: npm install && npm run build
+    publishDir: dist
+
+# Keep this at the very bottom
 databases:
   - name: sbb-medicare-db
     databaseName: sbb_medicare
-    plan: basic-256mb  # This is the modern equivalent of the $7 plan
+    plan: basic-256mb
     region: oregon
     postgresMajorVersion: "17"
