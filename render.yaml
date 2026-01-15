@@ -22,7 +22,7 @@ services:
     runtime: static
     rootDir: sbb-medicare-admin
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: dist # Correct field for static sites in blueprints
 
   # 3. THE STOREFRONT (Nested)
   - type: web
@@ -31,7 +31,7 @@ services:
     # Path is relative to repo root
     rootDir: sbb-medicare-admin/sbb-medicare-store 
     buildCommand: npm install && npm run build
-    publishDir: dist
+    staticPublishPath: dist # Correct field for static sites in blueprints
 
 # Keep this at the very bottom
 databases:
