@@ -1,68 +1,24 @@
-databases:
-  - name: sbb-medicare-db
-    databaseName: sbb_medicare
-    user: sbb_medicare_user
-    plan: free
-    region: oregon
-
 services:
-  # Backend API Service
   - type: web
     name: sbb-medicare-api
-    env: node
-    region: oregon
+    runtime: node
     plan: starter
+    region: oregon
     rootDir: sbb-medicare-backend
-    buildCommand: npm install
+    # Safe Command: Tries to build, but won't fail if the script is missing
+    buildCommand: npm install && npm run build --if-present
     startCommand: npm start
-    healthCheckPath: /health
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: sbb-medicare-db
           property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_EXPIRES_IN
-        value: 7d
-      - key: MAX_FILE_SIZE
-        value: "5242880"
-      - key: UPLOAD_PATH
-        value: ./uploads
-      - key: ALLOWED_ORIGINS
-        sync: false
-    autoDeploy: true
+      - key: NODE_VERSION
+        value: "18"
 
-  # Admin Dashboard Static Site
-  - type: web
-    name: sbb-medicare-admin
-    env: static
-    rootDir: sbb-medicare-admin
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        sync: false
-    autoDeploy: true
-
-  # Store Dashboard Static Site
-  - type: web
-    name: sbb-medicare-store
-    env: static
-    rootDir: sbb-medicare-store
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        sync: false
-    autoDeploy: true
+databases:
+  - name: sbb-medicare-db
+    databaseName: sbb_medicare
+    plan: starter
+    region: oregon
+    postgresMajorVersion: "17"
