@@ -17,19 +17,17 @@ services:
         value: "18"
 
   # 2. THE ADMIN PANEL
-  - type: static  # Changed from 'web' to 'static'
+  - type: web
     name: sbb-medicare-admin
     runtime: static
-    region: oregon
     rootDir: sbb-medicare-admin
     buildCommand: npm install && npm run build
     publishDir: dist
 
   # 3. THE STOREFRONT (Nested)
-  - type: static  # Changed from 'web' to 'static'
+  - type: web
     name: sbb-medicare-store
     runtime: static
-    region: oregon
     # Path is relative to repo root
     rootDir: sbb-medicare-admin/sbb-medicare-store 
     buildCommand: npm install && npm run build
