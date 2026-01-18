@@ -206,88 +206,37 @@ export default function OrdersPage() {
     };
 
     return (
-        <div className="p-6">
-            <div className="mb-6 flex justify-between items-center">
+        <div className="h-screen flex flex-col overflow-hidden p-4">
+            <div className="mb-3 flex items-center justify-between flex-shrink-0">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-                    <p className="text-gray-600 mt-1">Create and manage all orders</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Create and manage all orders</p>
                 </div>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                    <Plus className="w-5 h-5" />
-                    Create New Order
-                </button>
-            </div>
-
-            {/* Filters */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4">
-                <div className="flex gap-4 items-end">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select
-                            value={filters.status}
-                            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                            className="border border-gray-300 rounded px-3 py-2"
-                        >
-                            <option value="">All Status</option>
-                            <option value="ASSIGNED">Assigned</option>
-                            <option value="ACCEPTED">Accepted</option>
-                            <option value="REJECTED">Rejected</option>
-                            <option value="PICKED_UP">Picked Up</option>
-                            <option value="IN_TRANSIT">In Transit</option>
-                            <option value="PAYMENT_COLLECTION">Payment Collection</option>
-                            <option value="DELIVERED">Delivered</option>
-                            <option value="CANCELLED">Cancelled</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
                         <input
                             type="date"
                             value={filters.selectedDate}
                             onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
                             max={getTodayIST()}
-                            className="border border-gray-300 rounded px-3 py-2"
+                            className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-                        <input
-                            type="text"
-                            value={filters.orderId}
-                            onChange={(e) => setFilters({ ...filters, orderId: e.target.value })}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    loadOrders();
-                                }
-                            }}
-                            placeholder="Enter order ID"
-                            className="border border-gray-300 rounded px-3 py-2"
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFilters({
-                                status: '',
-                                selectedDate: getTodayIST(),
-                                orderId: '',
-                            });
-                        }}
-                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-                    >
-                        Clear
-                    </button>
                     <button
                         type="button"
                         onClick={loadOrders}
-                        className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 flex items-center gap-1.5 text-sm"
                     >
                         <Calendar className="w-4 h-4" />
                         Refresh
+                    </button>
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-sm"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Create Order
                     </button>
                 </div>
             </div>
@@ -298,49 +247,92 @@ export default function OrdersPage() {
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
-                                    Sl.No
-                                </th>
+                <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
+                    <div className="flex justify-between items-center mb-2 flex-shrink-0">
+                        <h3 className="text-base font-semibold text-gray-900">Orders List</h3>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={filters.status}
+                                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
+                            >
+                                <option value="">All Status</option>
+                                <option value="ASSIGNED">Assigned</option>
+                                <option value="ACCEPTED">Accepted</option>
+                                <option value="REJECTED">Rejected</option>
+                                <option value="PICKED_UP">Picked Up</option>
+                                <option value="IN_TRANSIT">In Transit</option>
+                                <option value="PAYMENT_COLLECTION">Payment Collection</option>
+                                <option value="DELIVERED">Delivered</option>
+                                <option value="CANCELLED">Cancelled</option>
+                            </select>
+                            <input
+                                type="text"
+                                value={filters.orderId}
+                                onChange={(e) => setFilters({ ...filters, orderId: e.target.value })}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        loadOrders();
+                                    }
+                                }}
+                                placeholder="Search by Order ID"
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44"
+                            />
+                            {(filters.status || filters.orderId) && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFilters({
+                                            ...filters,
+                                            status: '',
+                                            orderId: '',
+                                        });
+                                    }}
+                                    className="bg-gray-200 text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
+                                >
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        {orders.length === 0 ? (
+                            <p className="text-gray-600 text-sm">No orders found.</p>
+                        ) : (
+                            <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
+                                <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                                Sl.No
+                                            </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
                                     Order #
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Customer
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Area
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Delivery Boy
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Amount
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Date
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {orders.length === 0 ? (
-                                <tr>
-                                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                                        No orders found
-                                    </td>
-                                </tr>
-                            ) : (
-                                orders.map((order, index) => {
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Customer
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Area
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Delivery Boy
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Amount
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Status
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Date
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {orders.map((order, index) => {
                                     const orderNumber = order.orderNumber || order.order_number || '';
 
                                     // Format order number by trimming the middle for long IDs
@@ -362,83 +354,84 @@ export default function OrdersPage() {
                                         );
                                     };
 
-                                    return (
-                                        <tr key={order.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-4 text-sm text-gray-900 text-center">
-                                                {index + 1}
-                                            </td>
-                                            <td className="px-4 py-4 text-sm text-gray-900 max-w-[150px]">
-                                                {formatOrderNumber(orderNumber)}
-                                            </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.customerName || order.customer_name}</div>
-                                            <div className="text-sm text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">
-                                                {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
-                                            </div>
-                                            {order.deliveryBoyMobile || order.delivery_boy_mobile ? (
-                                                <div className="text-sm text-gray-500">{order.deliveryBoyMobile || order.delivery_boy_mobile}</div>
-                                            ) : null}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">₹{order.amount || order.total_amount || '0.00'}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                                                    order.status
-                                                )}`}
-                                            >
-                                                {order.status ? order.status.replace(/_/g, ' ') : '-'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ minWidth: '150px' }}>
-                                            <div className="flex items-center justify-start gap-3">
-                                                <button
-                                                    onClick={() => viewOrderDetails(order.id)}
-                                                    className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
-                                                    title="View Details"
-                                                >
-                                                    <Eye className="w-5 h-5" />
-                                                </button>
-                                                {/* Show Assign button for: unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
-                                                {((order.status === 'REJECTED' || order.status === 'rejected') ||
-                                                  !(order.deliveryBoyId || order.assigned_delivery_boy_id) ||
-                                                  (order.status === 'ASSIGNED' || order.status === 'assigned')) && (
-                                                    <button
-                                                        onClick={() => openAssignModal(order)}
-                                                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
-                                                        title="Assign/Reassign Delivery Boy"
-                                                    >
-                                                        <UserPlus className="w-5 h-5" />
-                                                    </button>
-                                                )}
-                                                {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
-                                                    <button
-                                                        onClick={() => handleDelete(order.id, order.orderNumber || order.order_number)}
-                                                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                    </div>
+                                            return (
+                                                <tr key={order.id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-4 text-sm text-gray-900 text-center">
+                                                        {index + 1}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-sm text-gray-900 max-w-[150px]">
+                                                        {formatOrderNumber(orderNumber)}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{order.customerName || order.customer_name}</div>
+                                                        <div className="text-sm text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
+                                                        </div>
+                                                        {order.deliveryBoyMobile || order.delivery_boy_mobile ? (
+                                                            <div className="text-sm text-gray-500">{order.deliveryBoyMobile || order.delivery_boy_mobile}</div>
+                                                        ) : null}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">₹{order.amount || order.total_amount || '0.00'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span
+                                                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                                                                order.status
+                                                            )}`}
+                                                        >
+                                                            {order.status ? order.status.replace(/_/g, ' ') : '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ minWidth: '150px' }}>
+                                                        <div className="flex items-center justify-start gap-3">
+                                                            <button
+                                                                onClick={() => viewOrderDetails(order.id)}
+                                                                className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                                title="View Details"
+                                                            >
+                                                                <Eye className="w-5 h-5" />
+                                                            </button>
+                                                            {/* Show Assign button for: unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
+                                                            {((order.status === 'REJECTED' || order.status === 'rejected') ||
+                                                              !(order.deliveryBoyId || order.assigned_delivery_boy_id) ||
+                                                              (order.status === 'ASSIGNED' || order.status === 'assigned')) && (
+                                                                <button
+                                                                    onClick={() => openAssignModal(order)}
+                                                                    className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                                                                    title="Assign/Reassign Delivery Boy"
+                                                                >
+                                                                    <UserPlus className="w-5 h-5" />
+                                                                </button>
+                                                            )}
+                                                            {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
+                                                                <button
+                                                                    onClick={() => handleDelete(order.id, order.orderNumber || order.order_number)}
+                                                                    className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                                                                    title="Delete"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                        )}
+                                </tbody>
+                                </table>
+                            </div>
+                        )}
                 </div>
             )}
 

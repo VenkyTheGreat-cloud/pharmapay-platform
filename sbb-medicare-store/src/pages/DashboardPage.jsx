@@ -59,6 +59,7 @@ export default function DashboardPage() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
+    const [statusFilter, setStatusFilter] = useState('');
     const [orderIdFilter, setOrderIdFilter] = useState('');
 
     useEffect(() => {
@@ -156,6 +157,14 @@ export default function DashboardPage() {
             return created >= startOfDay && created <= endOfDay;
         });
 
+        // Filter by status if provided
+        if (statusFilter && statusFilter.trim()) {
+            inRange = inRange.filter((order) => {
+                const orderStatus = (order.status || '').toUpperCase();
+                return orderStatus === statusFilter.toUpperCase();
+            });
+        }
+
         // Filter by order ID if provided
         if (orderIdFilter && orderIdFilter.trim()) {
             const searchId = orderIdFilter.trim();
@@ -188,7 +197,7 @@ export default function DashboardPage() {
             },
             filteredForList: list,
         };
-    }, [orders, selectedDate, orderIdFilter]);
+    }, [orders, selectedDate, statusFilter, orderIdFilter]);
 
     return (
         <div className="h-screen flex flex-col overflow-hidden p-4">
@@ -265,6 +274,21 @@ export default function DashboardPage() {
                         <div className="flex justify-between items-center mb-2 flex-shrink-0">
                             <h3 className="text-base font-semibold text-gray-900">Orders for Selected Date</h3>
                             <div className="flex items-center gap-2">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
+                                >
+                                    <option value="">All Status</option>
+                                    <option value="ASSIGNED">Assigned</option>
+                                    <option value="ACCEPTED">Accepted</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="PICKED_UP">Picked Up</option>
+                                    <option value="IN_TRANSIT">In Transit</option>
+                                    <option value="PAYMENT_COLLECTION">Payment Collection</option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
                                 <input
                                     type="text"
                                     value={orderIdFilter}
@@ -277,10 +301,13 @@ export default function DashboardPage() {
                                     placeholder="Search by Order ID"
                                     className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44"
                                 />
-                                {orderIdFilter && (
+                                {(statusFilter || orderIdFilter) && (
                                     <button
                                         type="button"
-                                        onClick={() => setOrderIdFilter('')}
+                                        onClick={() => {
+                                            setStatusFilter('');
+                                            setOrderIdFilter('');
+                                        }}
                                         className="bg-gray-200 text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
                                     >
                                         Clear
