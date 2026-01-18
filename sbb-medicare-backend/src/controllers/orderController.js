@@ -362,6 +362,157 @@ exports.getOrderById = async (req, res, next) => {
     }
 };
 
+// Update order (store manager can edit order details)
+exports.updateOrder = async (req, res, next) => {
+    try {
+        const orderId = req.params.id;
+        const {
+            orderNumber,
+            customerId,
+            customerName,
+            customerPhone,
+            customerAddress,
+            customerLat,
+            customerLng,
+            totalAmount,
+            notes,
+            customerComments
+        } = req.body;
+
+        // Get order
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        // Check access control - store manager can only edit orders from their store
+        if (req.user.role === 'store_manager' && order.store_id !== req.user.userId) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
+        }
+
+        // Admin can edit orders from their group
+        if (req.user.role === 'admin') {
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
+            if (!storeIds.includes(order.store_id)) {
+                return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your admin group'));
+            }
+        }
+
+        // Don't allow editing if order is DELIVERED or CANCELLED
+        if (order.status === 'DELIVERED' || order.status === 'CANCELLED') {
+            return res.status(400).json(errorResponse('INVALID_STATUS', `Cannot edit order with status: ${order.status}`));
+        }
+
+        // Build update object with only provided fields
+        const updates = {};
+
+        if (orderNumber !== undefined) {
+            if (!orderNumber || orderNumber.trim() === '') {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Order number cannot be empty'));
+            }
+            // Check if order number already exists (excluding current order)
+            const existingOrder = await query(
+                'SELECT id FROM orders WHERE order_number = $1 AND id != $2',
+                [orderNumber.trim(), orderId]
+            );
+            if (existingOrder.rows.length > 0) {
+                return res.status(400).json(errorResponse('DUPLICATE_ORDER_NUMBER', 'Order number already exists'));
+            }
+            updates.order_number = orderNumber.trim();
+        }
+
+        if (customerId !== undefined) {
+            // Validate customer exists
+            const customer = await Customer.findById(customerId);
+            if (!customer) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Customer not found'));
+            }
+            updates.customer_id = customerId;
+            // If customer_id changes, update customer details from customer table
+            if (customerId !== order.customer_id) {
+                updates.customer_name = customer.name;
+                updates.customer_phone = customer.mobile;
+                updates.customer_address = customer.address || customer.area || '';
+                updates.customer_lat = customer.latitude || null;
+                updates.customer_lng = customer.longitude || null;
+            }
+        }
+
+        // Allow manual override of customer details
+        if (customerName !== undefined) {
+            if (!customerName || customerName.trim() === '') {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Customer name cannot be empty'));
+            }
+            updates.customer_name = customerName.trim();
+        }
+
+        if (customerPhone !== undefined) {
+            if (!customerPhone || customerPhone.trim() === '') {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Customer phone cannot be empty'));
+            }
+            updates.customer_phone = customerPhone.trim();
+        }
+
+        if (customerAddress !== undefined) {
+            updates.customer_address = customerAddress ? customerAddress.trim() : null;
+        }
+
+        if (customerLat !== undefined) {
+            updates.customer_lat = customerLat ? parseFloat(customerLat) : null;
+        }
+
+        if (customerLng !== undefined) {
+            updates.customer_lng = customerLng ? parseFloat(customerLng) : null;
+        }
+
+        if (totalAmount !== undefined) {
+            const totalAmountNum = parseFloat(totalAmount);
+            if (isNaN(totalAmountNum) || totalAmountNum <= 0) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Total amount must be a positive number'));
+            }
+            updates.total_amount = totalAmountNum;
+        }
+
+        if (notes !== undefined) {
+            updates.notes = notes ? notes.trim() : null;
+        }
+
+        if (customerComments !== undefined) {
+            updates.customer_comments = customerComments ? customerComments.trim() : null;
+        }
+
+        // If no updates provided
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
+        }
+
+        // Update order
+        const updatedOrder = await Order.update(orderId, updates);
+
+        logger.info('Order updated', {
+            orderId,
+            updatedBy: req.user.userId,
+            updatedFields: Object.keys(updates)
+        });
+
+        // Get order items and payment summary for response
+        const items = await OrderItem.findByOrderId(updatedOrder.id);
+        const paymentSummary = await Payment.getPaymentSummary(updatedOrder.id);
+
+        res.json(successResponse({
+            ...updatedOrder,
+            items,
+            payment_summary: paymentSummary
+        }, 'Order updated successfully'));
+    } catch (error) {
+        if (error.message === 'No fields to update') {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
+        }
+        next(error);
+    }
+};
+
 // Create order (simplified - no items list, only total amount)
 exports.createOrder = async (req, res, next) => {
     try {

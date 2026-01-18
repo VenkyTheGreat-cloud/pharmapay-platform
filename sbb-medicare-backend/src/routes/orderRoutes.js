@@ -23,6 +23,23 @@ router.get('/dashboard', checkStoreAccess, orderController.getDashboardStats);
 // Get order by ID
 router.get('/:id', checkStoreAccess, orderController.getOrderById);
 
+// Update order (store manager can edit order details)
+router.put(
+    '/:id',
+    checkStoreAccess,
+    authorizeRoles('admin', 'store_manager'),
+    [
+        body('orderNumber').optional().notEmpty().trim().withMessage('Order number cannot be empty'),
+        body('customerId').optional().notEmpty().withMessage('Customer ID cannot be empty'),
+        body('customerName').optional().notEmpty().trim().withMessage('Customer name cannot be empty'),
+        body('customerPhone').optional().notEmpty().trim().withMessage('Customer phone cannot be empty'),
+        body('totalAmount').optional().isFloat({ min: 0.01 }).withMessage('Total amount must be greater than 0'),
+        body('customerLat').optional().isFloat().withMessage('Customer latitude must be a valid number'),
+        body('customerLng').optional().isFloat().withMessage('Customer longitude must be a valid number'),
+    ],
+    orderController.updateOrder
+);
+
 // Create order (simplified - no items, only total amount)
 // Note: deliveryBoyId is no longer required - order will be assigned to all delivery boys under admin
 router.post(
