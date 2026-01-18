@@ -191,8 +191,8 @@ export default function DashboardPage() {
     }, [orders, selectedDate, orderIdFilter]);
 
     return (
-        <div className="p-4">
-            <div className="mb-3 flex items-center justify-between">
+        <div className="h-screen flex flex-col overflow-hidden p-4">
+            <div className="mb-3 flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
                     <p className="text-gray-500 text-sm mt-0.5">Orders and collections for the selected date</p>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
                         <StatCard
                             icon={<Package className="w-5 h-5" />}
                             label="Total Created Orders"
@@ -261,8 +261,8 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Orders List for selected date */}
-                    <div className="bg-white rounded-lg shadow p-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: '400px' }}>
-                        <div className="flex justify-between items-center mb-2">
+                    <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
+                        <div className="flex justify-between items-center mb-2 flex-shrink-0">
                             <h3 className="text-base font-semibold text-gray-900">Orders for Selected Date</h3>
                             <div className="flex items-center gap-2">
                                 <input
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                         {filteredForList.length === 0 ? (
                             <p className="text-gray-600 text-sm">No orders found for the selected date.</p>
                         ) : (
-                            <div className="overflow-x-auto overflow-y-auto flex-1 border border-gray-200 rounded">
+                            <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
