@@ -60,6 +60,7 @@ export default function OrdersPage() {
     const [filters, setFilters] = useState({
         status: '',
         selectedDate: getTodayIST(),
+        orderId: '',
     });
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
@@ -103,6 +104,15 @@ export default function OrdersPage() {
                     const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
                     if (!created) return false;
                     return created >= startOfDay && created <= endOfDay;
+                });
+            }
+
+            // Filter by order ID if provided
+            if (filters.orderId && filters.orderId.trim()) {
+                const searchId = filters.orderId.trim();
+                filteredOrders = filteredOrders.filter((order) => {
+                    const orderNumber = (order.orderNumber || order.order_number || '').toString();
+                    return orderNumber.includes(searchId);
                 });
             }
             
@@ -242,6 +252,35 @@ export default function OrdersPage() {
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
+                        <input
+                            type="text"
+                            value={filters.orderId}
+                            onChange={(e) => setFilters({ ...filters, orderId: e.target.value })}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    loadOrders();
+                                }
+                            }}
+                            placeholder="Enter order ID"
+                            className="border border-gray-300 rounded px-3 py-2"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({
+                                status: '',
+                                selectedDate: getTodayIST(),
+                                orderId: '',
+                            });
+                        }}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+                    >
+                        Clear
+                    </button>
                     <button
                         type="button"
                         onClick={loadOrders}
