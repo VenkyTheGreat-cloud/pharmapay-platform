@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ordersAPI, deliveryBoysAPI } from '../services/api';
 import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
@@ -55,7 +55,7 @@ const formatImageUrl = (url) => {
 };
 
 export default function OrdersPage() {
-    const [orders, setOrders] = useState([]);
+    const [allOrders, setAllOrders] = useState([]); // Store all downloaded orders
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
         status: '',
@@ -69,22 +69,22 @@ export default function OrdersPage() {
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState('');
 
+    // Load orders only when date changes
     useEffect(() => {
         loadOrders();
-    }, [filters]);
+    }, [filters.selectedDate]);
 
     const loadOrders = async () => {
         try {
             setLoading(true);
             const params = {};
-            if (filters.status) params.status = filters.status.toUpperCase();
-            // Filter by selected date (from 00:00:00 to 23:59:59)
+            // Only filter by selected date in API call
             if (filters.selectedDate) {
                 params.dateFrom = filters.selectedDate;
                 params.dateTo = filters.selectedDate;
             }
             params.page = 1;
-            params.limit = 1000; // Increased limit to get all orders for the day
+            params.limit = 1000; // Get all orders for the day
             
             const response = await ordersAPI.getAll(params);
             // Backend: { success, data: { orders: [...], pagination: {...} } }
@@ -106,24 +106,41 @@ export default function OrdersPage() {
                     return created >= startOfDay && created <= endOfDay;
                 });
             }
-
-            // Filter by order ID if provided
-            if (filters.orderId && filters.orderId.trim()) {
-                const searchId = filters.orderId.trim();
-                filteredOrders = filteredOrders.filter((order) => {
-                    const orderNumber = (order.orderNumber || order.order_number || '').toString();
-                    return orderNumber.includes(searchId);
-                });
-            }
             
-            setOrders(filteredOrders);
+            // Store all downloaded orders (no local filtering here)
+            setAllOrders(filteredOrders);
         } catch (error) {
             console.error('Error loading orders:', error);
-            setOrders([]);
+            setAllOrders([]);
         } finally {
             setLoading(false);
         }
     };
+
+    // Local filtering using useMemo - filters by status and orderId without API call
+    const orders = useMemo(() => {
+        let filtered = [...allOrders];
+
+        // Filter by status
+        if (filters.status && filters.status.trim()) {
+            const statusUpper = filters.status.toUpperCase();
+            filtered = filtered.filter((order) => {
+                const orderStatus = (order.status || '').toUpperCase();
+                return orderStatus === statusUpper;
+            });
+        }
+
+        // Filter by order ID
+        if (filters.orderId && filters.orderId.trim()) {
+            const searchId = filters.orderId.trim();
+            filtered = filtered.filter((order) => {
+                const orderNumber = (order.orderNumber || order.order_number || '').toString();
+                return orderNumber.includes(searchId);
+            });
+        }
+
+        return filtered;
+    }, [allOrders, filters.status, filters.orderId]);
 
     const viewOrderDetails = async (orderId) => {
         try {
@@ -206,8 +223,8 @@ export default function OrdersPage() {
     };
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden p-4">
-            <div className="mb-3 flex items-center justify-between flex-shrink-0">
+        <div className="h-screen flex flex-col overflow-hidden">
+            <div className="p-4 pb-3 flex items-center justify-between flex-shrink-0">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
                     <p className="text-gray-500 text-sm mt-0.5">Create and manage all orders</p>
@@ -247,7 +264,8 @@ export default function OrdersPage() {
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
+                <div className="px-4 pb-4 flex flex-col flex-1 min-h-0">
+                    <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
                     <div className="flex justify-between items-center mb-2 flex-shrink-0">
                         <h3 className="text-base font-semibold text-gray-900">Orders List</h3>
                         <div className="flex items-center gap-2">
@@ -270,12 +288,6 @@ export default function OrdersPage() {
                                 type="text"
                                 value={filters.orderId}
                                 onChange={(e) => setFilters({ ...filters, orderId: e.target.value })}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        loadOrders();
-                                    }
-                                }}
                                 placeholder="Search by Order ID"
                                 className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44"
                             />
@@ -432,6 +444,7 @@ export default function OrdersPage() {
                                 </table>
                             </div>
                         )}
+                    </div>
                 </div>
             )}
 
