@@ -191,29 +191,27 @@ export default function DashboardPage() {
     }, [orders, selectedDate, orderIdFilter]);
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">Orders and collections for the selected date</p>
-            </div>
-
-            {/* Date Filter */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4">
-                <div className="flex gap-4 items-end">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+        <div className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Orders and collections for the selected date</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
                             max={getTodayIST()}
-                            className="border border-gray-300 rounded px-3 py-2"
+                            className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
                         />
                     </div>
                     <button
                         type="button"
                         onClick={loadOrders}
-                        className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 flex items-center gap-1.5 text-sm"
                     >
                         <Calendar className="w-4 h-4" />
                         Refresh
@@ -229,33 +227,33 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
                         <StatCard
-                            icon={<Package className="w-6 h-6" />}
+                            icon={<Package className="w-5 h-5" />}
                             label="Total Created Orders"
                             value={summary.totalCreated}
                             color="blue"
                         />
                         <StatCard
-                            icon={<IndianRupee className="w-6 h-6" />}
+                            icon={<IndianRupee className="w-5 h-5" />}
                             label="Total Collected Amount"
                             value={`₹${summary.totalCollectedAmount.toFixed(2)}`}
                             color="green"
                         />
                         <StatCard
-                            icon={<CheckCircle className="w-6 h-6" />}
+                            icon={<CheckCircle className="w-5 h-5" />}
                             label="Total Delivered Orders"
                             value={summary.totalDelivered}
                             color="purple"
                         />
                         <StatCard
-                            icon={<Truck className="w-6 h-6" />}
+                            icon={<Truck className="w-5 h-5" />}
                             label="Assigned Orders"
                             value={summary.totalAssigned}
                             color="orange"
                         />
                         <StatCard
-                            icon={<Truck className="w-6 h-6" />}
+                            icon={<Truck className="w-5 h-5" />}
                             label="PickedUp Orders"
                             value={summary.totalPickedUp}
                             color="orange"
@@ -263,9 +261,9 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Orders List for selected date */}
-                    <div className="bg-white rounded-lg shadow p-4 mt-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 450px)', minHeight: '350px' }}>
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-lg font-semibold text-gray-900">Orders for Selected Date</h3>
+                    <div className="bg-white rounded-lg shadow p-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 320px)', minHeight: '400px' }}>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-base font-semibold text-gray-900">Orders for Selected Date</h3>
                             <div className="flex items-center gap-2">
                                 <input
                                     type="text"
@@ -277,13 +275,13 @@ export default function DashboardPage() {
                                         }
                                     }}
                                     placeholder="Search by Order ID"
-                                    className="border border-gray-300 rounded px-3 py-1.5 text-sm w-48"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44"
                                 />
                                 {orderIdFilter && (
                                     <button
                                         type="button"
                                         onClick={() => setOrderIdFilter('')}
-                                        className="bg-gray-200 text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
+                                        className="bg-gray-200 text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
                                     >
                                         Clear
                                     </button>
@@ -867,14 +865,14 @@ function StatCard({ icon, label, value, color }) {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-                    {icon}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+                    <div className="w-5 h-5">{icon}</div>
                 </div>
-                <div>
-                    <p className="text-sm text-gray-600">{label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 truncate">{label}</p>
+                    <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
                 </div>
             </div>
         </div>
