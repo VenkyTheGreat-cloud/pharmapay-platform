@@ -109,11 +109,11 @@ export default function DeliveryBoysPage() {
     }
 
     return (
-        <div className="p-6">
+        <div className="p-4">
             <div className="mb-6 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Delivery Boys</h1>
-                    <p className="text-gray-600 mt-1">Manage delivery personnel</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Delivery Boys</h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Manage delivery personnel</p>
                 </div>
             </div>
 
@@ -156,6 +156,9 @@ export default function DeliveryBoysPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                Sl.No
+                            </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Name
                             </th>
@@ -173,13 +176,16 @@ export default function DeliveryBoysPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredDeliveryBoys.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                                     No delivery boys found
                                 </td>
                             </tr>
                         ) : (
-                            filteredDeliveryBoys.map((boy) => (
+                            filteredDeliveryBoys.map((boy, index) => (
                                 <tr key={boy.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-4 text-sm text-gray-900 text-center">
+                                        {index + 1}
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
                                         <div className="text-sm font-medium text-gray-900">{boy.name}</div>

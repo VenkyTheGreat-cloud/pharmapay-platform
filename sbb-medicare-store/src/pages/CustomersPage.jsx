@@ -102,11 +102,11 @@ export default function CustomersPage() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-4">
             <div className="mb-6 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-                    <p className="text-gray-600 mt-1">Manage customer information</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+                    <p className="text-gray-500 text-sm mt-0.5">Manage customer information</p>
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
@@ -151,6 +151,9 @@ export default function CustomersPage() {
                         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                    Sl.No
+                                </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Name
                                 </th>
@@ -174,13 +177,16 @@ export default function CustomersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                                         No customers found
                                     </td>
                                 </tr>
                             ) : (
-                                customers.map((customer) => (
+                                customers.map((customer, index) => (
                                     <tr key={customer.id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-4 text-sm text-gray-900 text-center">
+                                            {index + 1}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-gray-900">
                                                 {customer.name}
