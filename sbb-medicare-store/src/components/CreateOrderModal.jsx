@@ -70,7 +70,16 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        
+        // For order number, only allow digits and limit to 8 characters
+        if (name === 'orderNumber') {
+            const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+            const limitedValue = numericValue.slice(0, 8); // Limit to 8 digits
+            setFormData(prev => ({ ...prev, [name]: limitedValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+        
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -116,6 +125,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         if (!formData.orderNumber || !formData.orderNumber.trim()) {
             newErrors.orderNumber = 'Order Number is required';
+        } else if (!/^\d{8}$/.test(formData.orderNumber.trim())) {
+            newErrors.orderNumber = 'Order Number must be exactly 8 digits';
         }
 
         if (!formData.customerId) {
@@ -243,10 +254,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     name="orderNumber"
                                     value={formData.orderNumber}
                                     onChange={handleChange}
+                                    maxLength="8"
+                                    pattern="[0-9]{8}"
+                                    inputMode="numeric"
                                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                                         errors.orderNumber ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                    placeholder="e.g., ORD-2025-001"
+                                    placeholder="Enter 8 digit order number"
                                     disabled={isSubmitting}
                                 />
                                 {errors.orderNumber && (

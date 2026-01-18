@@ -59,6 +59,7 @@ export default function DashboardPage() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
+    const [orderIdFilter, setOrderIdFilter] = useState('');
 
     useEffect(() => {
         loadOrders();
@@ -148,12 +149,21 @@ export default function DashboardPage() {
         const endOfDay = new Date(selectedDateObj);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const inRange = orders.filter((order) => {
+        let inRange = orders.filter((order) => {
             const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
             if (!created) return false;
             // Check if order was created on the selected date (between start and end of day)
             return created >= startOfDay && created <= endOfDay;
         });
+
+        // Filter by order ID if provided
+        if (orderIdFilter && orderIdFilter.trim()) {
+            const searchId = orderIdFilter.trim();
+            inRange = inRange.filter((order) => {
+                const orderNumber = (order.orderNumber || order.order_number || '').toString();
+                return orderNumber.includes(searchId);
+            });
+        }
 
         const totalCreated = inRange.length;
         const totalDelivered = inRange.filter((o) => o.status === 'DELIVERED').length;
@@ -178,7 +188,7 @@ export default function DashboardPage() {
             },
             filteredForList: list,
         };
-    }, [orders, selectedDate]);
+    }, [orders, selectedDate, orderIdFilter]);
 
     return (
         <div className="p-6">
@@ -188,25 +198,52 @@ export default function DashboardPage() {
             </div>
 
             {/* Date Filter */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4 flex gap-4 items-end">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        max={getTodayIST()}
-                        className="border border-gray-300 rounded px-3 py-2"
-                    />
+            <div className="mb-6 bg-white rounded-lg shadow p-4">
+                <div className="flex gap-4 items-end">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            max={getTodayIST()}
+                            className="border border-gray-300 rounded px-3 py-2"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
+                        <input
+                            type="text"
+                            value={orderIdFilter}
+                            onChange={(e) => setOrderIdFilter(e.target.value)}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                }
+                            }}
+                            placeholder="Enter order ID"
+                            className="border border-gray-300 rounded px-3 py-2"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOrderIdFilter('');
+                            setSelectedDate(getTodayIST());
+                        }}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+                    >
+                        Clear
+                    </button>
+                    <button
+                        type="button"
+                        onClick={loadOrders}
+                        className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    >
+                        <Calendar className="w-4 h-4" />
+                        Refresh
+                    </button>
                 </div>
-                <button
-                    type="button"
-                    onClick={loadOrders}
-                    className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                    <Calendar className="w-4 h-4" />
-                    Refresh
-                </button>
             </div>
 
             {loading ? (
