@@ -22,7 +22,8 @@ export default function CustomersPage() {
     const loadCustomers = async () => {
         try {
             setLoading(true);
-            const response = await customersAPI.getAll();
+            // Fetch all customers with a high limit to ensure we get all customers
+            const response = await customersAPI.getAll({ page: 1, limit: 10000 });
             // Backend format: { success, data: { customers: [...], count: ... } }
             const list = response.data?.data?.customers || response.data?.data?.data || [];
             setCustomers(Array.isArray(list) ? list : []);
