@@ -426,8 +426,7 @@ export default function OrdersPage() {
                                                     </td>
                                                 </tr>
                                             );
-                                        })
-                                        )}
+                                        })}
                                 </tbody>
                                 </table>
                             </div>
