@@ -407,6 +407,12 @@ export const ordersAPI = {
         }
         return api.post(`/orders/${id}/reject`);
     },
+    update: (id, data) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Order updated (mock)', data: { id, ...data } });
+        }
+        return api.put(`/orders/${id}`, data);
+    },
     updateStatus: (id, data) => {
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Status updated (mock)', data: { id, ...data } });

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ordersAPI, deliveryBoysAPI } from '../services/api';
-import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2 } from 'lucide-react';
+import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2, Edit } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
+import EditOrderModal from '../components/EditOrderModal';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -65,6 +66,7 @@ export default function OrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState('');
@@ -203,6 +205,20 @@ export default function OrdersPage() {
         } catch (error) {
             console.error('Error deleting order:', error);
             alert(error.response?.data?.message || 'Error deleting order');
+        }
+    };
+
+    const openEditModal = async (order) => {
+        try {
+            // Fetch full order details to ensure we have all the data
+            const response = await ordersAPI.getById(order.id);
+            setSelectedOrder(response.data?.data || order);
+            setShowEditModal(true);
+        } catch (error) {
+            console.error('Error loading order details:', error);
+            // If API call fails, use the order data we have
+            setSelectedOrder(order);
+            setShowEditModal(true);
         }
     };
 
@@ -414,6 +430,19 @@ export default function OrdersPage() {
                                                             >
                                                                 <Eye className="w-5 h-5" />
                                                             </button>
+                                                            {/* Edit button - Hide for cancelled and delivered orders */}
+                                                            {order.status !== 'CANCELLED' && 
+                                                             order.status !== 'cancelled' && 
+                                                             order.status !== 'DELIVERED' && 
+                                                             order.status !== 'delivered' && (
+                                                                <button
+                                                                    onClick={() => openEditModal(order)}
+                                                                    className="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50 transition-colors"
+                                                                    title="Edit Order"
+                                                                >
+                                                                    <Edit className="w-5 h-5" />
+                                                                </button>
+                                                            )}
                                                             {/* Show Assign button for: unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
                                                             {((order.status === 'REJECTED' || order.status === 'rejected') ||
                                                               !(order.deliveryBoyId || order.assigned_delivery_boy_id) ||
@@ -455,6 +484,19 @@ export default function OrdersPage() {
                 onSuccess={() => {
                     loadOrders();
                 }}
+            />
+
+            {/* Edit Order Modal */}
+            <EditOrderModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setSelectedOrder(null);
+                }}
+                onSuccess={() => {
+                    loadOrders();
+                }}
+                order={selectedOrder}
             />
 
             {/* Assign Delivery Boy Modal */}
