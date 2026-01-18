@@ -57,7 +57,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const loadCustomers = async () => {
         try {
-            const response = await customersAPI.getAll();
+            // Fetch all customers with a high limit to ensure we get all customers
+            const response = await customersAPI.getAll({ page: 1, limit: 10000 });
             // Backend format: { success, data: { customers: [...], count: ... } }
             const list = response.data?.data?.customers || response.data?.data?.data || [];
             setCustomers(Array.isArray(list) ? list : []);
@@ -273,6 +274,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                                 setCustomerSearchQuery('');
                                                 setSelectedCustomerName('');
                                                 setFormData(prev => ({ ...prev, customerId: '' }));
+                                            }
+                                            // Ensure all customers are shown when field is focused
+                                            if (!customerSearchQuery && customers.length > 0) {
+                                                setShowCustomerDropdown(true);
                                             }
                                         }}
                                         placeholder="Search by customer name or mobile number"
