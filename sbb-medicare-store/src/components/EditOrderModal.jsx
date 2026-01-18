@@ -151,6 +151,118 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Non-editable Order Details */}
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-3 mb-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-3">Order Details (Read Only)</h3>
+                            
+                            {/* Customer Name */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Customer Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={order.customerName || order.customer_name || 'N/A'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Customer Mobile */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Customer Mobile
+                                </label>
+                                <input
+                                    type="text"
+                                    value={order.customerMobile || order.customer_phone || order.customer_mobile || 'N/A'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Order Number */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Order Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={order.orderNumber || order.order_number || order.id || 'N/A'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Order Date */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Order Date
+                                </label>
+                                <input
+                                    type="text"
+                                    value={(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleString() : 'N/A'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Status */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Status
+                                </label>
+                                <input
+                                    type="text"
+                                    value={order.status ? order.status.replace(/_/g, ' ') : 'N/A'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Delivery Boy (if assigned) */}
+                            {(order.deliveryBoyName || order.delivery_boy_name) && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Delivery Boy
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={`${order.deliveryBoyName || order.delivery_boy_name}${order.deliveryBoyMobile || order.delivery_boy_mobile ? ` (${order.deliveryBoyMobile || order.delivery_boy_mobile})` : ''}`}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                            )}
+
+                            {/* Area */}
+                            {(order.customer_area || order.customerArea) && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Area
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={order.customer_area || order.customerArea || 'N/A'}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Editable Fields Section */}
+                        <div className="border-t pt-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-4">Editable Fields</h3>
+                        </div>
+
                         {/* Bill Amount */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
