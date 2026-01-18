@@ -295,9 +295,10 @@ export default function OrdersPage() {
                                 </button>
                             )}
                         </div>
-                        {orders.length === 0 ? (
-                            <p className="text-gray-600 text-sm">No orders found.</p>
-                        ) : (
+                    </div>
+                    {orders.length === 0 ? (
+                        <p className="text-gray-600 text-sm">No orders found.</p>
+                    ) : (
                             <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
                                     <thead className="bg-gray-50">
