@@ -210,31 +210,6 @@ export default function DashboardPage() {
                             className="border border-gray-300 rounded px-3 py-2"
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-                        <input
-                            type="text"
-                            value={orderIdFilter}
-                            onChange={(e) => setOrderIdFilter(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                }
-                            }}
-                            placeholder="Enter order ID"
-                            className="border border-gray-300 rounded px-3 py-2"
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setOrderIdFilter('');
-                            setSelectedDate(getTodayIST());
-                        }}
-                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
-                    >
-                        Clear
-                    </button>
                     <button
                         type="button"
                         onClick={loadOrders}
@@ -254,7 +229,7 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                         <StatCard
                             icon={<Package className="w-6 h-6" />}
                             label="Total Created Orders"
@@ -288,12 +263,37 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Orders List for selected date */}
-                    <div className="bg-white rounded-lg shadow p-6 mt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders for Selected Date</h3>
+                    <div className="bg-white rounded-lg shadow p-4 mt-4 flex flex-col" style={{ maxHeight: 'calc(100vh - 450px)', minHeight: '350px' }}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900">Orders for Selected Date</h3>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={orderIdFilter}
+                                    onChange={(e) => setOrderIdFilter(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    placeholder="Search by Order ID"
+                                    className="border border-gray-300 rounded px-3 py-1.5 text-sm w-48"
+                                />
+                                {orderIdFilter && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setOrderIdFilter('')}
+                                        className="bg-gray-200 text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                         {filteredForList.length === 0 ? (
                             <p className="text-gray-600 text-sm">No orders found for the selected date.</p>
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto overflow-y-auto flex-1 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
