@@ -161,7 +161,7 @@ export default function DashboardPage() {
     const uniqueStatuses = ['ALL', ...new Set(allOrders.map(o => o.status).filter(Boolean))];
 
     return (
-        <div className="p-4 h-screen flex flex-col overflow-hidden">
+        <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
             {/* Fixed Header Section - Compact */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-2 -mx-4 px-4 pt-2 border-b-2 border-blue-200 shadow-sm flex-shrink-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -207,7 +207,7 @@ export default function DashboardPage() {
             ) : (
                 <div className="flex flex-col flex-1 min-h-0">
                     {/* Stats Cards for selected range - Colorful and Compact */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 mt-4 flex-shrink-0">
                         <StatCard
                             icon={<Package className="w-4 h-4" />}
                             label="Created Orders"
