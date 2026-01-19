@@ -59,33 +59,28 @@ export default function OrdersPage() {
         setShowOrderDetails(true);
     };
 
-    const getStatusColor = (status) => {
-        const colors = {
-            ASSIGNED: 'bg-purple-100 text-purple-800',
-            PICKED_UP: 'bg-yellow-100 text-yellow-800',
-            IN_TRANSIT: 'bg-orange-100 text-orange-800',
-            DELIVERED: 'bg-green-100 text-green-800',
-            CANCELLED: 'bg-red-100 text-red-800',
-        };
-        return colors[status] || 'bg-gray-100 text-gray-800';
-    };
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-                <p className="text-gray-600 mt-1">View and manage all orders</p>
+        <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
+            {/* Fixed Header Section - Compact */}
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-800">Orders</h1>
+                        <p className="text-xs text-gray-600">View and manage all orders</p>
+                    </div>
+                </div>
             </div>
 
             {/* Filters */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4">
+            <div className="mb-4 bg-white rounded-lg shadow-sm p-3 flex-shrink-0">
                 <div className="flex gap-4 items-end">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-0.5">Status</label>
                         <select
                             value={filters.status}
                             onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
-                            className="border border-gray-300 rounded px-3 py-2"
+                            className="border border-gray-300 rounded px-3 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         >
                             <option value="">All Status</option>
                             <option value="ASSIGNED">Assigned</option>
@@ -98,11 +93,14 @@ export default function OrdersPage() {
             </div>
 
             {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading orders...</p>
+                <div className="text-center py-8 flex-1 flex items-center justify-center">
+                    <div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
+                        <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
+                    </div>
                 </div>
             ) : (
+                <div className="flex flex-col flex-1 min-h-0">
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
