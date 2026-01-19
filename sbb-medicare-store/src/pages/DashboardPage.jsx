@@ -64,13 +64,21 @@ export default function DashboardPage() {
 
     useEffect(() => {
         loadOrders();
-    }, []);
+    }, [selectedDate]);
 
     const loadOrders = async () => {
         try {
             setLoading(true);
-            // Fetch orders (we'll filter by date and status on the client)
-            const res = await ordersAPI.getAll({ page: 1, limit: 1000 });
+            // Format date as YYYY-MM-DD for API
+            const dateStr = selectedDate || getTodayIST();
+            // Use the same date for both date_from and date_to
+            const params = {
+                page: 1,
+                limit: 1000,
+                date_from: dateStr,
+                date_to: dateStr
+            };
+            const res = await ordersAPI.getAll(params);
             const list = res.data?.data?.orders || res.data?.data || [];
             setOrders(list);
         } catch (error) {
@@ -127,35 +135,8 @@ export default function DashboardPage() {
             };
         }
 
-        // Filter orders for the selected date (00:00:00 to 23:59:59)
-        const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
-        if (!selectedDateObj) {
-            return {
-                filteredByDate: [],
-                summary: {
-                    totalCreated: 0,
-                    totalDelivered: 0,
-                    totalAssigned: 0,
-                    totalPickedUp: 0,
-                    totalCollectedAmount: 0,
-                },
-                filteredForList: [],
-            };
-        }
-
-        // Set start of day (00:00:00) and end of day (23:59:59) in IST
-        const startOfDay = new Date(selectedDateObj);
-        startOfDay.setHours(0, 0, 0, 0);
-        
-        const endOfDay = new Date(selectedDateObj);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        let inRange = orders.filter((order) => {
-            const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
-            if (!created) return false;
-            // Check if order was created on the selected date (between start and end of day)
-            return created >= startOfDay && created <= endOfDay;
-        });
+        // API already filters by date, so we start with all orders from the API response
+        let inRange = [...orders];
 
         // Filter by status if provided
         if (statusFilter && statusFilter.trim()) {
@@ -179,9 +160,19 @@ export default function DashboardPage() {
         const totalAssigned = inRange.filter((o) => o.status === 'ASSIGNED').length;
         const totalPickedUp = inRange.filter((o) => o.status === 'PICKED_UP').length;
 
+        // Only consider DELIVERED orders for collected amount
         const totalCollectedAmount = inRange
-            .filter((o) => o.status === 'DELIVERED' || o.status === 'PAYMENT_COLLECTION')
-            .reduce((sum, o) => sum + (Number(o.amount || o.total_amount) || 0), 0);
+            .filter((o) => {
+                const status = (o.status || '').toUpperCase();
+                return status === 'DELIVERED';
+            })
+            .reduce((sum, o) => {
+                // Use payment_summary.total_paid if available, otherwise use total_amount
+                const amount = o.payment_summary?.total_paid 
+                    ? Number(o.payment_summary.total_paid)
+                    : Number(o.amount || o.total_amount) || 0;
+                return sum + amount;
+            }, 0);
 
         // For list: show ALL statuses (ASSIGNED, IN_TRANSIT, DELIVERED, etc.)
         const list = inRange;

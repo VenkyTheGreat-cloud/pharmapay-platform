@@ -161,36 +161,36 @@ export default function DashboardPage() {
     const uniqueStatuses = ['ALL', ...new Set(allOrders.map(o => o.status).filter(Boolean))];
 
     return (
-        <div className="p-6">
-            {/* Fixed Header Section */}
-            <div className="sticky top-0 z-20 bg-gray-100 pb-6 -mx-6 px-6 pt-6 border-b border-gray-200 mb-6">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="p-4">
+            {/* Fixed Header Section - Compact */}
+            <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-50 to-indigo-50 pb-3 -mx-4 px-4 pt-4 border-b-2 border-blue-200 mb-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                        <p className="text-gray-600 mt-1">Orders and collections for the selected date</p>
+                        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+                        <p className="text-xs text-gray-600 mt-0.5">Orders and collections for the selected date</p>
                     </div>
 
-                    {/* Date filter for orders table */}
-                    <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
+                    {/* Date filter for orders table - Compact */}
+                    <div className="bg-white rounded-lg shadow-sm px-3 py-2 flex items-center gap-3 border border-blue-100">
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Date:</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-0.5">Date:</label>
                             <input
                                 type="date"
                                 value={filters.selectedDate}
                                 onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
                                 max={getMaxDate()}
-                                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                                className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div className="flex items-end">
                             <button
                                 onClick={loadDashboardData}
                                 disabled={loading}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:from-blue-400 disabled:to-indigo-400 disabled:cursor-not-allowed shadow-sm"
                                 title="Refresh orders for selected date"
                             >
-                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                Refresh
+                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                                <span className="hidden sm:inline">Refresh</span>
                             </button>
                         </div>
                     </div>
@@ -198,40 +198,40 @@ export default function DashboardPage() {
             </div>
 
             {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading orders...</p>
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+                    <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
                 </div>
             ) : (
                 <>
-                    {/* Stats Cards for selected range */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+                    {/* Stats Cards for selected range - Colorful */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                         <StatCard
-                            icon={<Package className="w-6 h-6" />}
+                            icon={<Package className="w-5 h-5" />}
                             label="Created Orders"
                             value={totalOrders}
                             color="blue"
                         />
                         <StatCard
-                            icon={<Clock className="w-6 h-6" />}
+                            icon={<Clock className="w-5 h-5" />}
                             label="Assigned Orders"
                             value={assignedOrders}
                             color="orange"
                         />
                         <StatCard
-                            icon={<CheckCircle className="w-6 h-6" />}
+                            icon={<CheckCircle className="w-5 h-5" />}
                             label="Picked / In Transit"
                             value={pickedUpOrders}
                             color="green"
                         />
                         <StatCard
-                            icon={<CheckCircle className="w-6 h-6" />}
+                            icon={<CheckCircle className="w-5 h-5" />}
                             label="Delivered Orders"
                             value={deliveredOrders}
                             color="green"
                         />
                         <StatCard
-                            icon={<IndianRupee className="w-6 h-6" />}
+                            icon={<IndianRupee className="w-5 h-5" />}
                             label="Collected Amount"
                             value={`₹${collectedAmount.toFixed(2)}`}
                             color="purple"
@@ -239,16 +239,16 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Orders Table for selected date */}
-                    <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-                        <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <h2 className="text-lg font-semibold text-gray-900">Orders for Selected Date</h2>
-                            <div className="flex items-center gap-3">
+                    <div className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden border border-gray-200">
+                        <div className="px-4 py-3 border-b bg-gradient-to-r from-gray-50 to-blue-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <h2 className="text-base font-semibold text-gray-800">Orders for Selected Date</h2>
+                            <div className="flex items-center gap-2">
                                 {/* Status Filter */}
                                 <div className="relative">
                                     <select
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="appearance-none border border-gray-300 rounded px-3 py-2 pr-8 text-sm text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="appearance-none border-2 border-blue-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-700 bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                                     >
                                         {uniqueStatuses.map((status) => (
                                             <option key={status} value={status}>
@@ -264,46 +264,46 @@ export default function DashboardPage() {
                                 </div>
                                 {/* Search by Order ID */}
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-blue-400" />
                                     <input
                                         type="text"
                                         placeholder="Search by Order ID"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-10 pr-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-48"
+                                        className="pl-9 pr-3 py-1.5 border-2 border-blue-200 rounded-lg text-xs text-gray-700 bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-44 shadow-sm"
                                     />
                                 </div>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Sl.No
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Order #
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Customer
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Area Name
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Delivery Boy
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Amount
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Status
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Created
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -311,57 +311,60 @@ export default function DashboardPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredOrders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                                                No orders found for the selected date.
+                                            <td colSpan="9" className="px-6 py-12 text-center">
+                                                <div className="text-gray-400 text-sm">
+                                                    <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                                    <p>No orders found for the selected date.</p>
+                                                </div>
                                             </td>
                                         </tr>
                                     ) : (
                                         filteredOrders.map((order, index) => (
-                                            <tr key={order.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <tr key={order.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-gray-700">
                                                     {index + 1}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     {trimOrderId(order.orderNumber || order.id || 'N/A')}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    <div>{order.customerName || 'N/A'}</div>
-                                                    <div className="text-gray-500 text-xs">{order.customerMobile || ''}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs">
+                                                    <div className="font-medium text-gray-900">{order.customerName || 'N/A'}</div>
+                                                    <div className="text-gray-500 text-xs mt-0.5">{order.customerMobile || ''}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
                                                     {order.customerArea || 'N/A'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
                                                     <div>{order.deliveryBoyName || 'Not assigned'}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-green-700">
                                                     ₹{parseFloat(order.amount || 0).toFixed(2)}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                                        order.status === 'ASSIGNED' ? 'bg-blue-100 text-blue-800' :
-                                                        order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
-                                                        order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :
-                                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                                        'bg-gray-100 text-gray-800'
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs">
+                                                    <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${
+                                                        order.status === 'DELIVERED' ? 'bg-gradient-to-r from-green-400 to-green-600 text-white' :
+                                                        order.status === 'ASSIGNED' ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white' :
+                                                        order.status === 'PICKED_UP' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white' :
+                                                        order.status === 'IN_TRANSIT' ? 'bg-gradient-to-r from-orange-400 to-orange-600 text-white' :
+                                                        order.status === 'CANCELLED' ? 'bg-gradient-to-r from-red-400 to-red-600 text-white' :
+                                                        'bg-gradient-to-r from-gray-400 to-gray-600 text-white'
                                                     }`}>
                                                         {order.status || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
                                                     {order.createdTime
                                                         ? new Date(order.createdTime).toLocaleString()
                                                         : '-'}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                     <button
                                                         onClick={() => handleViewOrderDetails(order.id)}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm"
                                                         title="View Order Details"
                                                     >
-                                                        <Eye className="w-4 h-4" />
-                                                        Details
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                        <span className="hidden sm:inline">Details</span>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -389,21 +392,28 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
     const colorClasses = {
-        blue: 'bg-blue-100 text-blue-600',
-        green: 'bg-green-100 text-green-600',
-        purple: 'bg-purple-100 text-purple-600',
-        orange: 'bg-orange-100 text-orange-600',
+        blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200',
+        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-200',
+        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-200',
+        orange: 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200',
+    };
+
+    const labelColors = {
+        blue: 'text-blue-600',
+        green: 'text-green-600',
+        purple: 'text-purple-600',
+        orange: 'text-orange-600',
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+        <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-4 border border-gray-100">
+            <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${colorClasses[color]}`}>
                     {icon}
                 </div>
-                <div>
-                    <p className="text-sm text-gray-600">{label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <div className="flex-1">
+                    <p className={`text-xs font-semibold ${labelColors[color]} mb-1`}>{label}</p>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
                 </div>
             </div>
         </div>
