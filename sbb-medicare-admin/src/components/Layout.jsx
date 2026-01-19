@@ -71,7 +71,7 @@ export default function Layout({ children }) {
                                 onClick={() => setSidebarOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                                     isActive(item.href)
-                                        ? 'bg-blue-50 text-blue-600'
+                                        ? 'bg-primary-50 text-primary-600 font-semibold'
                                         : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                             >
@@ -124,7 +124,7 @@ export default function Layout({ children }) {
                                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                                     title="View Profile"
                                 >
-                                    <UserCircle className="w-8 h-8 text-gray-600 hover:text-blue-600" />
+                                    <UserCircle className="w-8 h-8 text-gray-600 hover:text-primary-600" />
                                 </button>
                             </div>
                         </div>

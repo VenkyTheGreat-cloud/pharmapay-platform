@@ -297,7 +297,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
             case 'DELIVERED':
                 return 'bg-green-100 text-green-800';
             case 'ASSIGNED':
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-primary-100 text-primary-800';
             case 'PICKED_UP':
                 return 'bg-yellow-100 text-yellow-800';
             case 'IN_TRANSIT':
@@ -327,7 +327,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
 
                     {loading ? (
                         <div className="text-center py-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                             <p className="text-gray-600 mt-4">Loading order details...</p>
                         </div>
                     ) : error ? (
@@ -386,7 +386,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                         {order.assignedAt && (
                                             <div className="flex items-center justify-between py-2">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                    <div className="w-2 h-2 rounded-full bg-primary-500"></div>
                                                     <span className="text-sm text-gray-700">Assigned</span>
                                                 </div>
                                                 <span className="text-sm text-gray-600">
@@ -762,7 +762,7 @@ function ReceiptPhotoItem({ photoUrl, index }) {
         <div className="relative">
             {imageLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                 </div>
             )}
             <img

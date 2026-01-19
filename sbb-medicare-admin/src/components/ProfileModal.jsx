@@ -167,7 +167,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                             <div className="border-t pt-4">
                                 <button
                                     onClick={() => setShowChangePassword(true)}
-                                    className="flex items-center gap-2 w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="flex items-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md"
                                 >
                                     <Key className="w-5 h-5" />
                                     <span>Change Password</span>
@@ -189,7 +189,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                             confirmPassword: '',
                                         });
                                     }}
-                                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                                    className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                                 >
                                     ← Back to Profile
                                 </button>
@@ -287,7 +287,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                                     >
                                         {loading ? 'Changing...' : 'Change Password'}
                                     </button>
