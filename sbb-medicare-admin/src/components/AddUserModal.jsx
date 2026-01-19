@@ -179,7 +179,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                             >
                                 {loading ? 'Creating...' : 'Create'}
                             </button>

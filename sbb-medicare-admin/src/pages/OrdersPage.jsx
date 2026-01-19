@@ -99,7 +99,7 @@ export default function OrdersPage() {
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
@@ -174,7 +174,7 @@ export default function OrdersPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                                             <button
                                                 onClick={() => handleViewOrderDetails(order.id)}
-                                                className="text-blue-600 hover:text-blue-900"
+                                                className="text-primary-600 hover:text-primary-700"
                                                 title="View Details"
                                             >
                                                 <Eye className="w-5 h-5" />

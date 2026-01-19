@@ -163,7 +163,7 @@ export default function DashboardPage() {
     return (
         <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
             {/* Fixed Header Section - Compact */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-2 -mx-4 px-4 pt-2 border-b-2 border-blue-200 shadow-sm flex-shrink-0">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                         <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Date filter for orders table - Compact */}
-                    <div className="bg-white rounded-lg shadow-sm px-3 py-1.5 flex items-center gap-3 border border-blue-100">
+                    <div className="bg-white rounded-lg shadow-sm px-3 py-1.5 flex items-center gap-3 border border-primary-100">
                         <div>
                             <label className="block text-xs font-medium text-gray-600 mb-0.5">Date:</label>
                             <input
@@ -179,14 +179,14 @@ export default function DashboardPage() {
                                 value={filters.selectedDate}
                                 onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
                                 max={getMaxDate()}
-                                className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             />
                         </div>
                         <div className="flex items-end">
                             <button
                                 onClick={loadDashboardData}
                                 disabled={loading}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:from-blue-400 disabled:to-indigo-400 disabled:cursor-not-allowed shadow-sm"
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed shadow-sm"
                                 title="Refresh orders for selected date"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             {loading ? (
                 <div className="text-center py-8 flex-1 flex items-center justify-center">
                     <div>
-                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
                         <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
                     </div>
                 </div>
@@ -212,19 +212,19 @@ export default function DashboardPage() {
                             icon={<Package className="w-4 h-4" />}
                             label="Created Orders"
                             value={totalOrders}
-                            color="blue"
+                            color="primary"
                         />
                         <StatCard
                             icon={<Clock className="w-4 h-4" />}
                             label="Assigned Orders"
                             value={assignedOrders}
-                            color="orange"
+                            color="secondary"
                         />
                         <StatCard
                             icon={<CheckCircle className="w-4 h-4" />}
                             label="Picked / In Transit"
                             value={pickedUpOrders}
-                            color="green"
+                            color="primary"
                         />
                         <StatCard
                             icon={<CheckCircle className="w-4 h-4" />}
@@ -236,13 +236,13 @@ export default function DashboardPage() {
                             icon={<IndianRupee className="w-4 h-4" />}
                             label="Collected Amount"
                             value={`₹${collectedAmount.toFixed(2)}`}
-                            color="purple"
+                            color="secondary"
                         />
                     </div>
 
                     {/* Orders Table for selected date - Scrollable */}
                     <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
-                        <div className="px-4 py-2 border-b bg-gradient-to-r from-gray-50 to-blue-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-shrink-0">
+                        <div className="px-4 py-2 border-b bg-gradient-to-r from-gray-50 to-primary-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-shrink-0">
                             <h2 className="text-sm font-semibold text-gray-800">Orders for Selected Date</h2>
                             <div className="flex items-center gap-2">
                                 {/* Status Filter */}
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                                     <select
                                         value={statusFilter}
                                         onChange={(e) => setStatusFilter(e.target.value)}
-                                        className="appearance-none border-2 border-blue-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-700 bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                        className="appearance-none border-2 border-primary-200 rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-700 bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
                                     >
                                         {uniqueStatuses.map((status) => (
                                             <option key={status} value={status}>
@@ -266,20 +266,20 @@ export default function DashboardPage() {
                                 </div>
                                 {/* Search by Order ID */}
                                 <div className="relative">
-                                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-blue-400" />
+                                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-primary-400" />
                                     <input
                                         type="text"
                                         placeholder="Search by Order ID"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-9 pr-3 py-1.5 border-2 border-blue-200 rounded-lg text-xs text-gray-700 bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-44 shadow-sm"
+                                        className="pl-9 pr-3 py-1.5 border-2 border-primary-200 rounded-lg text-xs text-gray-700 bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-44 shadow-sm"
                                     />
                                 </div>
                             </div>
                         </div>
                         <div className="overflow-auto flex-1 min-h-0">
                             <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gradient-to-r from-blue-600 to-indigo-600">
+                                <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                                     <tr>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Sl.No
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                                         </tr>
                                     ) : (
                                         filteredOrders.map((order, index) => (
-                                            <tr key={order.id} className="hover:bg-blue-50 transition-colors border-b border-gray-100">
+                                            <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-gray-700">
                                                     {index + 1}
                                                 </td>
@@ -345,9 +345,9 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                     <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${
                                                         order.status === 'DELIVERED' ? 'bg-gradient-to-r from-green-400 to-green-600 text-white' :
-                                                        order.status === 'ASSIGNED' ? 'bg-gradient-to-r from-blue-400 to-blue-600 text-white' :
-                                                        order.status === 'PICKED_UP' ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white' :
-                                                        order.status === 'IN_TRANSIT' ? 'bg-gradient-to-r from-orange-400 to-orange-600 text-white' :
+                                                        order.status === 'ASSIGNED' ? 'bg-gradient-to-r from-primary-400 to-primary-600 text-white' :
+                                                        order.status === 'PICKED_UP' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
+                                                        order.status === 'IN_TRANSIT' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
                                                         order.status === 'CANCELLED' ? 'bg-gradient-to-r from-red-400 to-red-600 text-white' :
                                                         'bg-gradient-to-r from-gray-400 to-gray-600 text-white'
                                                     }`}>
@@ -362,7 +362,7 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                     <button
                                                         onClick={() => handleViewOrderDetails(order.id)}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-sm"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-sm"
                                                         title="View Order Details"
                                                     >
                                                         <Eye className="w-3.5 h-3.5" />
@@ -394,14 +394,16 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
     const colorClasses = {
-        blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-200',
+        primary: 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-200',
+        secondary: 'bg-gradient-to-br from-secondary-500 to-secondary-600 text-white shadow-md shadow-secondary-200',
         green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md shadow-green-200',
         purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md shadow-purple-200',
         orange: 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-200',
     };
 
     const labelColors = {
-        blue: 'text-blue-600',
+        primary: 'text-primary-600',
+        secondary: 'text-secondary-600',
         green: 'text-green-600',
         purple: 'text-purple-600',
         orange: 'text-orange-600',

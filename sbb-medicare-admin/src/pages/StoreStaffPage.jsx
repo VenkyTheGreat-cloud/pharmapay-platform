@@ -115,7 +115,7 @@ export default function StoreStaffPage() {
     if (loading) {
         return (
             <div className="p-6 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                 <p className="text-gray-600 mt-4">Loading store staff...</p>
             </div>
         );
@@ -143,7 +143,7 @@ export default function StoreStaffPage() {
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-2 shadow-md"
                 >
                     <Plus className="w-5 h-5" />
                     Add New Store Staff
@@ -156,7 +156,7 @@ export default function StoreStaffPage() {
                     onClick={() => setActiveTab('all')}
                     className={`pb-2 px-4 ${
                         activeTab === 'all'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
@@ -166,7 +166,7 @@ export default function StoreStaffPage() {
                     onClick={() => setActiveTab('active')}
                     className={`pb-2 px-4 ${
                         activeTab === 'active'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
@@ -176,7 +176,7 @@ export default function StoreStaffPage() {
                     onClick={() => setActiveTab('inactive')}
                     className={`pb-2 px-4 ${
                         activeTab === 'inactive'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
@@ -238,7 +238,7 @@ export default function StoreStaffPage() {
                                                     setSelectedUser(staff);
                                                     setShowEditModal(true);
                                                 }}
-                                                className="text-blue-600 hover:text-blue-900"
+                                                className="text-primary-600 hover:text-primary-700"
                                                 title="Edit"
                                             >
                                                 <Edit className="w-5 h-5" />
