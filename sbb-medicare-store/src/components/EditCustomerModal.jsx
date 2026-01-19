@@ -128,7 +128,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.name ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter customer full name"
@@ -148,7 +148,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 name="mobile"
                                 value={formData.mobile}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.mobile ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="10-digit mobile number"
@@ -169,7 +169,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 value={formData.address}
                                 onChange={handleChange}
                                 rows="3"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.address ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter complete delivery address"
@@ -189,7 +189,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 name="landmark"
                                 value={formData.landmark}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="e.g., Near City Mall"
                                 disabled={isSubmitting}
                             />
@@ -206,7 +206,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                     name="customerLat"
                                     value={formData.customerLat}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="e.g., 12.9716"
                                     disabled={isSubmitting}
                                 />
@@ -221,7 +221,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                     name="customerLng"
                                     value={formData.customerLng}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="e.g., 77.5946"
                                     disabled={isSubmitting}
                                 />
@@ -232,7 +232,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Updating...' : 'Update Customer'}
                             </button>

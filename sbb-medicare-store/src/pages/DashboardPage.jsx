@@ -101,19 +101,19 @@ export default function DashboardPage() {
     };
 
     const getStatusColor = (status) => {
-        if (!status) return 'bg-gray-100 text-gray-800';
+        if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
         const normalized = status.toUpperCase();
         const colors = {
-            ASSIGNED: 'bg-purple-100 text-purple-800',
-            ACCEPTED: 'bg-blue-100 text-blue-800',
-            REJECTED: 'bg-red-100 text-red-800',
-            PICKED_UP: 'bg-yellow-100 text-yellow-800',
-            IN_TRANSIT: 'bg-orange-100 text-orange-800',
-            PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
-            DELIVERED: 'bg-green-100 text-green-800',
-            CANCELLED: 'bg-red-100 text-red-800',
+            ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
+            PICKED_UP: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            IN_TRANSIT: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            PAYMENT_COLLECTION: 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white',
+            DELIVERED: 'bg-gradient-to-r from-green-400 to-green-600 text-white',
+            CANCELLED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
         };
-        return colors[normalized] || 'bg-gray-100 text-gray-800';
+        return colors[normalized] || 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
     };
 
     const {
@@ -191,37 +191,39 @@ export default function DashboardPage() {
     }, [orders, selectedDate, statusFilter, orderIdFilter]);
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden">
-            <div className="p-4 pb-3 flex items-center justify-between flex-shrink-0">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Orders and collections for the selected date</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            max={getTodayIST()}
-                            className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
-                        />
+        <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                        <p className="text-gray-500 text-sm mt-0.5">Orders and collections for the selected date</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={loadOrders}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 flex items-center gap-1.5 text-sm"
-                    >
-                        <Calendar className="w-4 h-4" />
-                        Refresh
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                max={getTodayIST()}
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={loadOrders}
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 text-sm"
+                        >
+                            <Calendar className="w-4 h-4" />
+                            Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading statistics...</p>
                 </div>
             ) : (
@@ -238,19 +240,19 @@ export default function DashboardPage() {
                             icon={<IndianRupee className="w-5 h-5" />}
                             label="Total Collected Amount"
                             value={`₹${summary.totalCollectedAmount.toFixed(2)}`}
-                            color="green"
+                            color="orange"
                         />
                         <StatCard
                             icon={<CheckCircle className="w-5 h-5" />}
                             label="Total Delivered Orders"
                             value={summary.totalDelivered}
-                            color="purple"
+                            color="green"
                         />
                         <StatCard
                             icon={<Truck className="w-5 h-5" />}
                             label="Assigned Orders"
                             value={summary.totalAssigned}
-                            color="orange"
+                            color="blue"
                         />
                         <StatCard
                             icon={<Truck className="w-5 h-5" />}
@@ -269,7 +271,7 @@ export default function DashboardPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">All Status</option>
                                     <option value="ASSIGNED">Assigned</option>
@@ -291,7 +293,7 @@ export default function DashboardPage() {
                                         }
                                     }}
                                     placeholder="Search by Order ID"
-                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                 />
                                 {(statusFilter || orderIdFilter) && (
                                     <button
@@ -312,33 +314,33 @@ export default function DashboardPage() {
                         ) : (
                             <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                    <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[80px]">
                                                 Sl.No
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Order ID
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Customer
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Area
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Delivery Boy
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Status
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Date &amp; Time
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Amount
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -366,7 +368,7 @@ export default function DashboardPage() {
                                             };
 
                                             return (
-                                            <tr key={order.id}>
+                                            <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-2 whitespace-nowrap text-gray-900 text-center">
                                                     {index + 1}
                                                 </td>
@@ -404,7 +406,7 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-2 whitespace-nowrap text-sm">
                                                     <button
                                                         onClick={() => viewOrderDetails(order.id)}
-                                                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                        className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50 transition-colors"
                                                         title="View Details"
                                                     >
                                                         <Eye className="w-5 h-5" />
@@ -670,7 +672,7 @@ export default function DashboardPage() {
                                                 {/* Created */}
                                                 {selectedOrder.created_at || selectedOrder.createdTime ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Order Created</p>
                                                             <p className="text-xs text-gray-500">
@@ -696,7 +698,7 @@ export default function DashboardPage() {
                                                 {/* Accepted */}
                                                 {selectedOrder.accepted_at ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
                                                             <p className="text-xs text-gray-500">
@@ -878,21 +880,21 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
     const colorClasses = {
-        blue: 'bg-blue-100 text-blue-600',
-        green: 'bg-green-100 text-green-600',
-        purple: 'bg-purple-100 text-purple-600',
-        orange: 'bg-orange-100 text-orange-600',
+        blue: 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md',
+        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md',
+        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md',
+        orange: 'bg-gradient-to-br from-secondary-500 to-secondary-600 text-white shadow-md',
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-3 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-2 border border-gray-100">
+            <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${colorClasses[color]}`}>
                     <div className="w-5 h-5">{icon}</div>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 truncate">{label}</p>
-                    <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
+                    <p className="text-xs font-medium text-primary-600 mb-0.5 truncate">{label}</p>
+                    <p className="text-base font-bold text-gray-900">{value}</p>
                 </div>
             </div>
         </div>
@@ -912,22 +914,22 @@ function StatusBadge({ status }) {
         CANCELLED: 'Cancelled',
     };
     const colorMap = {
-        ASSIGNED: 'bg-purple-100 text-purple-800',
-        ACCEPTED: 'bg-blue-100 text-blue-800',
-        REJECTED: 'bg-red-100 text-red-800',
-        PICKED_UP: 'bg-yellow-100 text-yellow-800',
-        IN_TRANSIT: 'bg-orange-100 text-orange-800',
-        PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
-        DELIVERED: 'bg-green-100 text-green-800',
-        CANCELLED: 'bg-red-100 text-red-800',
+        ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+        ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+        REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
+        PICKED_UP: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+        IN_TRANSIT: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+        PAYMENT_COLLECTION: 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white',
+        DELIVERED: 'bg-gradient-to-r from-green-400 to-green-600 text-white',
+        CANCELLED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
     };
 
     const key = status.toUpperCase();
     const label = labelMap[key] || status;
-    const colors = colorMap[key] || 'bg-gray-100 text-gray-800';
+    const colors = colorMap[key] || 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
 
     return (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colors}`}>
+        <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${colors}`}>
             {label}
         </span>
     );

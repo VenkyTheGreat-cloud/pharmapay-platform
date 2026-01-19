@@ -275,7 +275,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 onChange={handleChange}
                                 step="0.01"
                                 min="0"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.totalAmount ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter bill amount"
@@ -298,7 +298,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 onChange={handleChange}
                                 step="0.01"
                                 min="0"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.paidAmount ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="0.00"
@@ -333,7 +333,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                     name="paymentMode"
                                     value={formData.paymentMode}
                                     onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                         errors.paymentMode ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     disabled={isSubmitting}
@@ -360,7 +360,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                     name="transactionReference"
                                     value={formData.transactionReference}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="e.g., TXN123"
                                     disabled={isSubmitting}
                                 />
@@ -377,7 +377,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 value={formData.customerComments}
                                 onChange={handleChange}
                                 rows={4}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="Enter any notes or comments"
                                 disabled={isSubmitting}
                             />
@@ -388,7 +388,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed transition-all shadow-md"
                             >
                                 {isSubmitting ? 'Updating...' : 'Update Order'}
                             </button>

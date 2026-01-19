@@ -110,7 +110,7 @@ export default function CustomersPage() {
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-2"
                 >
                     <Plus className="w-5 h-5" />
                     Add New Customer
@@ -128,12 +128,12 @@ export default function CustomersPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                             placeholder="Search by name, mobile, or address..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                     </div>
                     <button
                         onClick={handleSearch}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700"
                     >
                         Search
                     </button>
@@ -142,7 +142,7 @@ export default function CustomersPage() {
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading customers...</p>
                 </div>
             ) : (
@@ -210,7 +210,7 @@ export default function CustomersPage() {
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => viewCustomerDetails(customer.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-primary-600 hover:text-primary-700"
                                                     title="View Details"
                                                 >
                                                     <Eye className="w-5 h-5" />
@@ -345,7 +345,7 @@ export default function CustomersPage() {
                                     
                                     {loadingOrders ? (
                                         <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
                                             <p className="text-gray-600 mt-2 text-sm">Loading orders...</p>
                                         </div>
                                     ) : customerOrders.length === 0 ? (
@@ -407,7 +407,7 @@ export default function CustomersPage() {
                                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                                                                     order.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
-                                                                    order.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'ACCEPTED' ? 'bg-gradient-to-r from-primary-400 to-primary-600 text-white' :
                                                                     order.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                                                                     order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
                                                                     order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :

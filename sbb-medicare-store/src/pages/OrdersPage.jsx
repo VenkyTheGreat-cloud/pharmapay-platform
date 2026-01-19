@@ -223,60 +223,62 @@ export default function OrdersPage() {
     };
 
     const getStatusColor = (status) => {
-        if (!status) return 'bg-gray-100 text-gray-800';
+        if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
         const normalized = status.toUpperCase();
         const colors = {
-            ASSIGNED: 'bg-purple-100 text-purple-800',
-            ACCEPTED: 'bg-blue-100 text-blue-800',
-            REJECTED: 'bg-red-100 text-red-800',
-            PICKED_UP: 'bg-yellow-100 text-yellow-800',
-            IN_TRANSIT: 'bg-orange-100 text-orange-800',
-            PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
-            DELIVERED: 'bg-green-100 text-green-800',
-            CANCELLED: 'bg-red-100 text-red-800',
+            ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
+            PICKED_UP: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            IN_TRANSIT: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            PAYMENT_COLLECTION: 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white',
+            DELIVERED: 'bg-gradient-to-r from-green-400 to-green-600 text-white',
+            CANCELLED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
         };
-        return colors[normalized] || 'bg-gray-100 text-gray-800';
+        return colors[normalized] || 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
     };
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden">
-            <div className="p-4 pb-3 flex items-center justify-between flex-shrink-0">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Create and manage all orders</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
-                        <input
-                            type="date"
-                            value={filters.selectedDate}
-                            onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
-                            max={getTodayIST()}
-                            className="border border-gray-300 rounded px-2.5 py-1.5 text-sm"
-                        />
+        <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+                        <p className="text-gray-500 text-sm mt-0.5">Create and manage all orders</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={loadOrders}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 flex items-center gap-1.5 text-sm"
-                    >
-                        <Calendar className="w-4 h-4" />
-                        Refresh
-                    </button>
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 flex items-center gap-1.5 text-sm"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Create Order
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
+                            <input
+                                type="date"
+                                value={filters.selectedDate}
+                                onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
+                                max={getTodayIST()}
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={loadOrders}
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 text-sm"
+                        >
+                            <Calendar className="w-4 h-4" />
+                            Refresh
+                        </button>
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1.5 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center gap-1.5 text-sm"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Create Order
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
@@ -329,33 +331,33 @@ export default function OrdersPage() {
                     ) : (
                             <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
-                                    <thead className="bg-gray-50">
+                                    <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[80px]">
                                                 Sl.No
                                             </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[150px]">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[150px]">
                                     Order #
                                 </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Customer
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Area
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Delivery Boy
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Amount
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Status
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Date
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                                            <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
                                                 Actions
                                             </th>
                                         </tr>
@@ -384,7 +386,7 @@ export default function OrdersPage() {
                                     };
 
                                             return (
-                                                <tr key={order.id} className="hover:bg-gray-50">
+                                                <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                     <td className="px-4 py-4 text-sm text-gray-900 text-center">
                                                         {index + 1}
                                                     </td>
@@ -425,7 +427,7 @@ export default function OrdersPage() {
                                                         <div className="flex items-center justify-start gap-3">
                                                             <button
                                                                 onClick={() => viewOrderDetails(order.id)}
-                                                                className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                                className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50 transition-colors"
                                                                 title="View Details"
                                                             >
                                                                 <Eye className="w-5 h-5" />
@@ -517,7 +519,7 @@ export default function OrdersPage() {
                                 <select
                                     value={selectedDeliveryBoy}
                                     onChange={(e) => setSelectedDeliveryBoy(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                                 >
                                     <option value="">Select a delivery boy</option>
                                     {deliveryBoys.length === 0 ? (
@@ -534,7 +536,7 @@ export default function OrdersPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleAssign}
-                                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md"
                                 >
                                     Assign
                                 </button>
@@ -802,7 +804,7 @@ export default function OrdersPage() {
                                                 {/* Created */}
                                                 {selectedOrder.created_at || selectedOrder.createdTime ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Order Created</p>
                                                             <p className="text-xs text-gray-500">
@@ -828,7 +830,7 @@ export default function OrdersPage() {
                                                 {/* Accepted */}
                                                 {selectedOrder.accepted_at ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
                                                             <p className="text-xs text-gray-500">
