@@ -227,7 +227,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Create New Order</h2>
+                        <h2 className="text-lg font-bold text-gray-800">Create New Order</h2>
                         <button
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-600"
@@ -246,7 +246,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Order Number */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Order Number <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -264,13 +264,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     disabled={isSubmitting}
                                 />
                                 {errors.orderNumber && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.orderNumber}</p>
+                                    <p className="text-red-500 text-xs mt-1">{errors.orderNumber}</p>
                                 )}
                             </div>
 
                             {/* Customer Selection */}
                             <div className="relative">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Customer <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
@@ -315,7 +315,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                                 <div className="font-medium text-gray-900">
                                                     {customer.name || customer.full_name}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div className="text-xs text-gray-500">
                                                     {customer.mobile || customer.mobile_number}
                                                 </div>
                                             </div>
@@ -327,19 +327,19 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         ref={customerDropdownRef}
                                         className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg"
                                     >
-                                        <div className="px-4 py-2 text-gray-500 text-sm">
+                                        <div className="px-4 py-2 text-gray-500 text-xs">
                                             No customers found
                                         </div>
                                     </div>
                                 )}
                                 {errors.customerId && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.customerId}</p>
+                                    <p className="text-red-500 text-xs mt-1">{errors.customerId}</p>
                                 )}
                             </div>
 
                             {/* Total Amount (Bill Amount) */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Bill Amount (Total Amount) <span className="text-red-500">*</span>
                                 </label>
                                 <input
@@ -356,13 +356,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     disabled={isSubmitting}
                                 />
                                 {errors.totalAmount && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.totalAmount}</p>
+                                    <p className="text-red-500 text-xs mt-1">{errors.totalAmount}</p>
                                 )}
                             </div>
 
                             {/* Paid Amount */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Paid Amount
                                 </label>
                                 <input
@@ -379,13 +379,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     disabled={isSubmitting}
                                 />
                                 {errors.paidAmount && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.paidAmount}</p>
+                                    <p className="text-red-500 text-xs mt-1">{errors.paidAmount}</p>
                                 )}
                             </div>
 
                             {/* Remaining Amount (Non-editable) */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Remaining Amount
                                 </label>
                                 <input
@@ -400,7 +400,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {/* Payment Mode (Required if paidAmount > 0) */}
                             {(parseFloat(formData.paidAmount) || 0) > 0 && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
                                         Payment Mode <span className="text-red-500">*</span>
                                     </label>
                                     <select
@@ -418,7 +418,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         <option value="Card">Card</option>
                                     </select>
                                     {errors.paymentMode && (
-                                        <p className="text-red-500 text-sm mt-1">{errors.paymentMode}</p>
+                                        <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
                                     )}
                                 </div>
                             )}
@@ -426,7 +426,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {/* Transaction Reference (Optional, shown only if paidAmount > 0) */}
                             {(parseFloat(formData.paidAmount) || 0) > 0 && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
                                         Transaction Reference (Optional)
                                     </label>
                                     <input
@@ -443,7 +443,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
                             {/* Customer Comments */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Customer Comments (Optional)
                                 </label>
                                 <textarea

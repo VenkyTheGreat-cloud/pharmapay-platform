@@ -275,7 +275,6 @@ export default function CustomersPage() {
                     </div>
                 </div>
             )}
-        </div>
 
             {/* Customer Details Modal */}
             {showModal && (
