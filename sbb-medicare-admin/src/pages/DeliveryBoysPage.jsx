@@ -275,6 +275,7 @@ export default function DeliveryBoysPage() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {/* Add User Modal */}
