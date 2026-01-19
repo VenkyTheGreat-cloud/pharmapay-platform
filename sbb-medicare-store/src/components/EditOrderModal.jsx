@@ -136,8 +136,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Edit Order</h2>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <h2 className="text-lg font-bold text-gray-800">Edit Order</h2>
+                            <p className="text-xs text-gray-600 mt-1">
                                 Order #: {order.orderNumber || order.order_number || order.id}
                             </p>
                         </div>
@@ -153,7 +153,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Non-editable Order Details */}
                         <div className="bg-gray-50 p-4 rounded-lg space-y-3 mb-4">
-                            <h3 className="text-sm font-semibold text-gray-700 mb-3">Order Details (Read Only)</h3>
+                            <h3 className="text-xs font-medium text-gray-800 mb-3">Order Details (Read Only)</h3>
                             
                             {/* Customer Name */}
                             <div>
@@ -260,12 +260,12 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
 
                         {/* Editable Fields Section */}
                         <div className="border-t pt-4">
-                            <h3 className="text-sm font-semibold text-gray-700 mb-4">Editable Fields</h3>
+                            <h3 className="text-xs font-medium text-gray-800 mb-4">Editable Fields</h3>
                         </div>
 
                         {/* Bill Amount */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Bill Amount <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -282,13 +282,13 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 disabled={isSubmitting}
                             />
                             {errors.totalAmount && (
-                                <p className="text-red-500 text-sm mt-1">{errors.totalAmount}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.totalAmount}</p>
                             )}
                         </div>
 
                         {/* Paid Amount */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Paid Amount
                             </label>
                             <input
@@ -305,13 +305,13 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 disabled={isSubmitting}
                             />
                             {errors.paidAmount && (
-                                <p className="text-red-500 text-sm mt-1">{errors.paidAmount}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.paidAmount}</p>
                             )}
                         </div>
 
                         {/* Remaining Amount (Non-editable, calculated) */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Remaining Amount
                             </label>
                             <input
@@ -326,7 +326,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                         {/* Payment Mode (Required if paidAmount > 0) */}
                         {(parseFloat(formData.paidAmount) || 0) > 0 && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Payment Mode <span className="text-red-500">*</span>
                                 </label>
                                 <select
@@ -344,7 +344,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                     <option value="Card">Card</option>
                                 </select>
                                 {errors.paymentMode && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.paymentMode}</p>
+                                    <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
                                 )}
                             </div>
                         )}
@@ -352,7 +352,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                         {/* Transaction Reference (Optional, shown only if paidAmount > 0) */}
                         {(parseFloat(formData.paidAmount) || 0) > 0 && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Transaction Reference (Optional)
                                 </label>
                                 <input
@@ -369,7 +369,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
 
                         {/* Customer Comments (Note) */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Note (Customer Comments)
                             </label>
                             <textarea

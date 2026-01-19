@@ -195,26 +195,26 @@ export default function DashboardPage() {
             <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                        <p className="text-gray-500 text-sm mt-0.5">Orders and collections for the selected date</p>
+                        <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
+                        <p className="text-xs text-gray-600 mt-0.5">Orders and collections for the selected date</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Date:</label>
+                            <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Date:</label>
                             <input
                                 type="date"
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
                                 max={getTodayIST()}
-                                className="border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             />
                         </div>
                         <button
                             type="button"
                             onClick={loadOrders}
-                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 text-sm"
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5"
                         >
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-3.5 h-3.5" />
                             Refresh
                         </button>
                     </div>
@@ -266,12 +266,12 @@ export default function DashboardPage() {
                     <div className="px-4 pb-4 flex flex-col flex-1 min-h-0">
                         <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
                         <div className="flex justify-between items-center mb-2 flex-shrink-0">
-                            <h3 className="text-base font-semibold text-gray-900">Orders for Selected Date</h3>
+                            <h3 className="text-xs font-medium text-gray-800">Orders for Selected Date</h3>
                             <div className="flex items-center gap-2">
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">All Status</option>
                                     <option value="ASSIGNED">Assigned</option>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
                                         }
                                     }}
                                     placeholder="Search by Order ID"
-                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-sm w-44 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-xs w-44 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                 />
                                 {(statusFilter || orderIdFilter) && (
                                     <button
@@ -369,21 +369,21 @@ export default function DashboardPage() {
 
                                             return (
                                             <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-900 text-center">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 text-center">
                                                     {index + 1}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 max-w-[160px]">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 max-w-[160px]">
                                                     {formatOrderNumber(orderNumber)}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">{order.customerName || order.customer_name}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">{order.customerName || order.customer_name}</div>
                                                     <div className="text-xs text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">
                                                         {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
                             </div>
                                                     {(order.deliveryBoyMobile || order.delivery_boy_mobile) && (
@@ -392,24 +392,24 @@ export default function DashboardPage() {
                             </div>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
+                                                <td className="px-4 py-3 whitespace-nowrap">
                                                     <StatusBadge status={order.status} />
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     {(order.createdTime || order.created_at)
                                                         ? new Date(order.createdTime || order.created_at).toLocaleString()
                                                         : '-'}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                                <td className="px-4 py-3 whitespace-nowrap">
                                                     <button
                                                         onClick={() => viewOrderDetails(order.id)}
                                                         className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50 transition-colors"
                                                         title="View Details"
                                                     >
-                                                        <Eye className="w-5 h-5" />
+                                                        <Eye className="w-4 h-4" />
                                                     </button>
                                                 </td>
                                             </tr>

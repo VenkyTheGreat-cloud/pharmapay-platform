@@ -108,7 +108,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Edit Customer</h2>
+                        <h2 className="text-lg font-bold text-gray-800">Edit Customer</h2>
                         <button
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-600"
@@ -120,7 +120,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Full Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -135,12 +135,12 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 disabled={isSubmitting}
                             />
                             {errors.name && (
-                                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Mobile Number <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -156,12 +156,12 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 disabled={isSubmitting}
                             />
                             {errors.mobile && (
-                                <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Address <span className="text-red-500">*</span>
                             </label>
                             <textarea
@@ -176,12 +176,12 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 disabled={isSubmitting}
                             />
                             {errors.address && (
-                                <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.address}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Landmark (Optional)
                             </label>
                             <input
@@ -197,7 +197,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Latitude (Optional)
                                 </label>
                                 <input
@@ -212,7 +212,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Longitude (Optional)
                                 </label>
                                 <input
