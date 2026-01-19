@@ -161,17 +161,17 @@ export default function DashboardPage() {
     const uniqueStatuses = ['ALL', ...new Set(allOrders.map(o => o.status).filter(Boolean))];
 
     return (
-        <div className="p-4">
+        <div className="p-4 h-screen flex flex-col overflow-hidden">
             {/* Fixed Header Section - Compact */}
-            <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-50 to-indigo-50 pb-3 -mx-4 px-4 pt-4 border-b-2 border-blue-200 mb-4 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 pb-2 -mx-4 px-4 pt-2 border-b-2 border-blue-200 shadow-sm flex-shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-                        <p className="text-xs text-gray-600 mt-0.5">Orders and collections for the selected date</p>
+                        <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
+                        <p className="text-xs text-gray-600">Orders and collections for the selected date</p>
                     </div>
 
                     {/* Date filter for orders table - Compact */}
-                    <div className="bg-white rounded-lg shadow-sm px-3 py-2 flex items-center gap-3 border border-blue-100">
+                    <div className="bg-white rounded-lg shadow-sm px-3 py-1.5 flex items-center gap-3 border border-blue-100">
                         <div>
                             <label className="block text-xs font-medium text-gray-600 mb-0.5">Date:</label>
                             <input
@@ -198,50 +198,52 @@ export default function DashboardPage() {
             </div>
 
             {loading ? (
-                <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
+                <div className="text-center py-8 flex-1 flex items-center justify-center">
+                    <div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+                        <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
+                    </div>
                 </div>
             ) : (
-                <>
-                    {/* Stats Cards for selected range - Colorful */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+                <div className="flex flex-col flex-1 min-h-0">
+                    {/* Stats Cards for selected range - Colorful and Compact */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
                         <StatCard
-                            icon={<Package className="w-5 h-5" />}
+                            icon={<Package className="w-4 h-4" />}
                             label="Created Orders"
                             value={totalOrders}
                             color="blue"
                         />
                         <StatCard
-                            icon={<Clock className="w-5 h-5" />}
+                            icon={<Clock className="w-4 h-4" />}
                             label="Assigned Orders"
                             value={assignedOrders}
                             color="orange"
                         />
                         <StatCard
-                            icon={<CheckCircle className="w-5 h-5" />}
+                            icon={<CheckCircle className="w-4 h-4" />}
                             label="Picked / In Transit"
                             value={pickedUpOrders}
                             color="green"
                         />
                         <StatCard
-                            icon={<CheckCircle className="w-5 h-5" />}
+                            icon={<CheckCircle className="w-4 h-4" />}
                             label="Delivered Orders"
                             value={deliveredOrders}
                             color="green"
                         />
                         <StatCard
-                            icon={<IndianRupee className="w-5 h-5" />}
+                            icon={<IndianRupee className="w-4 h-4" />}
                             label="Collected Amount"
                             value={`₹${collectedAmount.toFixed(2)}`}
                             color="purple"
                         />
                     </div>
 
-                    {/* Orders Table for selected date */}
-                    <div className="bg-white rounded-lg shadow-lg mb-6 overflow-hidden border border-gray-200">
-                        <div className="px-4 py-3 border-b bg-gradient-to-r from-gray-50 to-blue-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <h2 className="text-base font-semibold text-gray-800">Orders for Selected Date</h2>
+                    {/* Orders Table for selected date - Scrollable */}
+                    <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
+                        <div className="px-4 py-2 border-b bg-gradient-to-r from-gray-50 to-blue-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-shrink-0">
+                            <h2 className="text-sm font-semibold text-gray-800">Orders for Selected Date</h2>
                             <div className="flex items-center gap-2">
                                 {/* Status Filter */}
                                 <div className="relative">
@@ -275,7 +277,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-auto flex-1 min-h-0">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gradient-to-r from-blue-600 to-indigo-600">
                                     <tr>
@@ -374,7 +376,7 @@ export default function DashboardPage() {
                             </table>
                             </div>
                         </div>
-                </>
+                </div>
                     )}
 
             {/* Order Details Modal */}
@@ -392,10 +394,10 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
     const colorClasses = {
-        blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-200',
-        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-200',
-        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-200',
-        orange: 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-200',
+        blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-200',
+        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md shadow-green-200',
+        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md shadow-purple-200',
+        orange: 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-200',
     };
 
     const labelColors = {
@@ -406,14 +408,14 @@ function StatCard({ icon, label, value, color }) {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-4 border border-gray-100">
-            <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl ${colorClasses[color]}`}>
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-2 border border-gray-100">
+            <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${colorClasses[color]}`}>
                     {icon}
                 </div>
-                <div className="flex-1">
-                    <p className={`text-xs font-semibold ${labelColors[color]} mb-1`}>{label}</p>
-                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-medium ${labelColors[color]} mb-0.5 truncate`}>{label}</p>
+                    <p className="text-base font-bold text-gray-900">{value}</p>
                 </div>
             </div>
         </div>
