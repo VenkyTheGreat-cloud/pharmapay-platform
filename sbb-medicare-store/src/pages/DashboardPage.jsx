@@ -229,7 +229,7 @@ export default function DashboardPage() {
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
+                    <div className="px-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
                         <StatCard
                             icon={<Package className="w-5 h-5" />}
                             label="Total Created Orders"
