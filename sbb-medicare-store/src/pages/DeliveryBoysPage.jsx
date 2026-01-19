@@ -102,7 +102,7 @@ export default function DeliveryBoysPage() {
     if (loading) {
         return (
             <div className="p-6 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                 <p className="text-gray-600 mt-4">Loading delivery boys...</p>
             </div>
         );
@@ -123,7 +123,7 @@ export default function DeliveryBoysPage() {
                     onClick={() => setActiveTab('all')}
                     className={`pb-2 px-4 ${
                         activeTab === 'all'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
@@ -133,7 +133,7 @@ export default function DeliveryBoysPage() {
                     onClick={() => setActiveTab('active')}
                     className={`pb-2 px-4 ${
                         activeTab === 'active'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >
@@ -143,7 +143,7 @@ export default function DeliveryBoysPage() {
                     onClick={() => setActiveTab('pending')}
                     className={`pb-2 px-4 ${
                         activeTab === 'pending'
-                            ? 'border-b-2 border-blue-600 text-blue-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
                             : 'text-gray-600'
                     }`}
                 >

@@ -92,7 +92,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                             <div className="space-y-6">
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <Store className="w-6 h-6 text-blue-600" />
+                                        <Store className="w-6 h-6 text-primary-600" />
                                         <h3 className="text-lg font-semibold text-gray-900">Store Information</h3>
                                     </div>
                                     <div className="space-y-3">
@@ -115,7 +115,7 @@ export default function ProfileModal({ isOpen, onClose }) {
 
                                 <div className="bg-gray-50 p-4 rounded-lg">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <User className="w-6 h-6 text-blue-600" />
+                                        <User className="w-6 h-6 text-primary-600" />
                                         <h3 className="text-lg font-semibold text-gray-900">Manager Information</h3>
                                     </div>
                                     <div className="space-y-3">
@@ -173,7 +173,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                 <div className="pt-4 border-t">
                                     <button
                                         onClick={() => setShowChangePassword(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md transition-colors"
                                     >
                                         <Lock className="w-4 h-4" />
                                         Change Password
@@ -186,7 +186,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                             {/* Change Password Form */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
-                                    <Lock className="w-6 h-6 text-blue-600" />
+                                    <Lock className="w-6 h-6 text-primary-600" />
                                     <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
                                 </div>
 
@@ -200,7 +200,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                             name="oldPassword"
                                             value={passwordData.oldPassword}
                                             onChange={handlePasswordChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                             required
                                         />
                                     </div>
@@ -214,7 +214,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                             name="newPassword"
                                             value={passwordData.newPassword}
                                             onChange={handlePasswordChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                             required
                                             minLength={6}
                                             placeholder="Minimum 6 characters"
@@ -230,7 +230,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                             name="confirmPassword"
                                             value={passwordData.confirmPassword}
                                             onChange={handlePasswordChange}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                             required
                                         />
                                     </div>

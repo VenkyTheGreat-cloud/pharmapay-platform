@@ -239,7 +239,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
                     {loading ? (
                         <div className="text-center py-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                             <p className="text-gray-600 mt-4">Loading form data...</p>
                         </div>
                     ) : (
@@ -257,7 +257,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     maxLength="8"
                                     pattern="[0-9]{8}"
                                     inputMode="numeric"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                         errors.orderNumber ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     placeholder="Enter 8 digit order number"
@@ -295,7 +295,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             }
                                         }}
                                         placeholder="Search by customer name or mobile number"
-                                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                             errors.customerId ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                         disabled={isSubmitting}
@@ -310,7 +310,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             <div
                                                 key={customer.id}
                                                 onClick={() => handleCustomerSelect(customer)}
-                                                className="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                                className="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                                             >
                                                 <div className="font-medium text-gray-900">
                                                     {customer.name || customer.full_name}
@@ -349,7 +349,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     min="0"
                                     step="0.01"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                         errors.totalAmount ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     placeholder="0.00"
@@ -372,7 +372,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     min="0"
                                     step="0.01"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                         errors.paidAmount ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     placeholder="0.00"
@@ -407,7 +407,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         name="paymentMode"
                                         value={formData.paymentMode}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                             errors.paymentMode ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                         disabled={isSubmitting}
@@ -434,7 +434,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         name="transactionReference"
                                         value={formData.transactionReference}
                                         onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                         placeholder="e.g., TXN123"
                                         disabled={isSubmitting}
                                     />
@@ -451,7 +451,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     value={formData.customerComments}
                                     onChange={handleChange}
                                     rows="3"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="Any special instructions or notes"
                                     disabled={isSubmitting}
                                 />
@@ -462,7 +462,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed transition-all shadow-md"
                                 >
                                     {isSubmitting ? 'Creating...' : 'Create Order'}
                                 </button>
