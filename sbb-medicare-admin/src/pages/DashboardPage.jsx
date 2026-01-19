@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw } from 'lucide-react';
+import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw, Search } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
@@ -8,6 +8,8 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [showOrderDetails, setShowOrderDetails] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
     const [filters, setFilters] = useState(() => {
         // Get current date in IST (UTC+5:30)
         const getISTDate = () => {
@@ -41,22 +43,29 @@ export default function DashboardPage() {
                 date_to: filters.selectedDate,
             };
             const allRes = await ordersAPI.getAll(params);
-            console.log('Dashboard Orders API Response:', allRes.data); // Debug log
+            console.log('Dashboard Orders API Full Response:', allRes); // Debug log
+            console.log('Dashboard Orders API Response Data:', allRes.data); // Debug log
             
             // Handle different possible response structures
             let allList = [];
             if (allRes.data?.data?.orders) {
                 // Structure: { success: true, data: { orders: [...] } }
                 allList = allRes.data.data.orders;
+                console.log('Found orders in allRes.data.data.orders:', allList.length); // Debug log
             } else if (allRes.data?.data && Array.isArray(allRes.data.data)) {
                 // Structure: { success: true, data: [...] }
                 allList = allRes.data.data;
+                console.log('Found orders in allRes.data.data (array):', allList.length); // Debug log
             } else if (allRes.data?.orders) {
                 // Structure: { success: true, orders: [...] }
                 allList = allRes.data.orders;
+                console.log('Found orders in allRes.data.orders:', allList.length); // Debug log
             } else if (Array.isArray(allRes.data)) {
                 // Direct array
                 allList = allRes.data;
+                console.log('Found orders in allRes.data (direct array):', allList.length); // Debug log
+            } else {
+                console.warn('No orders found in expected response structure. Response:', allRes.data); // Debug log
             }
             
             // Normalize order data (handle snake_case to camelCase)
@@ -64,22 +73,23 @@ export default function DashboardPage() {
                 id: order.id,
                 orderNumber: order.order_number || order.orderNumber,
                 customerName: order.customer_name || order.customerName,
-                customerMobile: order.customer_mobile || order.customerMobile,
+                customerMobile: order.customer_phone || order.customer_mobile || order.customerMobile,
                 customerArea: order.customer_area || order.customerArea,
                 deliveryBoyName: order.delivery_boy_name || order.deliveryBoyName,
                 deliveryBoyMobile: order.delivery_boy_mobile || order.deliveryBoyMobile,
                 status: order.status,
-                amount: parseFloat(order.amount || order.total_amount || 0),
+                amount: parseFloat(order.total_amount || order.amount || 0),
                 paymentMode: order.payment_mode || order.paymentMode,
                 paymentStatus: order.payment_status || order.paymentStatus,
-                customerComments: order.customer_comments || order.customerComments || order.comments,
-                address: order.address || order.delivery_address,
-                createdTime: order.created_time || order.createdTime || order.created_at || order.order_date,
+                customerComments: order.customer_comments || order.customerComments || order.comments || order.notes,
+                address: order.customer_address || order.address || order.delivery_address,
+                createdTime: order.created_at || order.created_time || order.createdTime || order.order_date,
                 deliveredAt: order.delivered_at || order.deliveredAt || order.delivered_time,
                 items: order.items || order.medicines || [],
             }));
             
             console.log('Normalized Orders:', normalizedOrders); // Debug log
+            console.log('Total orders from API:', normalizedOrders.length); // Debug log
             setAllOrders(normalizedOrders);
         } catch (error) {
             console.error('Error loading dashboard data:', error);
@@ -93,28 +103,24 @@ export default function DashboardPage() {
     };
 
     const filteredOrders = allOrders.filter((order) => {
-        if (!order.createdTime) {
-            // If no createdTime, exclude it
+        // Since API already filters by date, we trust the API response
+        // Only do client-side filtering for status and search
+        
+        // Filter by status
+        if (statusFilter !== 'ALL' && order.status !== statusFilter) {
             return false;
         }
         
-        // Handle different date formats and filter by selected date (00:00:00 to 23:59:59 IST)
-        let orderDate;
-        if (typeof order.createdTime === 'string') {
-            orderDate = order.createdTime.split('T')[0];
-        } else if (order.createdTime instanceof Date) {
-            // Convert to IST date
-            const istTime = new Date(order.createdTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-            const year = istTime.getFullYear();
-            const month = String(istTime.getMonth() + 1).padStart(2, '0');
-            const day = String(istTime.getDate()).padStart(2, '0');
-            orderDate = `${year}-${month}-${day}`;
-        } else {
-            return false; // Exclude if date format is unknown
+        // Filter by search query (order ID)
+        if (searchQuery.trim()) {
+            const orderIdStr = (order.orderNumber || order.id || '').toString().toLowerCase();
+            const searchStr = searchQuery.toLowerCase().trim();
+            if (!orderIdStr.includes(searchStr)) {
+                return false;
+            }
         }
         
-        // Filter orders for the selected date only
-        return orderDate === filters.selectedDate;
+        return true;
     });
 
     // Stats for the selected date range
@@ -151,36 +157,42 @@ export default function DashboardPage() {
         return `${year}-${month}-${day}`;
     };
 
+    // Get unique statuses from orders for filter dropdown
+    const uniqueStatuses = ['ALL', ...new Set(allOrders.map(o => o.status).filter(Boolean))];
+
     return (
         <div className="p-6">
-            <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-                <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Orders overview, filters, and details</p>
-            </div>
-
-                {/* Date filter for orders table */}
-                <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
+            {/* Fixed Header Section */}
+            <div className="sticky top-0 z-20 bg-gray-100 pb-6 -mx-6 px-6 pt-6 border-b border-gray-200 mb-6">
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Select Date</label>
-                        <input
-                            type="date"
-                            value={filters.selectedDate}
-                            onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
-                            max={getMaxDate()}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
+                        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                        <p className="text-gray-600 mt-1">Orders and collections for the selected date</p>
                     </div>
-                    <div className="flex items-end">
-                        <button
-                            onClick={loadDashboardData}
-                            disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
-                            title="Refresh orders for selected date"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
-                        </button>
+
+                    {/* Date filter for orders table */}
+                    <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Date:</label>
+                            <input
+                                type="date"
+                                value={filters.selectedDate}
+                                onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
+                                max={getMaxDate()}
+                                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                            />
+                        </div>
+                        <div className="flex items-end">
+                            <button
+                                onClick={loadDashboardData}
+                                disabled={loading}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
+                                title="Refresh orders for selected date"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -228,12 +240,41 @@ export default function DashboardPage() {
 
                     {/* Orders Table for selected date */}
                     <div className="bg-white rounded-lg shadow mb-6 overflow-hidden">
-                        <div className="px-6 py-4 border-b flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">Orders for {filters.selectedDate}</h2>
-                            <p className="text-xs text-gray-500">
-                                Showing {filteredOrders.length} orders
-                            </p>
+                        <div className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Orders for Selected Date</h2>
+                            <div className="flex items-center gap-3">
+                                {/* Status Filter */}
+                                <div className="relative">
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        className="appearance-none border border-gray-300 rounded px-3 py-2 pr-8 text-sm text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        {uniqueStatuses.map((status) => (
+                                            <option key={status} value={status}>
+                                                {status === 'ALL' ? 'All Status' : status}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                {/* Search by Order ID */}
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by Order ID"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10 pr-3 py-2 border border-gray-300 rounded text-sm text-gray-700 bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-48"
+                                    />
+                                </div>
                             </div>
+                        </div>
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -271,7 +312,7 @@ export default function DashboardPage() {
                                     {filteredOrders.length === 0 ? (
                                         <tr>
                                             <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                                                No orders for selected date
+                                                No orders found for the selected date.
                                             </td>
                                         </tr>
                                     ) : (
