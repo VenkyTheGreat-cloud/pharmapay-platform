@@ -105,49 +105,56 @@ export default function DeliveryBoysPage() {
 
     if (loading) {
         return (
-            <div className="p-6 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading delivery boys...</p>
+            <div className="p-4 h-screen flex items-center justify-center bg-gray-100">
+                <div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
+                    <p className="text-gray-600 mt-3 text-sm">Loading delivery boys...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="p-6">
+        <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
+            {/* Fixed Header Section - Compact */}
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-800">Delivery Boys</h1>
+                        <p className="text-xs text-gray-600">Manage delivery personnel</p>
+                    </div>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-1.5 shadow-sm"
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Add New Delivery Boy</span>
+                        <span className="sm:hidden">Add</span>
+                    </button>
+                </div>
+            </div>
+
             {error && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                    <p className="text-red-800 text-sm">
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex-shrink-0">
+                    <p className="text-red-800 text-xs">
                         <strong>Error:</strong> {error}
                     </p>
                     <button
                         onClick={loadDeliveryBoys}
-                        className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+                        className="mt-2 text-red-600 hover:text-red-800 text-xs underline"
                     >
                         Retry
                     </button>
                 </div>
             )}
-            <div className="mb-6 flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Delivery Boys</h1>
-                    <p className="text-gray-600 mt-1">Manage delivery personnel</p>
-                </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-2 shadow-md"
-                >
-                    <Plus className="w-5 h-5" />
-                    Add New Delivery Boy
-                </button>
-            </div>
 
             {/* Tabs */}
-            <div className="mb-6 flex gap-4 border-b">
+            <div className="mb-4 flex gap-4 border-b flex-shrink-0">
                 <button
                     onClick={() => setActiveTab('all')}
                     className={`pb-2 px-4 ${
                         activeTab === 'all'
-                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold text-xs'
                             : 'text-gray-600'
                     }`}
                 >
@@ -157,7 +164,7 @@ export default function DeliveryBoysPage() {
                     onClick={() => setActiveTab('active')}
                     className={`pb-2 px-4 ${
                         activeTab === 'active'
-                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold text-xs'
                             : 'text-gray-600'
                     }`}
                 >
@@ -167,7 +174,7 @@ export default function DeliveryBoysPage() {
                     onClick={() => setActiveTab('inactive')}
                     className={`pb-2 px-4 ${
                         activeTab === 'inactive'
-                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold'
+                            ? 'border-b-2 border-primary-500 text-primary-600 font-semibold text-xs'
                             : 'text-gray-600'
                     }`}
                 >
@@ -176,53 +183,56 @@ export default function DeliveryBoysPage() {
             </div>
 
             {/* Delivery Boys Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Contact
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Registered
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {deliveryBoys.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
+                <div className="overflow-auto flex-1 min-h-0">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                                    No delivery boys found
-                                </td>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Name
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Contact
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Registered
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
-                        ) : (
-                            deliveryBoys.map((boy) => (
-                                <tr key={boy.id || Math.random()} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-900">{boy.name || 'N/A'}</div>
-                                            <div className="text-sm text-gray-500">{boy.email || ''}</div>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {deliveryBoys.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-12 text-center">
+                                        <div className="text-gray-400 text-sm">
+                                            <p>No delivery boys found</p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{boy.mobile || 'N/A'}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge isActive={boy.isActive} status={boy.status} />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                </tr>
+                            ) : (
+                                deliveryBoys.map((boy) => (
+                                    <tr key={boy.id || Math.random()} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div>
+                                                <div className="text-xs font-medium text-gray-900">{boy.name || 'N/A'}</div>
+                                                <div className="text-xs text-gray-500">{boy.email || ''}</div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="text-xs text-gray-700">{boy.mobile || 'N/A'}</div>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <StatusBadge isActive={boy.isActive} status={boy.status} />
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
+                                            {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => {
@@ -232,7 +242,7 @@ export default function DeliveryBoysPage() {
                                                     className="text-primary-600 hover:text-primary-700"
                                                     title="Edit"
                                                 >
-                                                    <Edit className="w-5 h-5" />
+                                                    <Edit className="w-4 h-4" />
                                                 </button>
                                             {boy.isActive ? (
                                                 <button
@@ -240,7 +250,7 @@ export default function DeliveryBoysPage() {
                                                     className="text-orange-600 hover:text-orange-900"
                                                     title="Deactivate"
                                                 >
-                                                    <UserX className="w-5 h-5" />
+                                                    <UserX className="w-4 h-4" />
                                                 </button>
                                         ) : (
                                                 <button
@@ -248,7 +258,7 @@ export default function DeliveryBoysPage() {
                                                     className="text-green-600 hover:text-green-900"
                                                     title="Activate"
                                                 >
-                                                    <UserCheck className="w-5 h-5" />
+                                                    <UserCheck className="w-4 h-4" />
                                                 </button>
                                             )}
                                                 <button

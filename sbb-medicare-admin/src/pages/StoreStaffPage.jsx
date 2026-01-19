@@ -114,9 +114,11 @@ export default function StoreStaffPage() {
 
     if (loading) {
         return (
-            <div className="p-6 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-                <p className="text-gray-600 mt-4">Loading store staff...</p>
+            <div className="p-4 h-screen flex items-center justify-center bg-gray-100">
+                <div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
+                    <p className="text-gray-600 mt-3 text-sm">Loading store staff...</p>
+                </div>
             </div>
         );
     }
@@ -185,70 +187,73 @@ export default function StoreStaffPage() {
             </div>
 
             {/* Store Staff Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Contact
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Registered
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredStoreStaff.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
+                <div className="overflow-auto flex-1 min-h-0">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                                    No store staff found
-                                </td>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Name
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Contact
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Registered
+                                </th>
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
-                        ) : (
-                            filteredStoreStaff.map((staff) => (
-                                <tr key={staff.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-900">{staff.name}</div>
-                                            <div className="text-sm text-gray-500">{staff.email}</div>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredStoreStaff.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-12 text-center">
+                                        <div className="text-gray-400 text-sm">
+                                            <p>No store staff found</p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900">{staff.mobile}</div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge isActive={staff.isActive} status={staff.status} />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(staff);
-                                                    setShowEditModal(true);
-                                                }}
-                                                className="text-primary-600 hover:text-primary-700"
-                                                title="Edit"
-                                            >
-                                                <Edit className="w-5 h-5" />
-                                            </button>
+                                </tr>
+                            ) : (
+                                filteredStoreStaff.map((staff) => (
+                                    <tr key={staff.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div>
+                                                <div className="text-xs font-medium text-gray-900">{staff.name}</div>
+                                                <div className="text-xs text-gray-500">{staff.email}</div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="text-xs text-gray-700">{staff.mobile}</div>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <StatusBadge isActive={staff.isActive} status={staff.status} />
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
+                                            {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedUser(staff);
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    className="text-primary-600 hover:text-primary-700"
+                                                    title="Edit"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
                                             <button
                                                 onClick={() => handleDelete(staff.id)}
                                                 className="text-red-600 hover:text-red-900"
                                                 title="Delete"
                                             >
-                                                <Trash2 className="w-5 h-5" />
+                                                <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -257,6 +262,7 @@ export default function StoreStaffPage() {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {/* Add User Modal */}

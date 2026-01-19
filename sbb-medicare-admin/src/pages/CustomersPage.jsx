@@ -154,14 +154,19 @@ export default function CustomersPage() {
     };
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-                <p className="text-gray-600 mt-1">View customer information (Read-only)</p>
+        <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
+            {/* Fixed Header Section - Compact */}
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-800">Customers</h1>
+                        <p className="text-xs text-gray-600">View customer information (Read-only)</p>
+                    </div>
+                </div>
             </div>
 
             {/* Search */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4">
+            <div className="mb-4 bg-white rounded-lg shadow-sm p-3 flex-shrink-0">
                 <div className="flex gap-4">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -171,12 +176,12 @@ export default function CustomersPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             placeholder="Search by name, mobile, or address..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
                     </div>
                     <button
                         onClick={handleSearch}
-                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 shadow-md"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 shadow-sm"
                     >
                         Search
                     </button>
@@ -184,35 +189,37 @@ export default function CustomersPage() {
             </div>
 
             {loading ? (
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading customers...</p>
+                <div className="text-center py-8 flex-1 flex items-center justify-center">
+                    <div>
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
+                        <p className="text-gray-600 mt-3 text-sm">Loading customers...</p>
+                    </div>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
+                    <div className="overflow-auto flex-1 min-h-0">
                         <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Sl.No
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Name
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Mobile
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Area Name
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Address
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Registered
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -220,42 +227,44 @@ export default function CustomersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
-                                        No customers found
+                                    <td colSpan="7" className="px-6 py-12 text-center">
+                                        <div className="text-gray-400 text-sm">
+                                            <p>No customers found</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
                                 customers.map((customer, index) => (
-                                    <tr key={customer.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <tr key={customer.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-gray-700">
                                             {index + 1}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="text-xs font-medium text-gray-900">{customer.name}</div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{customer.mobile}</div>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="text-xs text-gray-900">{customer.mobile}</div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{customer.area || 'N/A'}</div>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="text-xs text-gray-700">{customer.area || 'N/A'}</div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                                        <td className="px-4 py-3">
+                                            <div className="text-xs text-gray-700 max-w-xs truncate">
                                                 {customer.address}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
                                             {customer.createdAt
                                                 ? new Date(customer.createdAt).toLocaleDateString()
                                                 : '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs">
                                             <button
                                                 onClick={() => viewCustomerDetails(customer.id)}
                                                 className="text-primary-600 hover:text-primary-700"
                                                 title="View Details"
                                             >
-                                                <Eye className="w-5 h-5" />
+                                                <Eye className="w-4 h-4" />
                                             </button>
                                         </td>
                                     </tr>
@@ -266,6 +275,7 @@ export default function CustomersPage() {
                     </div>
                 </div>
             )}
+        </div>
 
             {/* Customer Details Modal */}
             {showModal && (
