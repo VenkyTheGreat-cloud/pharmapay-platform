@@ -282,7 +282,7 @@ export default function OrdersPage() {
                     <p className="text-gray-600 mt-4">Loading orders...</p>
                 </div>
             ) : (
-                <div className="px-4 pb-4 flex flex-col flex-1 min-h-0">
+                <div className="px-4 pb-4 mt-4 flex flex-col flex-1 min-h-0">
                     <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
                     <div className="flex justify-between items-center mb-2 flex-shrink-0">
                         <h3 className="text-xs font-medium text-gray-800">Orders List</h3>
