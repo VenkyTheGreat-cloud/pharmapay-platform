@@ -42,8 +42,8 @@ exports.getAllOrders = async (req, res, next) => {
         const dateTo = normalizeDateParam(date_to);
 
         const filters = {
-            limit: Math.min(parseInt(limit), 50),
-            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 50)
+            limit: Math.min(parseInt(limit), 500),
+            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 500)
         };
 
         // Filter based on user role
@@ -160,8 +160,8 @@ exports.getTodayOrders = async (req, res, next) => {
 
         const filters = {
             date: new Date().toISOString().split('T')[0],
-            limit: Math.min(parseInt(limit), 50),
-            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 50)
+            limit: Math.min(parseInt(limit), 500),
+            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 500)
         };
 
         if (storeId) filters.store_id = storeId;
