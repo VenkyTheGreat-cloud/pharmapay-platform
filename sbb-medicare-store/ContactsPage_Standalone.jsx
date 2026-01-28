@@ -1,6 +1,41 @@
+/**
+ * Contacts Screen - Standalone Component
+ * 
+ * This component can be integrated into any React dashboard.
+ * 
+ * Requirements:
+ * - React 18+
+ * - Tailwind CSS with primary color configuration
+ * - lucide-react for icons
+ * - API base URL and authentication token access
+ * 
+ * Usage:
+ * 1. Copy this file to your components/pages directory
+ * 2. Update API_BASE_URL and getAuthToken() function
+ * 3. Import and use: <ContactsPage />
+ */
+
 import { useState, useEffect } from 'react';
-import { contactsAPI } from '../services/api';
 import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
+
+// ============================================
+// CONFIGURATION - UPDATE THESE VALUES
+// ============================================
+
+// Update with your API base URL
+const API_BASE_URL = 'https://sbb-medicare-api.onrender.com/api';
+
+// Update with your authentication token getter function
+const getAuthToken = () => {
+    // Example: return localStorage.getItem('authToken');
+    // Or: return sessionStorage.getItem('authToken');
+    // Or: return yourAuthContext.getToken();
+    return localStorage.getItem('authToken') || '';
+};
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -17,6 +52,82 @@ const getTodayIST = () => {
     return istDateString;
 };
 
+// Helper function to get current date and time in IST as ISO string
+const getCurrentISTDateTime = () => {
+    const now = new Date();
+    // Format current date/time in IST timezone
+    const istString = now.toLocaleString('en-US', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    
+    // Parse the IST string (format: MM/DD/YYYY, HH:mm:ss)
+    const [datePart, timePart] = istString.split(', ');
+    const [month, day, year] = datePart.split('/');
+    const [hour, minute, second] = timePart.split(':');
+    
+    // Format as ISO string: YYYY-MM-DDTHH:mm:ssZ
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+};
+
+// ============================================
+// API FUNCTIONS
+// ============================================
+
+const customerRegistryAPI = {
+    // POST /customer-registry
+    create: async (data) => {
+        const token = getAuthToken();
+        const response = await fetch(`${API_BASE_URL}/customer-registry`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || error.error?.message || 'Failed to create customer registry');
+        }
+        
+        return response.json();
+    },
+    
+    // GET /customer-registry/with-orders?date=YYYY-MM-DD
+    getWithOrders: async (date) => {
+        const token = getAuthToken();
+        const response = await fetch(
+            `${API_BASE_URL}/customer-registry/with-orders?date=${date}`,
+            {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || error.error?.message || 'Failed to fetch contacts');
+        }
+        
+        return response.json();
+    }
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
 export default function ContactsPage() {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -32,43 +143,15 @@ export default function ContactsPage() {
     const loadContacts = async () => {
         try {
             setLoading(true);
-            const response = await contactsAPI.getWithOrders(selectedDate);
-            const res = response.data;
-            const list = res?.data?.customers || [];
+            const res = await customerRegistryAPI.getWithOrders(selectedDate);
+            const list = res.data?.customers || [];
             setContacts(list);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Error loading contacts. Please try again.';
-            alert(errorMsg);
+            alert(error.message || 'Error loading contacts. Please try again.');
         } finally {
             setLoading(false);
         }
-    };
-
-    // Helper function to get current date and time in IST as ISO string
-    const getCurrentISTDateTime = () => {
-        const now = new Date();
-        // Format current date/time in IST timezone
-        const istString = now.toLocaleString('en-US', {
-            timeZone: 'Asia/Kolkata',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        });
-        
-        // Parse the IST string (format: MM/DD/YYYY, HH:mm:ss)
-        const [datePart, timePart] = istString.split(', ');
-        const [month, day, year] = datePart.split('/');
-        const [hour, minute, second] = timePart.split(':');
-        
-        // Format as ISO string: YYYY-MM-DDTHH:mm:ssZ
-        return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
     };
 
     const handleAddContact = async (e) => {
@@ -97,7 +180,7 @@ export default function ContactsPage() {
             // Get current date and time in IST
             const registryDate = getCurrentISTDateTime();
             
-            await contactsAPI.create({
+            await customerRegistryAPI.create({
                 mobile: mobileNumber.trim(),
                 name: customerName.trim(),
                 registry_date: registryDate
@@ -113,10 +196,7 @@ export default function ContactsPage() {
             alert('Contact added successfully');
         } catch (error) {
             console.error('Error adding contact:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Error adding contact. Please try again.';
-            alert(errorMsg);
+            alert(error.message || 'Error adding contact. Please try again.');
         } finally {
             setIsSubmitting(false);
         }

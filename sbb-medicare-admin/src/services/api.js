@@ -112,14 +112,10 @@ const realAccessControlAPI = {
 };
 
 const realContactsAPI = {
-    getAll: (params) => api.get('/contacts', { params }),
-    search: (search, extraParams = {}) =>
-        api.get('/contacts', { params: { search, ...extraParams } }),
-    getById: (id) => api.get(`/contacts/${id}`),
-    getByMobile: (mobile) => api.get(`/contacts/mobile/${mobile}`),
-    create: (data) => api.post('/contacts', data),
-    update: (id, data) => api.put(`/contacts/${id}`, data),
-    delete: (id) => api.delete(`/contacts/${id}`),
+    // POST /customer-registry
+    create: (data) => api.post('/customer-registry', data),
+    // GET /customer-registry/with-orders?date=YYYY-MM-DD
+    getWithOrders: (date) => api.get('/customer-registry/with-orders', { params: { date } }),
 };
 
 const realConfigAPI = {
@@ -575,87 +571,64 @@ const mockAccessControlAPI = {
     },
 };
 
-let mockContacts = [
-    {
-        id: 4001,
-        name: 'Dr. Rajesh Kumar',
-        mobile: '9876543210',
-        email: 'rajesh.kumar@hospital.com',
-        designation: 'Chief Medical Officer',
-        organization: 'City Hospital',
-        address: '123 Medical Street, Bangalore',
-        notes: 'Preferred contact time: 10 AM - 2 PM',
-        createdAt: '2025-01-15T08:30:00Z',
-        updatedAt: '2025-11-20T10:45:00Z',
-    },
-    {
-        id: 4002,
-        name: 'Priya Sharma',
-        mobile: '9123456789',
-        email: 'priya.sharma@pharma.com',
-        designation: 'Sales Manager',
-        organization: 'ABC Pharmaceuticals',
-        address: '456 Pharma Road, Bangalore',
-        notes: 'Key supplier contact',
-        createdAt: '2025-02-10T09:00:00Z',
-        updatedAt: '2025-11-18T14:20:00Z',
-    },
-];
+let mockCustomerRegistry = [];
 
 const mockContactsAPI = {
-    getAll: async (params) => {
+    create: async (data) => {
         await delay();
+        const newRegistry = {
+            id: Date.now(),
+            mobile: data.mobile,
+            name: data.name,
+            registry_date: data.registry_date,
+            created_at: new Date().toISOString(),
+        };
+        mockCustomerRegistry.push(newRegistry);
+        return { data: { success: true, data: newRegistry } };
+    },
+    getWithOrders: async (date) => {
+        await delay();
+        // Mock data for the selected date
+        const mockCustomers = [
+            {
+                registry_id: 1,
+                customer_name: 'John Doe',
+                customer_mobile: '9876543210',
+                registry_date: `${date}T14:30:00.000Z`,
+                registry_date_time: `${date}T14:30:00.000Z`,
+                has_order: true,
+                order: {
+                    order_id: 123,
+                    order_number: 'ORD-001',
+                    order_created_at: `${date}T16:45:00.000Z`,
+                    order_created_date_time: `${date}T16:45:00.000Z`,
+                    total_amount: 1000.00,
+                    order_status: 'DELIVERED',
+                },
+            },
+            {
+                registry_id: 2,
+                customer_name: 'Jane Smith',
+                customer_mobile: '9876543211',
+                registry_date: `${date}T10:15:00.000Z`,
+                registry_date_time: `${date}T10:15:00.000Z`,
+                has_order: false,
+                order: null,
+            },
+        ];
         return {
             data: {
                 success: true,
                 data: {
-                    data: mockContacts,
-                    pagination: {
-                        total: mockContacts.length,
-                        page: 1,
-                        limit: 50,
-                        totalPages: 1,
-                    },
+                    date: date,
+                    customers: mockCustomers,
+                    total_registered: mockCustomers.length,
+                    total_with_orders: mockCustomers.filter(c => c.has_order).length,
+                    total_without_orders: mockCustomers.filter(c => !c.has_order).length,
                 },
+                message: 'Registered customers with order status retrieved successfully',
             },
         };
-    },
-    search: async () => {
-        return mockContactsAPI.getAll();
-    },
-    getById: async (id) => {
-        await delay();
-        const found = mockContacts.find((c) => c.id === id) || mockContacts[0];
-        return { data: { success: true, data: found } };
-    },
-    getByMobile: async (mobile) => {
-        await delay();
-        const found = mockContacts.find((c) => c.mobile === mobile) || mockContacts[0];
-        return { data: { success: true, data: found } };
-    },
-    create: async (data) => {
-        await delay();
-        const newContact = {
-            ...data,
-            id: Date.now(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
-        mockContacts.push(newContact);
-        return { data: { success: true, data: newContact } };
-    },
-    update: async (id, data) => {
-        await delay();
-        mockContacts = mockContacts.map((c) =>
-            c.id === id ? { ...c, ...data, updatedAt: new Date().toISOString() } : c
-        );
-        const updated = mockContacts.find((c) => c.id === id);
-        return { data: { success: true, data: updated } };
-    },
-    delete: async (id) => {
-        await delay();
-        mockContacts = mockContacts.filter((c) => c.id !== id);
-        return { data: { success: true, message: 'Contact deleted successfully' } };
     },
 };
 

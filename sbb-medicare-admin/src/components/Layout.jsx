@@ -9,7 +9,8 @@ import {
     Menu,
     X,
     UserCircle,
-    Clock
+    Clock,
+    Phone
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -30,9 +31,9 @@ export default function Layout({ children }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
-        { name: 'Contacts', href: '/contacts', icon: Users },
-        { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Store Staff', href: '/store-staff', icon: UserCog },
+        { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
+        { name: 'Contacts', href: '/contacts', icon: Phone },
     ];
 
     const isActive = (href) => location.pathname === href;
