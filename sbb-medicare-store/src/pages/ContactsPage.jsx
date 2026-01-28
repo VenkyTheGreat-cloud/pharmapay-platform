@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Phone, Calendar, RefreshCw, Plus } from 'lucide-react';
-import { contactsAPI } from '../services/api';
+import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { customerRegistryAPI } from '../services/api';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -21,6 +21,7 @@ export default function ContactsPage() {
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
+    const [customerName, setCustomerName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,20 +32,49 @@ export default function ContactsPage() {
     const loadContacts = async () => {
         try {
             setLoading(true);
-            const res = await contactsAPI.getByDate(selectedDate);
-            const list = res.data?.data?.contacts || res.data?.data || [];
+            const res = await customerRegistryAPI.getWithOrders(selectedDate);
+            const list = res.data?.data?.customers || [];
             setContacts(list);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            alert('Error loading contacts. Please try again.');
+            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading contacts. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    // Helper function to get current date and time in IST as ISO string
+    const getCurrentISTDateTime = () => {
+        const now = new Date();
+        // Format current date/time in IST timezone
+        const istString = now.toLocaleString('en-US', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        
+        // Parse the IST string (format: MM/DD/YYYY, HH:mm:ss)
+        const [datePart, timePart] = istString.split(', ');
+        const [month, day, year] = datePart.split('/');
+        const [hour, minute, second] = timePart.split(':');
+        
+        // Format as ISO string: YYYY-MM-DDTHH:mm:ssZ
+        return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+    };
+
     const handleAddContact = async (e) => {
         e.preventDefault();
         
+        if (!customerName.trim()) {
+            alert('Please enter a customer name');
+            return;
+        }
+
         if (!mobileNumber.trim()) {
             alert('Please enter a mobile number');
             return;
@@ -59,12 +89,18 @@ export default function ContactsPage() {
 
         try {
             setIsSubmitting(true);
-            await contactsAPI.create({
+            
+            // Get current date and time in IST
+            const registryDate = getCurrentISTDateTime();
+            
+            await customerRegistryAPI.create({
                 mobile: mobileNumber.trim(),
-                date: selectedDate
+                name: customerName.trim(),
+                registry_date: registryDate
             });
             
-            // Clear the input
+            // Clear the inputs
+            setCustomerName('');
             setMobileNumber('');
             
             // Reload contacts
@@ -73,7 +109,7 @@ export default function ContactsPage() {
             alert('Contact added successfully');
         } catch (error) {
             console.error('Error adding contact:', error);
-            alert('Error adding contact. Please try again.');
+            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error adding contact. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -126,30 +162,45 @@ export default function ContactsPage() {
             {/* Add Contact Form */}
             <div className="px-4 mt-4 flex-shrink-0">
                 <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-                    <form onSubmit={handleAddContact} className="flex items-center gap-3">
-                        <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">
-                                Add New Mobile Number
-                            </label>
-                            <input
-                                type="text"
-                                value={mobileNumber}
-                                onChange={(e) => {
-                                    const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                                    if (value.length <= 10) {
-                                        setMobileNumber(value);
-                                    }
-                                }}
-                                placeholder="Enter 10-digit mobile number"
-                                maxLength="10"
-                                disabled={isSubmitting}
-                                className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            />
+                    <form onSubmit={handleAddContact} className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Customer Name <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    placeholder="Enter customer name"
+                                    disabled={isSubmitting}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Mobile Number <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={mobileNumber}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                                        if (value.length <= 10) {
+                                            setMobileNumber(value);
+                                        }
+                                    }}
+                                    placeholder="Enter 10-digit mobile number"
+                                    maxLength="10"
+                                    disabled={isSubmitting}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                />
+                            </div>
                         </div>
-                        <div className="pt-5">
+                        <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !mobileNumber.trim()}
+                                disabled={isSubmitting || !customerName.trim() || !mobileNumber.trim()}
                                 className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
                             >
                                 <Plus className="w-3.5 h-3.5" />
@@ -184,50 +235,67 @@ export default function ContactsPage() {
                                             Sl.No
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Date
+                                            Customer Mobile Number
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Time
+                                            Customer Name
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Mobile Number
+                                            Order Created
+                                        </th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                            Order Created Date Time
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {contacts.map((contact, index) => {
-                                        const contactDate = contact.date || contact.created_at || contact.createdAt;
-                                        const dateObj = contactDate ? new Date(contactDate) : null;
+                                    {contacts.map((customer, index) => {
+                                        const hasOrder = customer.has_order || false;
+                                        const order = customer.order || null;
+                                        const orderCreatedDate = order?.order_created_at || order?.order_created_date_time || null;
+                                        const orderDateObj = orderCreatedDate ? new Date(orderCreatedDate) : null;
                                         
                                         return (
-                                            <tr key={contact.id || index} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                            <tr key={customer.registry_id || index} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 text-center">
                                                     {index + 1}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                                    {dateObj 
-                                                        ? dateObj.toLocaleDateString('en-GB', { 
-                                                            day: '2-digit', 
-                                                            month: '2-digit', 
-                                                            year: 'numeric' 
-                                                        })
-                                                        : '-'}
+                                                    <div className="flex items-center gap-2">
+                                                        <Phone className="w-4 h-4 text-primary-600" />
+                                                        {customer.customer_mobile || '-'}
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                                    {dateObj 
-                                                        ? dateObj.toLocaleTimeString('en-GB', { 
-                                                            hour: '2-digit', 
-                                                            minute: '2-digit', 
-                                                            second: '2-digit',
-                                                            hour12: false
-                                                        })
-                                                        : '-'}
+                                                    {customer.customer_name || '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     <div className="flex items-center gap-2">
-                                                        <Phone className="w-4 h-4 text-primary-600" />
-                                                        {contact.mobile || contact.mobileNumber || '-'}
+                                                        {hasOrder ? (
+                                                            <>
+                                                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                                                <span className="text-green-600 font-semibold">Yes</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <XCircle className="w-4 h-4 text-red-600" />
+                                                                <span className="text-red-600 font-semibold">No</span>
+                                                            </>
+                                                        )}
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {hasOrder && orderDateObj ? (
+                                                        orderDateObj.toLocaleString('en-GB', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                            second: '2-digit',
+                                                            hour12: false
+                                                        })
+                                                    ) : '-'}
                                                 </td>
                                             </tr>
                                         );

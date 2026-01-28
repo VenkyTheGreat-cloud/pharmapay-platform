@@ -527,4 +527,40 @@ export const contactsAPI = {
     },
 };
 
+// Customer Registry API
+export const customerRegistryAPI = {
+    // POST /customer-registry - { mobile, name, registry_date }
+    create: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id: Date.now(),
+                    mobile: data.mobile,
+                    name: data.name,
+                    registry_date: data.registry_date,
+                    created_at: new Date().toISOString(),
+                },
+            });
+        }
+        return api.post('/customer-registry', data);
+    },
+    // GET /customer-registry/with-orders?date=YYYY-MM-DD
+    getWithOrders: (date) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    date: date,
+                    customers: [],
+                    total_registered: 0,
+                    total_with_orders: 0,
+                    total_without_orders: 0,
+                },
+            });
+        }
+        return api.get('/customer-registry/with-orders', { params: { date } });
+    },
+};
+
 export default api;

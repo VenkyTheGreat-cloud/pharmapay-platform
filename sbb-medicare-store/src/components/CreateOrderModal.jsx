@@ -18,7 +18,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         paidAmount: '',
         paymentMode: '',
         transactionReference: '',
-        customerComments: ''
+        customerComments: '',
+        returnItems: false,
+        returnAdjustAmount: ''
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,13 +71,15 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         
         // For order number, only allow digits and limit to 8 characters
         if (name === 'orderNumber') {
             const numericValue = value.replace(/\D/g, ''); // Remove non-digits
             const limitedValue = numericValue.slice(0, 8); // Limit to 8 digits
             setFormData(prev => ({ ...prev, [name]: limitedValue }));
+        } else if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: checked }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
@@ -191,6 +195,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 submitData.customerComments = formData.customerComments.trim();
             }
 
+            // Add returnItems and returnAdjustAmount
+            submitData.returnItems = formData.returnItems;
+            if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0) {
+                submitData.returnAdjustAmount = parseFloat(formData.returnAdjustAmount);
+            }
+
             await ordersAPI.create(submitData);
             alert('Order created successfully!');
 
@@ -203,7 +213,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 paidAmount: '',
                 paymentMode: '',
                 transactionReference: '',
-                customerComments: ''
+                customerComments: '',
+                returnItems: false,
+                returnAdjustAmount: ''
             });
             setErrors({});
             setCustomerSearchQuery('');
@@ -456,6 +468,43 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     disabled={isSubmitting}
                                 />
                             </div>
+
+                            {/* Return Items */}
+                            <div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        name="returnItems"
+                                        checked={formData.returnItems}
+                                        onChange={handleChange}
+                                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                        disabled={isSubmitting}
+                                    />
+                                    <span className="text-xs font-medium text-gray-600">
+                                        Return Items
+                                    </span>
+                                </label>
+                            </div>
+
+                            {/* Return Adjust Amount */}
+                            {formData.returnItems && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Return Adjust Amount
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="returnAdjustAmount"
+                                        value={formData.returnAdjustAmount}
+                                        onChange={handleChange}
+                                        min="0"
+                                        step="0.01"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        placeholder="0.00"
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+                            )}
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 pt-4">

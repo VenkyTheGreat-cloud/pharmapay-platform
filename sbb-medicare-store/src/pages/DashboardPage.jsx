@@ -344,6 +344,12 @@ export default function DashboardPage() {
                                                 Mode of Payment
                                             </th>
                                             <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Return Items
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Return Adjust Amount
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -409,6 +415,14 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     {order.paymentMode || order.payment_mode 
                                                         ? (order.paymentMode || order.payment_mode).replace(/_/g, ' ')
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.returnItems || order.return_items ? 'Yes' : 'No'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.returnAdjustAmount || order.return_adjust_amount 
+                                                        ? `₹${(Number(order.returnAdjustAmount || order.return_adjust_amount)).toFixed(2)}`
                                                         : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
@@ -593,6 +607,28 @@ export default function DashboardPage() {
                                                     )}
                                                 </>
                                             )}
+
+                                            {/* Return Items Information */}
+                                            <div className="pt-3 border-t">
+                                                <div className="flex justify-between items-center pb-2">
+                                                    <span className="text-sm font-medium text-gray-700">Return Items</span>
+                                                    <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                        selectedOrder.returnItems || selectedOrder.return_items
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {selectedOrder.returnItems || selectedOrder.return_items ? 'Yes' : 'No'}
+                                                    </span>
+                                                </div>
+                                                {(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) && (
+                                                    <div className="flex justify-between items-center pt-2 border-t">
+                                                        <span className="text-sm font-medium text-gray-700">Return Adjust Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
 
                                             {/* Individual Payment Methods */}
                                             {selectedOrder.payments && Array.isArray(selectedOrder.payments) && selectedOrder.payments.length > 0 && (
