@@ -153,14 +153,27 @@ class CustomerRegistry {
 
     // Get registered customers with order status for a specific date
     // Returns all customers registered on the date, with order info if orders exist for that mobile on that date
+    // Handles duplicate mobile numbers by returning the latest registration entry per mobile
     static async getRegisteredCustomersWithOrders(date, storeIds = null) {
+        // First, get distinct mobile numbers with their latest registry entry for the date
         let queryText = `
+            WITH latest_registrations AS (
+                SELECT DISTINCT ON (cr.mobile)
+                    cr.id as registry_id,
+                    cr.name as customer_name,
+                    cr.mobile as customer_mobile,
+                    cr.registry_date,
+                    cr.created_at as registry_created_at
+                FROM customer_registry cr
+                WHERE DATE(cr.registry_date) = $1::date
+                ORDER BY cr.mobile, cr.registry_date DESC, cr.created_at DESC
+            )
             SELECT 
-                cr.id as registry_id,
-                cr.name as customer_name,
-                cr.mobile as customer_mobile,
-                cr.registry_date,
-                cr.created_at as registry_created_at,
+                lr.registry_id,
+                lr.customer_name,
+                lr.customer_mobile,
+                lr.registry_date,
+                lr.registry_created_at,
                 CASE 
                     WHEN o.id IS NOT NULL THEN true 
                     ELSE false 
@@ -170,10 +183,9 @@ class CustomerRegistry {
                 o.created_at as order_created_at,
                 o.total_amount,
                 o.status as order_status
-            FROM customer_registry cr
-            LEFT JOIN orders o ON cr.mobile = o.customer_phone 
-                AND DATE(o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = $1::date
-            WHERE DATE(cr.registry_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = $1::date
+            FROM latest_registrations lr
+            LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone 
+                AND DATE(o.created_at) = $1::date
         `;
         const params = [date];
         let paramCount = 2;
@@ -185,7 +197,7 @@ class CustomerRegistry {
             paramCount++;
         }
 
-        queryText += ' ORDER BY cr.registry_date DESC, o.created_at DESC';
+        queryText += ' ORDER BY lr.registry_date DESC, o.created_at DESC';
 
         const result = await query(queryText, params);
         return result.rows;
