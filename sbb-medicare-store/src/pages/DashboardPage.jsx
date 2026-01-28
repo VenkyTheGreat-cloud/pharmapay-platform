@@ -341,6 +341,9 @@ export default function DashboardPage() {
                                                 Amount
                                             </th>
                                             <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Mode of Payment
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -402,6 +405,11 @@ export default function DashboardPage() {
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.paymentMode || order.payment_mode 
+                                                        ? (order.paymentMode || order.payment_mode).replace(/_/g, ' ')
+                                                        : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap">
                                                     <button

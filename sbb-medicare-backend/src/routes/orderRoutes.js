@@ -53,6 +53,8 @@ router.post(
         body('paidAmount').optional().isFloat({ min: 0 }).withMessage('Paid amount must be a positive number'),
         body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'BANK_TRANSFER']).withMessage('Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'),
         body('transactionReference').optional().isString().withMessage('Transaction reference must be a string'),
+        body('returnItems').optional().isBoolean().withMessage('Return items must be a boolean'),
+        body('returnAdjustAmount').optional().isFloat({ min: 0 }).withMessage('Return adjust amount must be a non-negative number'),
     ],
     orderController.createOrder
 );
