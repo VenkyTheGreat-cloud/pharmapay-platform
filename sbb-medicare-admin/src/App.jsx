@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import PendingOrdersPage from './pages/PendingOrdersPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import StoreStaffPage from './pages/StoreStaffPage';
 import CustomersPage from './pages/CustomersPage';
@@ -40,6 +41,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <DashboardPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/pending-orders"
+                element={
+                    <ProtectedRoute>
+                        <PendingOrdersPage />
                     </ProtectedRoute>
                 }
             />

@@ -1,14 +1,32 @@
 import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
-import { Search, Eye, MapPin } from 'lucide-react';
+import { Search, Eye, Edit, Trash2, Plus } from 'lucide-react';
+import AddCustomerModal from '../components/AddCustomerModal';
+import EditCustomerModal from '../components/EditCustomerModal';
+import { useAuth } from '../context/AuthContext';
 
 export default function CustomersPage() {
+    const { user } = useAuth();
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [selectedCustomerOrders, setSelectedCustomerOrders] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [customerToEdit, setCustomerToEdit] = useState(null);
+    const [customerToDelete, setCustomerToDelete] = useState(null);
+
+    // Check if user is admin (based on dashboardType or role)
+    const isAdmin = user?.dashboardType === 'admin' || user?.role === 'admin' || user?.user_type === 'admin';
+    
+    // Check if user is super admin
+    const isSuperAdmin = user?.role === 'super_admin' || 
+                        user?.role === 'superadmin' || 
+                        user?.user_type === 'super_admin' || 
+                        user?.user_type === 'superadmin' ||
+                        user?.dashboardType === 'super_admin';
 
     useEffect(() => {
         loadCustomers();
@@ -71,6 +89,28 @@ export default function CustomersPage() {
             await loadCustomers({ search: searchQuery });
         } catch (error) {
             console.error('Error searching customers:', error);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!customerToDelete) return;
+        
+        if (!window.confirm(`Are you sure you want to delete customer "${customerToDelete.name}"? This action cannot be undone.`)) {
+            setCustomerToDelete(null);
+            return;
+        }
+
+        try {
+            await customersAPI.delete(customerToDelete.id);
+            alert('Customer deleted successfully!');
+            setCustomerToDelete(null);
+            loadCustomers();
+        } catch (error) {
+            console.error('Error deleting customer:', error);
+            const errorMsg = error.response?.data?.error?.message || 
+                           error.response?.data?.message || 
+                           'Failed to delete customer';
+            alert(`Error: ${errorMsg}`);
         }
     };
 
@@ -160,8 +200,18 @@ export default function CustomersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                         <h1 className="text-lg font-bold text-gray-800">Customers</h1>
-                        <p className="text-xs text-gray-600">View customer information (Read-only)</p>
+                        <p className="text-xs text-gray-600">Manage customer information</p>
                     </div>
+                    {!isAdmin && !isSuperAdmin && (
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-1.5 shadow-sm"
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Add Customer</span>
+                            <span className="sm:hidden">Add</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -259,13 +309,32 @@ export default function CustomersPage() {
                                                 : '-'}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-xs">
-                                            <button
-                                                onClick={() => viewCustomerDetails(customer.id)}
-                                                className="text-primary-600 hover:text-primary-700"
-                                                title="View Details"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => viewCustomerDetails(customer.id)}
+                                                    className="text-primary-600 hover:text-primary-700"
+                                                    title="View Details"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setCustomerToEdit(customer);
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    className="text-primary-600 hover:text-primary-700"
+                                                    title="Edit Customer"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setCustomerToDelete(customer)}
+                                                    className="text-red-600 hover:text-red-700"
+                                                    title="Delete Customer"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -468,6 +537,55 @@ export default function CustomersPage() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Customer Modal */}
+            <AddCustomerModal
+                isOpen={showAddModal}
+                onClose={() => setShowAddModal(false)}
+                onSuccess={() => {
+                    loadCustomers();
+                }}
+            />
+
+            {/* Edit Customer Modal */}
+            <EditCustomerModal
+                isOpen={showEditModal}
+                onClose={() => {
+                    setShowEditModal(false);
+                    setCustomerToEdit(null);
+                }}
+                onSuccess={() => {
+                    loadCustomers();
+                }}
+                customer={customerToEdit}
+            />
+
+            {/* Delete Confirmation Modal */}
+            {customerToDelete && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Customer</h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Are you sure you want to delete customer <strong>"{customerToDelete.name}"</strong>? 
+                            This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setCustomerToDelete(null)}
+                                className="flex-1 px-4 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="flex-1 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-red-500 to-red-600 rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md"
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -8,7 +8,8 @@ import {
     LogOut,
     Menu,
     X,
-    UserCircle
+    UserCircle,
+    Clock
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -27,9 +28,10 @@ export default function Layout({ children }) {
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
+        { name: 'Customers', href: '/customers', icon: Users },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Store Staff', href: '/store-staff', icon: UserCog },
-        { name: 'Customers', href: '/customers', icon: Users },
     ];
 
     const isActive = (href) => location.pathname === href;

@@ -1,74 +1,43 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw, Search } from 'lucide-react';
+import { Clock, Eye, Package, Search } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
-export default function DashboardPage() {
-    const [allOrders, setAllOrders] = useState([]);
+export default function PendingOrdersPage() {
+    const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
-    const [filters, setFilters] = useState(() => {
-        // Get current date in IST (UTC+5:30)
-        const getISTDate = () => {
-            const now = new Date();
-            // Convert to IST: UTC+5:30
-            const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-            // Format as YYYY-MM-DD
-            const year = istTime.getFullYear();
-            const month = String(istTime.getMonth() + 1).padStart(2, '0');
-            const day = String(istTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        
-        return {
-            selectedDate: getISTDate(),
-        };
-    });
 
     useEffect(() => {
-        loadDashboardData();
-    }, [filters.selectedDate]); // Reload when date filter changes
+        loadPendingOrders();
+    }, []);
 
-    const loadDashboardData = async () => {
+    const loadPendingOrders = async () => {
         try {
             setLoading(true);
-            // Build params with date filter - use the same date for from and to (00:00:00 to 23:59:59)
             const params = {
                 page: 1,
-                limit: 500,
-                date_from: filters.selectedDate,
-                date_to: filters.selectedDate,
+                limit: 100,
             };
-            const allRes = await ordersAPI.getAll(params);
-            console.log('Dashboard Orders API Full Response:', allRes); // Debug log
-            console.log('Dashboard Orders API Response Data:', allRes.data); // Debug log
+            const response = await ordersAPI.getPendingTillYesterday(params);
+            console.log('Pending Orders API Response:', response.data);
             
             // Handle different possible response structures
             let allList = [];
-            if (allRes.data?.data?.orders) {
-                // Structure: { success: true, data: { orders: [...] } }
-                allList = allRes.data.data.orders;
-                console.log('Found orders in allRes.data.data.orders:', allList.length); // Debug log
-            } else if (allRes.data?.data && Array.isArray(allRes.data.data)) {
-                // Structure: { success: true, data: [...] }
-                allList = allRes.data.data;
-                console.log('Found orders in allRes.data.data (array):', allList.length); // Debug log
-            } else if (allRes.data?.orders) {
-                // Structure: { success: true, orders: [...] }
-                allList = allRes.data.orders;
-                console.log('Found orders in allRes.data.orders:', allList.length); // Debug log
-            } else if (Array.isArray(allRes.data)) {
-                // Direct array
-                allList = allRes.data;
-                console.log('Found orders in allRes.data (direct array):', allList.length); // Debug log
-            } else {
-                console.warn('No orders found in expected response structure. Response:', allRes.data); // Debug log
+            if (response.data?.data?.orders) {
+                allList = response.data.data.orders;
+            } else if (response.data?.data && Array.isArray(response.data.data)) {
+                allList = response.data.data;
+            } else if (response.data?.orders) {
+                allList = response.data.orders;
+            } else if (Array.isArray(response.data)) {
+                allList = response.data;
             }
             
-            // Normalize order data (handle snake_case to camelCase)
+            // Normalize order data
             const normalizedOrders = allList.map(order => ({
                 id: order.id,
                 orderNumber: order.order_number || order.orderNumber,
@@ -90,24 +59,19 @@ export default function DashboardPage() {
                 returnAdjustAmount: parseFloat(order.return_adjust_amount || order.returnAdjustAmount || 0),
             }));
             
-            console.log('Normalized Orders:', normalizedOrders); // Debug log
-            console.log('Total orders from API:', normalizedOrders.length); // Debug log
-            setAllOrders(normalizedOrders);
+            setOrders(normalizedOrders);
         } catch (error) {
-            console.error('Error loading dashboard data:', error);
+            console.error('Error loading pending orders:', error);
             const errorMsg = error.response?.data?.error?.message || 
                            error.response?.data?.message || 
-                           'Failed to load orders';
+                           'Failed to load pending orders';
             alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredOrders = allOrders.filter((order) => {
-        // Since API already filters by date, we trust the API response
-        // Only do client-side filtering for status and search
-        
+    const filteredOrders = orders.filter((order) => {
         // Filter by status
         if (statusFilter !== 'ALL' && order.status !== statusFilter) {
             return false;
@@ -125,17 +89,6 @@ export default function DashboardPage() {
         return true;
     });
 
-    // Stats for the selected date range
-    const totalOrders = filteredOrders.length;
-    const assignedOrders = filteredOrders.filter((o) => o.status === 'ASSIGNED').length;
-    const pickedUpOrders = filteredOrders.filter(
-        (o) => o.status === 'PICKED_UP' || o.status === 'IN_TRANSIT'
-    ).length;
-    const deliveredOrders = filteredOrders.filter((o) => o.status === 'DELIVERED').length;
-    const collectedAmount = filteredOrders
-        .filter((o) => o.status === 'DELIVERED')
-        .reduce((sum, o) => sum + (o.amount || 0), 0);
-
     const handleViewOrderDetails = (orderId) => {
         setSelectedOrderId(orderId);
         setShowOrderDetails(true);
@@ -149,52 +102,28 @@ export default function DashboardPage() {
         return `${start}...${end}`;
     };
 
-    // Get max date (today in IST) for date picker
-    const getMaxDate = () => {
-        const now = new Date();
-        const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-        const year = istTime.getFullYear();
-        const month = String(istTime.getMonth() + 1).padStart(2, '0');
-        const day = String(istTime.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
     // Get unique statuses from orders for filter dropdown
-    const uniqueStatuses = ['ALL', ...new Set(allOrders.map(o => o.status).filter(Boolean))];
+    const uniqueStatuses = ['ALL', ...new Set(orders.map(o => o.status).filter(Boolean))];
+
+    // Format date for display
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        } catch {
+            return dateString;
+        }
+    };
 
     return (
         <div className="p-4 h-screen flex flex-col overflow-hidden bg-gray-100">
             {/* Fixed Header Section - Compact */}
-            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 -mx-4 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0 mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                        <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
-                        <p className="text-xs text-gray-600">Orders and collections for the selected date</p>
-                    </div>
-
-                    {/* Date filter for orders table - Compact */}
-                    <div className="bg-white rounded-lg shadow-sm px-3 py-1.5 flex items-center gap-3 border border-primary-100">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-0.5">Date:</label>
-                            <input
-                                type="date"
-                                value={filters.selectedDate}
-                                onChange={(e) => setFilters({ ...filters, selectedDate: e.target.value })}
-                                max={getMaxDate()}
-                                className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            />
-                        </div>
-                        <div className="flex items-end">
-                            <button
-                                onClick={loadDashboardData}
-                                disabled={loading}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed shadow-sm"
-                                title="Refresh orders for selected date"
-                            >
-                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                                <span className="hidden sm:inline">Refresh</span>
-                            </button>
-                        </div>
+                        <h1 className="text-lg font-bold text-gray-800">Pending Orders</h1>
+                        <p className="text-xs text-gray-600">Orders pending till yesterday</p>
                     </div>
                 </div>
             </div>
@@ -203,49 +132,15 @@ export default function DashboardPage() {
                 <div className="text-center py-8 flex-1 flex items-center justify-center">
                     <div>
                         <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
-                        <p className="text-gray-600 mt-3 text-sm">Loading orders...</p>
+                        <p className="text-gray-600 mt-3 text-sm">Loading pending orders...</p>
                     </div>
                 </div>
             ) : (
                 <div className="flex flex-col flex-1 min-h-0">
-                    {/* Stats Cards for selected range - Colorful and Compact */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 mt-4 flex-shrink-0">
-                        <StatCard
-                            icon={<Package className="w-4 h-4" />}
-                            label="Created Orders"
-                            value={totalOrders}
-                            color="primary"
-                        />
-                        <StatCard
-                            icon={<Clock className="w-4 h-4" />}
-                            label="Assigned Orders"
-                            value={assignedOrders}
-                            color="secondary"
-                        />
-                        <StatCard
-                            icon={<CheckCircle className="w-4 h-4" />}
-                            label="Picked / In Transit"
-                            value={pickedUpOrders}
-                            color="primary"
-                        />
-                        <StatCard
-                            icon={<CheckCircle className="w-4 h-4" />}
-                            label="Delivered Orders"
-                            value={deliveredOrders}
-                            color="green"
-                        />
-                        <StatCard
-                            icon={<IndianRupee className="w-4 h-4" />}
-                            label="Collected Amount"
-                            value={`₹${collectedAmount.toFixed(2)}`}
-                            color="secondary"
-                        />
-                    </div>
-
-                    {/* Orders Table for selected date - Scrollable */}
+                    {/* Orders Table */}
                     <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
                         <div className="px-4 py-2 border-b bg-gradient-to-r from-gray-50 to-primary-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-shrink-0">
-                            <h2 className="text-sm font-semibold text-gray-800">Orders for Selected Date</h2>
+                            <h2 className="text-sm font-semibold text-gray-800">Pending Orders List</h2>
                             <div className="flex items-center gap-2">
                                 {/* Status Filter */}
                                 <div className="relative">
@@ -287,13 +182,16 @@ export default function DashboardPage() {
                                             Sl.No
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                            Date
+                                        </th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Order #
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Customer
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Area Name
+                                            Area
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Delivery Boy
@@ -314,9 +212,6 @@ export default function DashboardPage() {
                                             Status
                                         </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Created
-                                        </th>
-                                        <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -327,7 +222,7 @@ export default function DashboardPage() {
                                             <td colSpan="12" className="px-6 py-12 text-center">
                                                 <div className="text-gray-400 text-sm">
                                                     <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                                    <p>No orders found for the selected date.</p>
+                                                    <p>No pending orders found.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -336,6 +231,9 @@ export default function DashboardPage() {
                                             <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-gray-700">
                                                     {index + 1}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
+                                                    {formatDate(order.createdTime)}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     {trimOrderId(order.orderNumber || order.id || 'N/A')}
@@ -347,8 +245,11 @@ export default function DashboardPage() {
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
                                                     {order.customerArea || 'N/A'}
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-700">
-                                                    <div>{order.deliveryBoyName || 'Not assigned'}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs">
+                                                    <div className="text-gray-700">{order.deliveryBoyName || 'Not assigned'}</div>
+                                                    {order.deliveryBoyMobile && (
+                                                        <div className="text-gray-500 text-xs mt-0.5">{order.deliveryBoyMobile}</div>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-green-700">
                                                     ₹{parseFloat(order.amount || 0).toFixed(2)}
@@ -378,11 +279,6 @@ export default function DashboardPage() {
                                                         {order.status || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
-                                                    {order.createdTime
-                                                        ? new Date(order.createdTime).toLocaleString()
-                                                        : '-'}
-                                                </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
                                                     <button
                                                         onClick={() => handleViewOrderDetails(order.id)}
@@ -398,10 +294,10 @@ export default function DashboardPage() {
                                     )}
                                 </tbody>
                             </table>
-                            </div>
                         </div>
+                    </div>
                 </div>
-                    )}
+            )}
 
             {/* Order Details Modal */}
             <OrderDetailsModal
@@ -412,38 +308,6 @@ export default function DashboardPage() {
                 }}
                 orderId={selectedOrderId}
             />
-        </div>
-    );
-}
-
-function StatCard({ icon, label, value, color }) {
-    const colorClasses = {
-        primary: 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md shadow-primary-200',
-        secondary: 'bg-gradient-to-br from-secondary-500 to-secondary-600 text-white shadow-md shadow-secondary-200',
-        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md shadow-green-200',
-        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md shadow-purple-200',
-        orange: 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-200',
-    };
-
-    const labelColors = {
-        primary: 'text-primary-600',
-        secondary: 'text-secondary-600',
-        green: 'text-green-600',
-        purple: 'text-purple-600',
-        orange: 'text-orange-600',
-    };
-
-    return (
-        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-2 border border-gray-100">
-            <div className="flex items-center gap-2">
-                <div className={`p-1.5 rounded-lg ${colorClasses[color]}`}>
-                    {icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium ${labelColors[color]} mb-0.5 truncate`}>{label}</p>
-                    <p className="text-base font-bold text-gray-900">{value}</p>
-                </div>
-            </div>
         </div>
     );
 }
