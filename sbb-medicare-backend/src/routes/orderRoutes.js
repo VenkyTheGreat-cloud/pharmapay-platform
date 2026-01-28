@@ -11,6 +11,9 @@ router.use(authenticateToken);
 // Get all orders
 router.get('/', checkStoreAccess, orderController.getAllOrders);
 
+// Get pending orders created till yesterday (status != DELIVERED)
+router.get('/pending-till-yesterday', checkStoreAccess, orderController.getPendingOrdersTillYesterday);
+
 // Get today's orders
 router.get('/today', checkStoreAccess, orderController.getTodayOrders);
 

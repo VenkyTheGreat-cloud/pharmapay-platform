@@ -397,6 +397,104 @@ class Order {
         return result.rows;
     }
 
+    // Get pending orders created till yesterday (status != DELIVERED)
+    static async getPendingOrdersTillYesterday(filters = {}) {
+        let queryText = `
+            SELECT o.*, 
+                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
+                   u.name as store_name,
+                   c.area as customer_area
+            FROM orders o
+            LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+            LEFT JOIN users u ON o.store_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
+            WHERE o.status != 'DELIVERED'
+              AND DATE(o.created_at) < CURRENT_DATE
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        // Single store_id (legacy)
+        if (filters.store_id) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
+            paramCount++;
+        }
+
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
+        }
+
+        queryText += ' ORDER BY o.created_at DESC';
+
+        if (filters.limit) {
+            queryText += ` LIMIT $${paramCount}`;
+            params.push(filters.limit);
+            paramCount++;
+        }
+
+        if (filters.offset) {
+            queryText += ` OFFSET $${paramCount}`;
+            params.push(filters.offset);
+            paramCount++;
+        }
+
+        const result = await query(queryText, params);
+        return result.rows;
+    }
+
+    // Get count of pending orders created till yesterday
+    static async countPendingOrdersTillYesterday(filters = {}) {
+        let queryText = `
+            SELECT COUNT(*) as total 
+            FROM orders o
+            WHERE o.status != 'DELIVERED'
+              AND DATE(o.created_at) < CURRENT_DATE
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        // Single store_id (legacy)
+        if (filters.store_id) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
+            paramCount++;
+        }
+
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
+        }
+
+        const result = await query(queryText, params);
+        return parseInt(result.rows[0].total);
+    }
+
     // Get orders by customer mobile
     static async getByCustomerMobile(mobile, storeId = null) {
         let queryText = `

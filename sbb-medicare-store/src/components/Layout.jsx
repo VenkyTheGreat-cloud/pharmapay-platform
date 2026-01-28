@@ -10,7 +10,8 @@ import {
     X,
     User,
     Store,
-    Phone
+    Phone,
+    Clock
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -31,6 +32,7 @@ export default function Layout({ children }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Orders', href: '/orders', icon: Package },
+        { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
         { name: 'Contacts', href: '/contacts', icon: Phone },
     ];

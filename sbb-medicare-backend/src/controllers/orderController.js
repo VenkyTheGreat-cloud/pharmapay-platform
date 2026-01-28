@@ -1109,6 +1109,113 @@ exports.updateLocation = async (req, res, next) => {
     }
 };
 
+// Get pending orders created till yesterday (status != DELIVERED)
+exports.getPendingOrdersTillYesterday = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 20 } = req.query;
+
+        const filters = {
+            limit: Math.min(parseInt(limit), 500),
+            offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 500)
+        };
+
+        // Filter based on user role
+        if (req.user.role === 'admin') {
+            // Admin: see orders for all stores in their group (admin + its stores)
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
+            filters.store_ids = storeIds;
+        } else if (req.user.role === 'store_manager') {
+            // Store manager: use adminId from token to get group, fallback to own ID
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
+            filters.store_ids = storeIds;
+        } else if (req.user.role === 'delivery_boy') {
+            // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
+            const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
+            if (!deliveryBoy || !deliveryBoy.store_id) {
+                return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
+            }
+
+            const User = require('../models/User');
+            const storeUser = await User.findById(deliveryBoy.store_id);
+
+            let storeIds = [];
+            if (storeUser) {
+                const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
+                storeIds = await User.getStoreIdsForAdmin(adminId);
+            }
+            // Always include delivery boy's own store_id
+            if (!storeIds || storeIds.length === 0) {
+                storeIds = [deliveryBoy.store_id];
+            } else if (!storeIds.includes(deliveryBoy.store_id)) {
+                storeIds.push(deliveryBoy.store_id);
+            }
+
+            // Special filter: include unassigned + assigned to this delivery boy
+            filters.store_ids = storeIds;
+            filters.include_unassigned_for_delivery_boy = true;
+            filters.delivery_boy_id = req.user.userId;
+        }
+
+        const orders = await Order.getPendingOrdersTillYesterday(filters);
+        const total = await Order.countPendingOrdersTillYesterday(filters);
+
+        // Get payment summary and items for each order (same format as getAllOrders)
+        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+            try {
+                const items = await OrderItem.findByOrderId(order.id);
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                return {
+                    ...order,
+                    items: items ? items.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: parseFloat(item.price),
+                        total: parseFloat(item.total)
+                    })) : [],
+                    payment_summary: paymentSummary || {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            } catch (err) {
+                // If payment summary fails, return order with default payment summary
+                logger.error('Error getting order details', { orderId: order.id, error: err.message });
+                return {
+                    ...order,
+                    items: [],
+                    payment_summary: {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            }
+        }));
+
+        const pagination = {
+            total,
+            page: parseInt(page),
+            limit: filters.limit,
+            totalPages: Math.ceil(total / filters.limit)
+        };
+
+        res.json(paginatedResponse({ orders: ordersWithDetails }, pagination));
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Get orders by customer mobile
 exports.getOrdersByCustomerMobile = async (req, res, next) => {
     try {
