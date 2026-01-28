@@ -9,7 +9,8 @@ import {
     Menu,
     X,
     User,
-    Store
+    Store,
+    Phone
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -31,6 +32,7 @@ export default function Layout({ children }) {
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Orders', href: '/orders', icon: Package },
         { name: 'Customers', href: '/customers', icon: Users },
+        { name: 'Contacts', href: '/contacts', icon: Phone },
     ];
 
     const isActive = (href) => location.pathname === href;

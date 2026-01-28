@@ -116,8 +116,9 @@ exports.getAllOrders = async (req, res, next) => {
                     })) : [],
                     payment_summary: paymentSummary || {
                         total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
                         total_paid: 0,
-                        remaining_amount: parseFloat(order.total_amount || 0),
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
                         payment_status: order.payment_status || 'PENDING',
                         is_fully_paid: false
                     }
@@ -130,8 +131,9 @@ exports.getAllOrders = async (req, res, next) => {
                     items: [],
                     payment_summary: {
                         total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
                         total_paid: 0,
-                        remaining_amount: parseFloat(order.total_amount || 0),
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
                         payment_status: order.payment_status || 'PENDING',
                         is_fully_paid: false
                     }
@@ -178,8 +180,9 @@ exports.getTodayOrders = async (req, res, next) => {
                     items: items || [],
                     payment_summary: paymentSummary || {
                         total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
                         total_paid: 0,
-                        remaining_amount: parseFloat(order.total_amount || 0),
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
                         payment_status: order.payment_status || 'PENDING',
                         is_fully_paid: false
                     }
@@ -191,8 +194,9 @@ exports.getTodayOrders = async (req, res, next) => {
                     items: [],
                     payment_summary: {
                         total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
                         total_paid: 0,
-                        remaining_amount: parseFloat(order.total_amount || 0),
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
                         payment_status: order.payment_status || 'PENDING',
                         is_fully_paid: false
                     }
@@ -376,7 +380,9 @@ exports.updateOrder = async (req, res, next) => {
             customerLng,
             totalAmount,
             notes,
-            customerComments
+            customerComments,
+            returnItems,
+            returnAdjustAmount
         } = req.body;
 
         // Get order
@@ -482,6 +488,38 @@ exports.updateOrder = async (req, res, next) => {
             updates.customer_comments = customerComments ? customerComments.trim() : null;
         }
 
+        if (returnItems !== undefined) {
+            const returnItemsFlag = returnItems === true || returnItems === 'true' || returnItems === 1;
+            updates.return_items = returnItemsFlag;
+        }
+
+        if (returnAdjustAmount !== undefined) {
+            const returnAdjustAmountNum = parseFloat(returnAdjustAmount);
+            if (isNaN(returnAdjustAmountNum) || returnAdjustAmountNum < 0) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be a non-negative number'));
+            }
+            
+            // Get current total_amount (either from updates or existing order)
+            const currentTotalAmount = updates.total_amount !== undefined 
+                ? updates.total_amount 
+                : parseFloat(order.total_amount);
+            
+            if (returnAdjustAmountNum > currentTotalAmount) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount cannot exceed total amount'));
+            }
+            
+            // If returnItems is true (either from updates or existing order), returnAdjustAmount should be > 0
+            const currentReturnItems = updates.return_items !== undefined 
+                ? updates.return_items 
+                : (order.return_items === true);
+            
+            if (currentReturnItems && returnAdjustAmountNum <= 0) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items is true'));
+            }
+            
+            updates.return_adjust_amount = returnAdjustAmountNum;
+        }
+
         // If no updates provided
         if (Object.keys(updates).length === 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
@@ -538,7 +576,9 @@ exports.createOrder = async (req, res, next) => {
             paidAmount,           // Optional: Amount already paid
             paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, BANK_TRANSFER)
             transactionReference, // Optional: Transaction reference
-            customerComments 
+            customerComments,
+            returnItems,          // Optional: Boolean indicating if there are return items
+            returnAdjustAmount    // Optional: Amount to be deducted from total due to return items
         } = req.body;
         const storeId = req.user.userId;
 
@@ -554,14 +594,33 @@ exports.createOrder = async (req, res, next) => {
 
         const totalAmountNum = parseFloat(totalAmount);
         const paidAmountNum = paidAmount ? parseFloat(paidAmount) : 0;
+        const returnItemsFlag = returnItems === true || returnItems === 'true' || returnItems === 1;
+        const returnAdjustAmountNum = returnAdjustAmount ? parseFloat(returnAdjustAmount) : 0;
 
-        // Validate paid amount
+        // Validate return adjust amount
+        if (returnAdjustAmountNum < 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount cannot be negative'));
+        }
+
+        if (returnAdjustAmountNum > totalAmountNum) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount cannot exceed total amount'));
+        }
+
+        // If returnItems is true, returnAdjustAmount should be > 0
+        if (returnItemsFlag && returnAdjustAmountNum <= 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items is true'));
+        }
+
+        // Calculate adjusted total (total_amount - return_adjust_amount)
+        const adjustedTotal = totalAmountNum - returnAdjustAmountNum;
+
+        // Validate paid amount against adjusted total
         if (paidAmountNum < 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Paid amount cannot be negative'));
         }
 
-        if (paidAmountNum > totalAmountNum) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Paid amount cannot exceed total amount'));
+        if (paidAmountNum > adjustedTotal) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', `Paid amount cannot exceed adjusted total amount (${adjustedTotal.toFixed(2)})`));
         }
 
         // Validate payment mode if paid amount is provided
@@ -600,9 +659,10 @@ exports.createOrder = async (req, res, next) => {
         });
         console.log('[ORDER CREATE] Admin ID:', adminId, 'Role:', req.user.role);
 
-        // Determine payment status based on paid amount
+        // Determine payment status based on paid amount vs adjusted total
+        // adjusted_total = total_amount - return_adjust_amount
         let initialPaymentStatus = 'PENDING';
-        if (paidAmountNum >= totalAmountNum) {
+        if (paidAmountNum >= adjustedTotal) {
             initialPaymentStatus = 'PAID';
         } else if (paidAmountNum > 0) {
             initialPaymentStatus = 'PARTIAL';
@@ -630,12 +690,14 @@ exports.createOrder = async (req, res, next) => {
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, payment_status, payment_mode, customer_comments, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
+                                    total_amount, status, payment_status, payment_mode, customer_comments, 
+                                    return_items, return_adjust_amount, assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
                  RETURNING *`,
                 [orderNumber.trim(), customerId, null, storeId,
                  customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
-                 totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments]
+                 totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments,
+                 returnItemsFlag, returnAdjustAmountNum]
             );
 
             const order = orderResult.rows[0];

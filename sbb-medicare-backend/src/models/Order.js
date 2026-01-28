@@ -13,7 +13,9 @@ class Order {
             customer_lat,
             customer_lng,
             total_amount,
-            customer_comments
+            customer_comments,
+            return_items = false,
+            return_adjust_amount = 0
         } = orderData;
 
         return transaction(async (client) => {
@@ -28,12 +30,12 @@ class Order {
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, customer_comments, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, CURRENT_TIMESTAMP)
+                                    total_amount, status, customer_comments, return_items, return_adjust_amount, assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
                 [orderNumber, customer_id, assigned_delivery_boy_id, store_id,
                  customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                 total_amount, customer_comments]
+                 total_amount, customer_comments, return_items, return_adjust_amount]
             );
 
             const order = orderResult.rows[0];

@@ -477,4 +477,54 @@ export const paymentsAPI = {
     },
 };
 
+// Contacts API
+export const contactsAPI = {
+    // GET /contacts?date=YYYY-MM-DD
+    getByDate: (date) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    contacts: [],
+                },
+            });
+        }
+        return api.get('/contacts', { params: { date } });
+    },
+    // POST /contacts - { mobile, date }
+    create: (data) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    id: Date.now(),
+                    mobile: data.mobile,
+                    date: data.date || new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                },
+            });
+        }
+        return api.post('/contacts', data);
+    },
+    // GET /contacts - get all contacts
+    getAll: (params) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    contacts: [],
+                },
+            });
+        }
+        return api.get('/contacts', { params });
+    },
+    // DELETE /contacts/:id
+    delete: (id) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Contact deleted (mock)' });
+        }
+        return api.delete(`/contacts/${id}`);
+    },
+};
+
 export default api;
