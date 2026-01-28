@@ -70,6 +70,7 @@ const realOrdersAPI = {
     getAll: (params) => api.get('/orders', { params }),
     getToday: (params) => api.get('/orders/today', { params }),
     getOngoing: (params) => api.get('/orders/ongoing', { params }),
+    getPendingTillYesterday: (params) => api.get('/orders/pending-till-yesterday', { params }),
     getById: (id) => api.get(`/orders/${id}`),
     create: (data) => api.post('/orders', data),
     assign: (id, deliveryBoyId) =>
@@ -376,6 +377,7 @@ const mockOrdersAPI = {
     },
     getToday: async () => mockOrdersAPI.getAll(),
     getOngoing: async () => mockOrdersAPI.getAll(),
+    getPendingTillYesterday: async (params) => mockOrdersAPI.getAll(),
     getById: async (id) => {
         await delay();
         const found = mockOrders.find((o) => o.id === id) || mockOrders[0];
