@@ -121,7 +121,21 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const calculateRemainingAmount = () => {
         const total = parseFloat(formData.totalAmount) || 0;
         const paid = parseFloat(formData.paidAmount) || 0;
-        return Math.max(0, total - paid);
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
+            ? parseFloat(formData.returnAdjustAmount) || 0 
+            : 0;
+        
+        // Calculate: Total Amount - Return Adjust Amount - Paid Amount
+        const adjustedTotal = total - returnAdjustAmount;
+        return Math.max(0, adjustedTotal - paid);
+    };
+
+    const calculateAdjustedTotal = () => {
+        const total = parseFloat(formData.totalAmount) || 0;
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
+            ? parseFloat(formData.returnAdjustAmount) || 0 
+            : 0;
+        return Math.max(0, total - returnAdjustAmount);
     };
 
     const validate = () => {
@@ -129,8 +143,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         if (!formData.orderNumber || !formData.orderNumber.trim()) {
             newErrors.orderNumber = 'Order Number is required';
-        } else if (!/^\d{8}$/.test(formData.orderNumber.trim())) {
-            newErrors.orderNumber = 'Order Number must be exactly 8 digits';
+        } else if (!/^\d{1,8}$/.test(formData.orderNumber.trim())) {
+            newErrors.orderNumber = 'Order Number must be between 1 and 8 digits';
         }
 
         if (!formData.customerId) {
@@ -143,13 +157,26 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         const paidAmount = parseFloat(formData.paidAmount) || 0;
         const totalAmount = parseFloat(formData.totalAmount) || 0;
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
+            ? parseFloat(formData.returnAdjustAmount) || 0 
+            : 0;
+        const adjustedTotal = Math.max(0, totalAmount - returnAdjustAmount);
 
         if (paidAmount < 0) {
             newErrors.paidAmount = 'Paid Amount cannot be negative';
         }
 
-        if (paidAmount > totalAmount) {
-            newErrors.paidAmount = 'Paid Amount cannot be greater than Total Amount';
+        if (paidAmount > adjustedTotal) {
+            newErrors.paidAmount = `Paid Amount cannot be greater than Adjusted Total Amount (₹${adjustedTotal.toFixed(2)})`;
+        }
+
+        // Validate return adjust amount if return items is checked
+        if (formData.returnItems) {
+            if (!formData.returnAdjustAmount || parseFloat(formData.returnAdjustAmount) <= 0) {
+                newErrors.returnAdjustAmount = 'Return Adjust Amount is required when Return Items is checked';
+            } else if (parseFloat(formData.returnAdjustAmount) > totalAmount) {
+                newErrors.returnAdjustAmount = 'Return Adjust Amount cannot be greater than Total Amount';
+            }
         }
 
         // Payment mode is required if paidAmount > 0
@@ -267,12 +294,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     value={formData.orderNumber}
                                     onChange={handleChange}
                                     maxLength="8"
-                                    pattern="[0-9]{8}"
+                                    pattern="[0-9]{1,8}"
                                     inputMode="numeric"
                                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                         errors.orderNumber ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                    placeholder="Enter 8 digit order number"
+                                    placeholder="Enter 1-8 digit order number"
                                     disabled={isSubmitting}
                                 />
                                 {errors.orderNumber && (
@@ -372,6 +399,25 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 )}
                             </div>
 
+                            {/* Adjusted Total Amount (shown when return items is checked) */}
+                            {formData.returnItems && formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0 && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Adjusted Total Amount (After Return Deduction)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={`₹${calculateAdjustedTotal().toFixed(2)}`}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-blue-50 text-gray-700 cursor-not-allowed"
+                                        readOnly
+                                        disabled
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Total Amount (₹{parseFloat(formData.totalAmount || 0).toFixed(2)}) - Return Adjust Amount (₹{parseFloat(formData.returnAdjustAmount || 0).toFixed(2)})
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Paid Amount */}
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -398,7 +444,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {/* Remaining Amount (Non-editable) */}
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Remaining Amount
+                                    Remaining Amount to Pay
                                 </label>
                                 <input
                                     type="text"
@@ -407,6 +453,11 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     readOnly
                                     disabled
                                 />
+                                {formData.returnItems && formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Adjusted Total (₹{calculateAdjustedTotal().toFixed(2)}) - Paid Amount (₹{parseFloat(formData.paidAmount || 0).toFixed(2)})
+                                    </p>
+                                )}
                             </div>
 
                             {/* Payment Mode (Required if paidAmount > 0) */}
@@ -490,7 +541,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {formData.returnItems && (
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                                        Return Adjust Amount
+                                        Return Adjust Amount <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="number"
@@ -499,10 +550,15 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         onChange={handleChange}
                                         min="0"
                                         step="0.01"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                                            errors.returnAdjustAmount ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                         placeholder="0.00"
                                         disabled={isSubmitting}
                                     />
+                                    {errors.returnAdjustAmount && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.returnAdjustAmount}</p>
+                                    )}
                                 </div>
                             )}
 
