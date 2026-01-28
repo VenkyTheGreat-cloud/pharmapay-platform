@@ -111,6 +111,17 @@ const realAccessControlAPI = {
         api.patch(`/access-control/${id}/toggle-active`, { isActive }),
 };
 
+const realContactsAPI = {
+    getAll: (params) => api.get('/contacts', { params }),
+    search: (search, extraParams = {}) =>
+        api.get('/contacts', { params: { search, ...extraParams } }),
+    getById: (id) => api.get(`/contacts/${id}`),
+    getByMobile: (mobile) => api.get(`/contacts/mobile/${mobile}`),
+    create: (data) => api.post('/contacts', data),
+    update: (id, data) => api.put(`/contacts/${id}`, data),
+    delete: (id) => api.delete(`/contacts/${id}`),
+};
+
 const realConfigAPI = {
     get: () => api.get('/config'),
 };
@@ -564,6 +575,90 @@ const mockAccessControlAPI = {
     },
 };
 
+let mockContacts = [
+    {
+        id: 4001,
+        name: 'Dr. Rajesh Kumar',
+        mobile: '9876543210',
+        email: 'rajesh.kumar@hospital.com',
+        designation: 'Chief Medical Officer',
+        organization: 'City Hospital',
+        address: '123 Medical Street, Bangalore',
+        notes: 'Preferred contact time: 10 AM - 2 PM',
+        createdAt: '2025-01-15T08:30:00Z',
+        updatedAt: '2025-11-20T10:45:00Z',
+    },
+    {
+        id: 4002,
+        name: 'Priya Sharma',
+        mobile: '9123456789',
+        email: 'priya.sharma@pharma.com',
+        designation: 'Sales Manager',
+        organization: 'ABC Pharmaceuticals',
+        address: '456 Pharma Road, Bangalore',
+        notes: 'Key supplier contact',
+        createdAt: '2025-02-10T09:00:00Z',
+        updatedAt: '2025-11-18T14:20:00Z',
+    },
+];
+
+const mockContactsAPI = {
+    getAll: async (params) => {
+        await delay();
+        return {
+            data: {
+                success: true,
+                data: {
+                    data: mockContacts,
+                    pagination: {
+                        total: mockContacts.length,
+                        page: 1,
+                        limit: 50,
+                        totalPages: 1,
+                    },
+                },
+            },
+        };
+    },
+    search: async () => {
+        return mockContactsAPI.getAll();
+    },
+    getById: async (id) => {
+        await delay();
+        const found = mockContacts.find((c) => c.id === id) || mockContacts[0];
+        return { data: { success: true, data: found } };
+    },
+    getByMobile: async (mobile) => {
+        await delay();
+        const found = mockContacts.find((c) => c.mobile === mobile) || mockContacts[0];
+        return { data: { success: true, data: found } };
+    },
+    create: async (data) => {
+        await delay();
+        const newContact = {
+            ...data,
+            id: Date.now(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        mockContacts.push(newContact);
+        return { data: { success: true, data: newContact } };
+    },
+    update: async (id, data) => {
+        await delay();
+        mockContacts = mockContacts.map((c) =>
+            c.id === id ? { ...c, ...data, updatedAt: new Date().toISOString() } : c
+        );
+        const updated = mockContacts.find((c) => c.id === id);
+        return { data: { success: true, data: updated } };
+    },
+    delete: async (id) => {
+        await delay();
+        mockContacts = mockContacts.filter((c) => c.id !== id);
+        return { data: { success: true, message: 'Contact deleted successfully' } };
+    },
+};
+
 const mockConfigAPI = {
     get: async () => {
         await delay();
@@ -593,6 +688,7 @@ const mockConfigAPI = {
 
 export const authAPI = USE_MOCK_API ? mockAuthAPI : realAuthAPI;
 export const customersAPI = USE_MOCK_API ? mockCustomersAPI : realCustomersAPI;
+export const contactsAPI = USE_MOCK_API ? mockContactsAPI : realContactsAPI;
 export const ordersAPI = USE_MOCK_API ? mockOrdersAPI : realOrdersAPI;
 export const paymentsAPI = USE_MOCK_API ? mockPaymentsAPI : realPaymentsAPI;
 export const deliveryBoysAPI = USE_MOCK_API ? mockDeliveryBoysAPI : realDeliveryBoysAPI;

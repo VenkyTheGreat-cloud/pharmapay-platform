@@ -7,6 +7,7 @@ import PendingOrdersPage from './pages/PendingOrdersPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import StoreStaffPage from './pages/StoreStaffPage';
 import CustomersPage from './pages/CustomersPage';
+import ContactsPage from './pages/ContactsPage';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
@@ -73,6 +74,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <CustomersPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/contacts"
+                element={
+                    <ProtectedRoute>
+                        <ContactsPage />
                     </ProtectedRoute>
                 }
             />
