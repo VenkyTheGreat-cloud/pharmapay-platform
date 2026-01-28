@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import OrdersPage from './pages/OrdersPage';
+import PendingOrdersPage from './pages/PendingOrdersPage';
 import CustomersPage from './pages/CustomersPage';
 import ContactsPage from './pages/ContactsPage';
 
@@ -57,6 +58,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <OrdersPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/pending-orders"
+                element={
+                    <ProtectedRoute>
+                        <PendingOrdersPage />
                     </ProtectedRoute>
                 }
             />

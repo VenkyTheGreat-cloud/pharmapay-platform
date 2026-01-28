@@ -333,6 +333,18 @@ export const ordersAPI = {
         }
         return api.get('/orders/ongoing', { params });
     },
+    getPendingTillYesterday: (params) => {
+        if (API_DISABLED) {
+            return mockResolve({
+                success: true,
+                data: {
+                    orders: [],
+                    pagination: { total: 0, page: 1, limit: 100, totalPages: 0 },
+                },
+            });
+        }
+        return api.get('/orders/pending-till-yesterday', { params });
+    },
     getById: (id) => {
         if (API_DISABLED) {
             return mockResolve({
