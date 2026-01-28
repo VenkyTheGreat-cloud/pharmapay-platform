@@ -2,6 +2,42 @@ import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
 import { Eye } from 'lucide-react';
 
+// Helper function to format image URL - handles base64 data and regular URLs
+const formatImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    
+    const trimmedUrl = url.trim();
+    
+    // Return null for empty or invalid URLs
+    if (!trimmedUrl || trimmedUrl === ',' || trimmedUrl.length === 0) return null;
+    
+    // If it's already a data URI, use as-is
+    if (trimmedUrl.startsWith('data:')) {
+        return trimmedUrl;
+    }
+    
+    // If it's a full URL (http/https), use as-is
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+        return trimmedUrl;
+    }
+    
+    // If it starts with a forward slash, it's a relative path - use as-is
+    if (trimmedUrl.startsWith('/')) {
+        return trimmedUrl;
+    }
+    
+    // For anything else that's reasonably long, treat as base64
+    // This is the safest approach - if it's not a recognized URL format and is long, it's likely base64
+    if (trimmedUrl.length > 20) {
+        // Format as base64 data URI (assume JPEG)
+        // This will work for base64 strings like "9j/4AAQSkZJRgABAQAAA..."
+        return `data:image/jpeg;base64,${trimmedUrl}`;
+    }
+    
+    // For short strings, return as-is (might be a filename or short identifier)
+    return trimmedUrl;
+};
+
 // Helper function to get status color
 const getStatusColor = (status) => {
     if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
@@ -108,6 +144,9 @@ export default function PendingOrdersPage() {
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[80px]">
                                             Sl.No
                                         </th>
+                                        <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                            Date
+                                        </th>
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[150px]">
                                             Order #
                                         </th>
@@ -132,9 +171,6 @@ export default function PendingOrdersPage() {
                                         <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Status
                                         </th>
-                                        <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
-                                            Date
-                                        </th>
                                         <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
                                             Actions
                                         </th>
@@ -148,6 +184,9 @@ export default function PendingOrdersPage() {
                                             <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-3 text-xs font-medium text-gray-900 text-center">
                                                     {index + 1}
+                                                </td>
+                                                <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs font-medium text-gray-900 max-w-[150px]">
                                                     {formatOrderNumber(orderNumber)}
@@ -187,9 +226,6 @@ export default function PendingOrdersPage() {
                                                         {order.status ? order.status.replace(/_/g, ' ') : '-'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                                    {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
-                                                </td>
                                                 <td className="px-6 py-3 whitespace-nowrap" style={{ minWidth: '150px' }}>
                                                     <button
                                                         onClick={() => viewOrderDetails(order.id)}
@@ -209,7 +245,7 @@ export default function PendingOrdersPage() {
                 </div>
             </div>
 
-            {/* Order Details Modal - Reuse from OrdersPage if needed */}
+            {/* Order Details Modal */}
             {showViewModal && selectedOrder && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -228,29 +264,458 @@ export default function PendingOrdersPage() {
                                     ✕
                                 </button>
                             </div>
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-sm text-gray-500">Customer</p>
-                                    <p className="text-base font-medium text-gray-900">
-                                        {selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Status</p>
-                                    <span className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(selectedOrder.status)}`}>
-                                        {selectedOrder.status ? selectedOrder.status.replace(/_/g, ' ').toUpperCase() : 'N/A'}
-                                    </span>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Amount</p>
-                                    <p className="text-base font-medium text-gray-900">
-                                        ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
-                                    </p>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Left Column - Order Information */}
+                                <div className="space-y-6">
+                                    {/* Order Status */}
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h3 className="text-sm font-medium text-gray-500 mb-2">Current Status</h3>
+                                        <span
+                                            className={`px-3 py-1 inline-flex text-sm font-semibold rounded-full ${getStatusColor(
+                                                selectedOrder.status
+                                            )}`}
+                                        >
+                                            {selectedOrder.status ? selectedOrder.status.replace(/_/g, ' ').toUpperCase() : 'N/A'}
+                                        </span>
+                                    </div>
+
+                                    {/* Customer Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                            <div>
+                                                <p className="text-sm text-gray-500">Name</p>
+                                                <p className="text-base font-medium text-gray-900">
+                                                    {selectedOrder.customerName || selectedOrder.customer_name || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Mobile</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerMobile || selectedOrder.customer_phone || selectedOrder.customer_mobile || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Area</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customer_area || selectedOrder.customerArea || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Address</p>
+                                                <p className="text-base text-gray-900">
+                                                    {selectedOrder.customerAddress || selectedOrder.customer_address || selectedOrder.address || 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Delivery Boy Information */}
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Name</p>
+                                                    <p className="text-base font-medium text-gray-900">
+                                                        {selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Mobile</p>
+                                                    <p className="text-base text-gray-900">
+                                                        {selectedOrder.deliveryBoyMobile || selectedOrder.delivery_boy_mobile || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Payment Information */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Payment Information</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                                            {/* Payment Summary */}
+                                            {selectedOrder.payment_summary ? (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.total_paid) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.payment_summary.remaining_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                        <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                            selectedOrder.payment_summary.payment_status === 'FULL' || selectedOrder.payment_summary.is_fully_paid || selectedOrder.payment_summary.payment_status === 'PAID'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : selectedOrder.payment_summary.payment_status === 'PARTIAL'
+                                                                ? 'bg-yellow-100 text-yellow-800'
+                                                                : 'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {selectedOrder.payment_summary.payment_status || 'PENDING'}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Total Amount</span>
+                                                        <span className="text-xl font-bold text-gray-900">
+                                                            ₹{(Number(selectedOrder.amount || selectedOrder.total_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Paid Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center border-b pb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                    {(selectedOrder.payment_status) && (
+                                                        <div className="flex justify-between items-center border-b pb-2">
+                                                            <span className="text-sm font-medium text-gray-700">Payment Status</span>
+                                                            <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                                selectedOrder.payment_status === 'FULL' || selectedOrder.payment_status === 'PAID'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : selectedOrder.payment_status === 'PARTIAL'
+                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                    : 'bg-red-100 text-red-800'
+                                                            }`}>
+                                                                {selectedOrder.payment_status}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+
+                                            {/* Return Items Information */}
+                                            <div className="pt-3 border-t">
+                                                <div className="flex justify-between items-center pb-2">
+                                                    <span className="text-sm font-medium text-gray-700">Return Items</span>
+                                                    <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                        selectedOrder.returnItems || selectedOrder.return_items
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {selectedOrder.returnItems || selectedOrder.return_items ? 'Yes' : 'No'}
+                                                    </span>
+                                                </div>
+                                                {(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) && (
+                                                    <div className="flex justify-between items-center pt-2 border-t">
+                                                        <span className="text-sm font-medium text-gray-700">Return Adjust Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Individual Payment Methods */}
+                                            {selectedOrder.payments && Array.isArray(selectedOrder.payments) && selectedOrder.payments.length > 0 && (
+                                                <div className="pt-3 border-t">
+                                                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Payment Methods</h4>
+                                                    <div className="space-y-3">
+                                                        {selectedOrder.payments.map((payment, index) => {
+                                                            const cashAmount = Number(payment.cash_amount || payment.cashAmount || 0);
+                                                            const bankAmount = Number(payment.bank_amount || payment.bankAmount || 0);
+                                                            const totalAmount = cashAmount + bankAmount;
+                                                            const paymentMode = payment.payment_mode || payment.paymentMode || 'N/A';
+                                                            const transactionRef = payment.transaction_reference || payment.transactionReference;
+                                                            const paymentStatus = payment.status || 'PENDING';
+                                                            const createdAt = payment.created_at || payment.createdAt;
+                                                            const createdByName = payment.created_by_name || payment.createdByName;
+
+                                                            return (
+                                                                <div key={payment.id || index} className="bg-white p-3 rounded-lg border border-gray-200">
+                                                                    <div className="flex justify-between items-start mb-2">
+                                                                        <div>
+                                                                            <span className="text-sm font-semibold text-gray-900">
+                                                                                {paymentMode.replace(/_/g, ' ')}
+                                                                            </span>
+                                                                            <span className={`ml-2 text-xs font-semibold rounded-full px-2 py-0.5 ${
+                                                                                paymentStatus === 'CONFIRMED'
+                                                                                    ? 'bg-green-100 text-green-800'
+                                                                                    : paymentStatus === 'PENDING'
+                                                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                                                    : 'bg-red-100 text-red-800'
+                                                                            }`}>
+                                                                                {paymentStatus}
+                                                                            </span>
+                                                                        </div>
+                                                                        <span className="text-base font-bold text-gray-900">
+                                                                            ₹{totalAmount.toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {cashAmount > 0 && bankAmount > 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Cash: ₹{cashAmount.toFixed(2)} + Bank: ₹{bankAmount.toFixed(2)}
+                                                                        </div>
+                                                                    )}
+                                                                    {cashAmount > 0 && bankAmount === 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Cash Payment
+                                                                        </div>
+                                                                    )}
+                                                                    {bankAmount > 0 && cashAmount === 0 && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            Bank/UPI Payment
+                                                                        </div>
+                                                                    )}
+                                                                    {transactionRef && (
+                                                                        <div className="text-xs text-gray-600 mb-1">
+                                                                            <span className="font-medium">Txn Ref:</span> <span className="font-mono">{transactionRef}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {createdAt && (
+                                                                        <div className="text-xs text-gray-500">
+                                                                            {new Date(createdAt).toLocaleString()}
+                                                                        </div>
+                                                                    )}
+                                                                    {createdByName && (
+                                                                        <div className="text-xs text-gray-500 mt-1">
+                                                                            Collected by: {createdByName}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                            </div>
+
+                                {/* Right Column - Status Timeline */}
+                                <div className="space-y-6">
+                                    {/* Status Timeline */}
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Status Timeline</h3>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <div className="space-y-4">
+                                                {/* Created */}
+                                                {selectedOrder.created_at || selectedOrder.createdTime ? (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Order Created</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.created_at || selectedOrder.createdTime).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : null}
+
+                                                {/* Assigned */}
+                                                {selectedOrder.assigned_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Assigned to Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.assigned_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Accepted */}
+                                                {selectedOrder.accepted_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.accepted_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Picked Up */}
+                                                {selectedOrder.picked_up_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-yellow-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Picked Up</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.picked_up_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* In Transit */}
+                                                {selectedOrder.in_transit_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">In Transit</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.in_transit_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Payment Collection */}
+                                                {selectedOrder.payment_collection_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Payment Collected</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.payment_collection_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Delivered */}
+                                                {selectedOrder.delivered_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Delivered</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.delivered_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Cancelled */}
+                                                {selectedOrder.cancelled_at && (
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-red-500 mt-2"></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-900">Cancelled</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {new Date(selectedOrder.cancelled_at).toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                            </div>
+
+                                    {/* Customer Comments */}
+                                    {(selectedOrder.customerComments || selectedOrder.customer_comments) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Customer Comments</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">
+                                                    {selectedOrder.customerComments || selectedOrder.customer_comments}
+                                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                                    {/* Notes */}
+                                    {selectedOrder.notes && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-900">{selectedOrder.notes}</p>
+                            </div>
+                        </div>
+                    )}
+
+                                    {/* Receipt Photo - Only for DELIVERED orders */}
+                                    {((selectedOrder.status === 'DELIVERED' || selectedOrder.status === 'delivered') && 
+                                      (() => {
+                                        // Check for receipt photos in payments array
+                                        const payments = selectedOrder.payments || [];
+                                        const receiptPhotos = payments
+                                            .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
+                                            .filter(url => url && url.trim() && url.trim() !== ',' && formatImageUrl(url));
+                                        
+                                        // Also check direct order level receipt_photo_url (fallback)
+                                        if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
+                                            const directUrl = selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl;
+                                            if (directUrl && directUrl.trim() && directUrl.trim() !== ',') {
+                                                receiptPhotos.push(directUrl);
+                                            }
+                                        }
+                                        
+                                        return receiptPhotos.length > 0;
+                                      })()) && (
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Receipt Photo</h3>
+                                            <div className="bg-gray-50 p-4 rounded-lg space-y-4">
+                                                {(() => {
+                                                    // Get all valid receipt photos from payments array
+                                                    const payments = selectedOrder.payments || [];
+                                                    const receiptPhotos = payments
+                                                        .map(payment => payment.receipt_photo_url || payment.receiptPhotoUrl)
+                                                        .filter(url => url && url.trim() && url.trim() !== ',' && formatImageUrl(url));
+                                                    
+                                                    // Also check direct order level receipt_photo_url (fallback)
+                                                    if (selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl) {
+                                                        const directUrl = selectedOrder.receipt_photo_url || selectedOrder.receiptPhotoUrl;
+                                                        if (directUrl && directUrl.trim() && directUrl.trim() !== ',') {
+                                                            receiptPhotos.push(directUrl);
+                                                        }
+                                                    }
+                                                    
+                                                    return receiptPhotos.map((photoUrl, index) => {
+                                                        // Ensure we format the URL - treat any non-URL string longer than 20 chars as base64
+                                                        let formattedUrl = formatImageUrl(photoUrl);
+                                                        
+                                                        // Double-check: if it's still not a data URI or full URL, and it's long, format as base64
+                                                        if (formattedUrl && !formattedUrl.startsWith('data:') && !formattedUrl.startsWith('http') && formattedUrl.length > 20) {
+                                                            formattedUrl = `data:image/jpeg;base64,${formattedUrl}`;
+                                                        }
+                                                        
+                                                        if (!formattedUrl) return null;
+                                                        
+                                                        return (
+                                                            <div key={index} className="flex justify-center">
+                                                                <img
+                                                                    src={formattedUrl}
+                                                                    alt={`Receipt ${index + 1}`}
+                                                                    className="rounded-lg border border-gray-200 shadow-sm object-contain max-w-md max-h-64"
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none';
+                                                                        const errorMsg = e.target.nextElementSibling;
+                                                                        if (errorMsg) errorMsg.style.display = 'block';
+                                                                    }}
+                                                                />
+                                                                <p className="text-sm text-gray-500 mt-2 text-center" style={{ display: 'none' }}>
+                                                                    Failed to load receipt image
+                                                                </p>
+                                                            </div>
+                                                        );
+                                                    }).filter(Boolean);
+                                                })()}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
             )}
         </div>
     );
