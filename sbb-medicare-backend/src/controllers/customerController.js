@@ -144,6 +144,113 @@ exports.getCustomerOrders = async (req, res, next) => {
     }
 };
 
+// Create customer (simplified - only name, mobile, and date)
+exports.createCustomerSimple = async (req, res, next) => {
+    try {
+        const { name, mobile, date } = req.body;
+
+        // Validation
+        if (!name || !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Name is required'
+                }
+            });
+        }
+
+        if (!mobile || !mobile.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Mobile number is required'
+                }
+            });
+        }
+
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Date is required'
+                }
+            });
+        }
+
+        // Validate date format (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Date must be in YYYY-MM-DD format'
+                }
+            });
+        }
+
+        // Get store_id from authenticated user
+        const storeId = req.user.userId;
+
+        // Check if customer with mobile already exists for this store
+        const existingCustomer = await Customer.findByMobileAndStore(mobile.trim(), storeId);
+        if (existingCustomer) {
+            return res.status(409).json({
+                success: false,
+                error: {
+                    code: 'DUPLICATE_MOBILE',
+                    message: 'Customer with this mobile number already exists'
+                },
+                data: { customer: existingCustomer }
+            });
+        }
+
+        // Create customer with minimal fields
+        const customer = await Customer.create({
+            name: name.trim(),
+            mobile: mobile.trim(),
+            address: null,
+            area: null, // Optional for simplified creation
+            landmark: null,
+            customer_lat: null,
+            customer_lng: null,
+            store_id: storeId,
+            customer_date: date // Store the provided date
+        });
+
+        logger.info('Customer created (simplified)', { 
+            customerId: customer.id, 
+            createdBy: req.user.userId,
+            storeId: storeId,
+            date: date
+        });
+
+        res.status(201).json({
+            success: true,
+            data: {
+                customer: {
+                    id: customer.id,
+                    name: customer.name,
+                    mobile: customer.mobile,
+                    customer_date: customer.customer_date,
+                    created_at: customer.created_at
+                },
+                message: 'Customer created successfully'
+            }
+        });
+    } catch (error) {
+        logger.error('Error creating customer (simplified)', {
+            error: error.message,
+            stack: error.stack,
+            body: req.body
+        });
+        next(error);
+    }
+};
+
 // Create customer
 exports.createCustomer = async (req, res, next) => {
     try {
@@ -351,6 +458,115 @@ exports.searchCustomers = async (req, res, next) => {
             }
         });
     } catch (error) {
+        next(error);
+    }
+};
+
+// Get customers with order registration status for a specific date
+exports.getCustomersWithOrderStatusByDate = async (req, res, next) => {
+    try {
+        const { date } = req.query || req.body;
+
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Date is required (format: YYYY-MM-DD)'
+                }
+            });
+        }
+
+        // Validate date format (YYYY-MM-DD)
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(date)) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'Date must be in YYYY-MM-DD format'
+                }
+            });
+        }
+
+        // Get store IDs based on user role
+        let storeIds = null;
+        const userRole = req.user.role;
+        const storeId = req.user.userId;
+
+        if (userRole === 'admin') {
+            // Admin: get all stores in their group
+            const User = require('../models/User');
+            storeIds = await User.getStoreIdsForAdmin(storeId);
+        } else if (userRole === 'store_manager') {
+            // Store manager: get all stores in their admin group
+            const User = require('../models/User');
+            const adminId = req.user.adminId || storeId;
+            storeIds = await User.getStoreIdsForAdmin(adminId);
+        } else {
+            // For other roles, use single store_id
+            storeIds = [storeId];
+        }
+
+        // Get customers with order status for the date
+        const customers = await Customer.getCustomersWithOrderStatusByDate(date, storeIds);
+
+        // Group by customer (since one customer might have multiple orders on the same date)
+        // We'll show the first order's details
+        const customerMap = new Map();
+        
+        customers.forEach(row => {
+            const key = `${row.mobile}-${row.id}`;
+            if (!customerMap.has(key)) {
+                customerMap.set(key, {
+                    customer_id: row.id,
+                    name: row.name,
+                    mobile: row.mobile,
+                    registered: row.registered,
+                    order_created_at: row.order_created_at ? new Date(row.order_created_at).toISOString() : null,
+                    order_number: row.order_number || null,
+                    order_id: row.order_id || null
+                });
+            } else {
+                // If customer has multiple orders, update with the latest order
+                const existing = customerMap.get(key);
+                if (row.registered && row.order_created_at) {
+                    const existingDate = existing.order_created_at ? new Date(existing.order_created_at) : null;
+                    const newDate = new Date(row.order_created_at);
+                    if (!existingDate || newDate > existingDate) {
+                        existing.order_created_at = newDate.toISOString();
+                        existing.order_number = row.order_number;
+                        existing.order_id = row.order_id;
+                    }
+                }
+            }
+        });
+
+        const result = Array.from(customerMap.values());
+
+        logger.info('Customers with order status fetched', {
+            date,
+            count: result.length,
+            registeredCount: result.filter(c => c.registered).length,
+            requestedBy: req.user.userId
+        });
+
+        res.json({
+            success: true,
+            data: {
+                date,
+                customers: result,
+                total_customers: result.length,
+                registered_customers: result.filter(c => c.registered).length,
+                unregistered_customers: result.filter(c => !c.registered).length
+            }
+        });
+    } catch (error) {
+        logger.error('Error getting customers with order status by date', {
+            error: error.message,
+            stack: error.stack,
+            date: req.query?.date || req.body?.date
+        });
         next(error);
     }
 };

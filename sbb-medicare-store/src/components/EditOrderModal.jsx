@@ -256,6 +256,36 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                     />
                                 </div>
                             )}
+
+                            {/* Return Items */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                    Return Items
+                                </label>
+                                <input
+                                    type="text"
+                                    value={order.returnItems || order.return_items ? 'Yes' : 'No'}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                    readOnly
+                                    disabled
+                                />
+                            </div>
+
+                            {/* Return Adjust Amount */}
+                            {(order.returnAdjustAmount || order.return_adjust_amount) && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Return Adjust Amount
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={`₹${(Number(order.returnAdjustAmount || order.return_adjust_amount) || 0).toFixed(2)}`}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Editable Fields Section */}

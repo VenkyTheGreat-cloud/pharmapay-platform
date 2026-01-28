@@ -19,6 +19,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const deliveryBoyRoutes = require('./routes/deliveryBoyRoutes');
 const accessControlRoutes = require('./routes/accessControlRoutes');
+const customerRegistryRoutes = require('./routes/customerRegistryRoutes');
 
 // Initialize express app
 const app = express();
@@ -95,6 +96,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/delivery-boys', deliveryBoyRoutes);
 app.use('/api/access-control', accessControlRoutes);
+app.use('/api/customer-registry', customerRegistryRoutes);
 app.use('/api/config', require('./routes/configRoutes'));
 
 // 404 handler
