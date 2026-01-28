@@ -30,6 +30,7 @@ export default function Layout({ children }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
+        { name: 'Contacts', href: '/contacts', icon: Users },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Store Staff', href: '/store-staff', icon: UserCog },
     ];
