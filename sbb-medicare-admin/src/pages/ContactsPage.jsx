@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { contactsAPI } from '../services/api';
 import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -18,12 +19,23 @@ const getTodayIST = () => {
 };
 
 export default function ContactsPage() {
+    const { user } = useAuth();
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
     const [customerName, setCustomerName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Check if user is admin (based on dashboardType or role)
+    const isAdmin = user?.dashboardType === 'admin' || user?.role === 'admin' || user?.user_type === 'admin';
+    
+    // Check if user is super admin
+    const isSuperAdmin = user?.role === 'super_admin' || 
+                        user?.role === 'superadmin' || 
+                        user?.user_type === 'super_admin' || 
+                        user?.user_type === 'superadmin' ||
+                        user?.dashboardType === 'super_admin';
 
     useEffect(() => {
         loadContacts();
@@ -166,57 +178,59 @@ export default function ContactsPage() {
                 </div>
             </div>
 
-            {/* Add Contact Form */}
-            <div className="px-4 mt-4 flex-shrink-0">
-                <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-                    <form onSubmit={handleAddContact} className="space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Customer Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    placeholder="Enter customer name"
-                                    disabled={isSubmitting}
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                />
+            {/* Add Contact Form - Hidden for Admin and Super Admin */}
+            {!isAdmin && !isSuperAdmin && (
+                <div className="px-4 mt-4 flex-shrink-0">
+                    <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+                        <form onSubmit={handleAddContact} className="space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Customer Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        placeholder="Enter customer name"
+                                        disabled={isSubmitting}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Mobile Number <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={mobileNumber}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                                            if (value.length <= 10) {
+                                                setMobileNumber(value);
+                                            }
+                                        }}
+                                        placeholder="Enter 10-digit mobile number"
+                                        maxLength="10"
+                                        disabled={isSubmitting}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Mobile Number <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={mobileNumber}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                                        if (value.length <= 10) {
-                                            setMobileNumber(value);
-                                        }
-                                    }}
-                                    placeholder="Enter 10-digit mobile number"
-                                    maxLength="10"
-                                    disabled={isSubmitting}
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                />
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !customerName.trim() || !mobileNumber.trim()}
+                                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    Submit
+                                </button>
                             </div>
-                        </div>
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || !customerName.trim() || !mobileNumber.trim()}
-                                className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                Submit
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Contacts List */}
             <div className="px-4 pb-4 mt-4 flex flex-col flex-1 min-h-0">
