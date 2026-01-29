@@ -4,11 +4,25 @@ class Customer {
     // Create a new customer
     static async create(customerData) {
         const { name, mobile, address, area, landmark, customer_lat, customer_lng, store_id, customer_date } = customerData;
+        
+        // Build dynamic INSERT statement - only include customer_date if it's provided
+        const hasCustomerDate = customer_date !== undefined && customer_date !== null;
+        const columns = ['name', 'mobile', 'address', 'area', 'landmark', 'customer_lat', 'customer_lng', 'store_id'];
+        const values = [name, mobile, address || null, area, landmark, customer_lat, customer_lng, store_id];
+        
+        if (hasCustomerDate) {
+            columns.push('customer_date');
+            values.push(customer_date);
+        }
+        
+        const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
+        const columnList = columns.join(', ');
+        
         const result = await query(
-            `INSERT INTO customers (name, mobile, address, area, landmark, customer_lat, customer_lng, store_id, customer_date)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO customers (${columnList})
+             VALUES (${placeholders})
              RETURNING *`,
-            [name, mobile, address || null, area, landmark, customer_lat, customer_lng, store_id, customer_date || null]
+            values
         );
         return result.rows[0];
     }
