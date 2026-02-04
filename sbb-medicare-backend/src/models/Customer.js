@@ -8,7 +8,17 @@ class Customer {
         // Build dynamic INSERT statement - only include customer_date if it's provided
         const hasCustomerDate = customer_date !== undefined && customer_date !== null;
         const columns = ['name', 'mobile', 'address', 'area', 'landmark', 'customer_lat', 'customer_lng', 'store_id'];
-        const values = [name, mobile, address || null, area, landmark, customer_lat, customer_lng, store_id];
+        // Handle optional fields - allow null for name, address, and area
+        const values = [
+            name ? name.trim() : null, 
+            mobile.trim(), 
+            address ? address.trim() : null, 
+            area ? area.trim() : null, 
+            landmark ? landmark.trim() : null, 
+            customer_lat || null, 
+            customer_lng || null, 
+            store_id
+        ];
         
         if (hasCustomerDate) {
             columns.push('customer_date');

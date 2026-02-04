@@ -42,13 +42,9 @@ exports.createCustomerRegistry = async (req, res, next) => {
     try {
         const { mobile, name, registry_date } = req.body;
 
-        // Validation
+        // Validation - Only mobile is mandatory
         if (!mobile || mobile.trim() === '') {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Mobile number is required'));
-        }
-
-        if (!name || name.trim() === '') {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name is required'));
         }
 
         // Validate mobile format (basic validation - 10 digits)
@@ -60,10 +56,10 @@ exports.createCustomerRegistry = async (req, res, next) => {
         // Normalize datetime (accepts both date and datetime)
         const normalizedDateTime = registry_date ? normalizeDateTimeParam(registry_date) : new Date().toISOString();
 
-        // Create registry entry
+        // Create registry entry - name is optional
         const registry = await CustomerRegistry.create({
             mobile: mobile.trim(),
-            name: name.trim(),
+            name: name ? name.trim() : null,
             registry_date: normalizedDateTime
         });
 
@@ -181,10 +177,8 @@ exports.updateCustomerRegistry = async (req, res, next) => {
         }
 
         if (name !== undefined) {
-            if (!name || name.trim() === '') {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name cannot be empty'));
-            }
-            updates.name = name.trim();
+            // Name is optional - can be null or empty string
+            updates.name = name ? name.trim() : null;
         }
 
         if (registry_date !== undefined) {

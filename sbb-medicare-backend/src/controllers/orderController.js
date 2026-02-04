@@ -624,13 +624,13 @@ exports.updateOrder = async (req, res, next) => {
 
         // Get order items, return items, and payment summary for response
         const items = await OrderItem.findByOrderId(updatedOrder.id);
-        const returnItemsList = await ReturnItem.findByOrderId(updatedOrder.id);
+        const returnItemsFromDb = await ReturnItem.findByOrderId(updatedOrder.id);
         const paymentSummary = await Payment.getPaymentSummary(updatedOrder.id);
 
         res.json(successResponse({
             ...updatedOrder,
             items,
-            return_items_list: returnItemsList.map(item => ({
+            return_items_list: returnItemsFromDb.map(item => ({
                 id: item.id,
                 name: item.name,
                 quantity: item.quantity

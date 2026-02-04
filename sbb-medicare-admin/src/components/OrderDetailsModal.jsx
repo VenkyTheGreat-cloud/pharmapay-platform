@@ -196,6 +196,23 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
         }
     }, [isOpen, orderId]);
 
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [isOpen, onClose]);
+
     const loadOrderDetails = async () => {
         try {
             setLoading(true);
@@ -271,6 +288,11 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                     items: apiOrder.items || apiOrder.medicines || [],
                     // Extract all payments
                     payments: extractPayments(apiOrder),
+                    // Extract return items
+                    returnItems: apiOrder.return_items || apiOrder.returnItems || [],
+                    returnAdjustAmount: parseFloat(apiOrder.return_adjust_amount || apiOrder.returnAdjustAmount || 0),
+                    hasReturnItems: apiOrder.return_items && apiOrder.return_items.length > 0 || 
+                                  apiOrder.returnItems && apiOrder.returnItems.length > 0 || false,
                 };
                 setOrder(normalizedOrder);
                 
@@ -661,6 +683,72 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
                                                     </td>
                                                 </tr>
                                             </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Return Items */}
+                            {order.hasReturnItems && order.returnItems && order.returnItems.length > 0 && (
+                                <div className="bg-white border border-red-200 rounded-lg p-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Package className="w-5 h-5 text-red-600" />
+                                        <h3 className="font-semibold text-red-900">Return Items</h3>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-red-50">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-red-700 uppercase">
+                                                        Item
+                                                    </th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-red-700 uppercase">
+                                                        Quantity
+                                                    </th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-red-700 uppercase">
+                                                        Price
+                                                    </th>
+                                                    <th className="px-4 py-2 text-left text-xs font-medium text-red-700 uppercase">
+                                                        Reason
+                                                    </th>
+                                                    <th className="px-4 py-2 text-right text-xs font-medium text-red-700 uppercase">
+                                                        Total
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                {order.returnItems.map((returnItem, index) => (
+                                                    <tr key={returnItem.id || index} className="hover:bg-red-50">
+                                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                                            {returnItem.name || returnItem.item_name || returnItem.medicine_name || 'N/A'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            {returnItem.quantity || 0}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            ₹{parseFloat(returnItem.price || returnItem.unit_price || 0).toFixed(2)}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                                            {returnItem.reason || returnItem.return_reason || 'N/A'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm font-medium text-red-700 text-right">
+                                                            ₹{parseFloat(returnItem.total || returnItem.amount || (returnItem.price || returnItem.unit_price || 0) * (returnItem.quantity || 0)).toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            {order.returnAdjustAmount > 0 && (
+                                                <tfoot className="bg-red-50">
+                                                    <tr>
+                                                        <td colSpan="4" className="px-4 py-3 text-sm font-semibold text-red-900 text-right">
+                                                            Return Adjust Amount:
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm font-bold text-red-900 text-right">
+                                                            ₹{order.returnAdjustAmount.toFixed(2)}
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
+                                            )}
                                         </table>
                                     </div>
                                 </div>

@@ -259,23 +259,13 @@ exports.createCustomer = async (req, res, next) => {
         const mobile = req.body.mobile || req.body.mobile_number;
         const { address, area, landmark, customerLat, customerLng, latitude, longitude, customer_lat, customer_lng } = req.body;
 
-        // Validation - Area is mandatory, Address is optional for new customers
-        if (!name || !mobile) {
+        // Validation - Only mobile is mandatory
+        if (!mobile || !mobile.trim()) {
             return res.status(400).json({
                 success: false,
                 error: {
                     code: 'VALIDATION_ERROR',
-                    message: 'Name and mobile are required'
-                }
-            });
-        }
-
-        if (!area) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    code: 'VALIDATION_ERROR',
-                    message: 'Area is required'
+                    message: 'Mobile number is required'
                 }
             });
         }
@@ -288,7 +278,7 @@ exports.createCustomer = async (req, res, next) => {
         const lng = customerLng || longitude || customer_lng || null;
 
         // Check if customer with mobile already exists for this store
-        const existingCustomer = await Customer.findByMobileAndStore(mobile, storeId);
+        const existingCustomer = await Customer.findByMobileAndStore(mobile.trim(), storeId);
         if (existingCustomer) {
             return res.status(409).json({
                 success: false,
@@ -301,10 +291,10 @@ exports.createCustomer = async (req, res, next) => {
         }
 
         const customer = await Customer.create({
-            name: name.trim(),
+            name: name ? name.trim() : null, // Name is optional
             mobile: mobile.trim(),
             address: address ? address.trim() : null, // Address is optional
-            area: area.trim(), // Area is mandatory
+            area: area ? area.trim() : null, // Area is optional
             landmark: landmark ? landmark.trim() : null,
             customer_lat: lat,
             customer_lng: lng,

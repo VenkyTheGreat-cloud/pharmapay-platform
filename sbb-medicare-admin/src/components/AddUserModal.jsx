@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { deliveryBoysAPI, accessControlAPI } from '../services/api';
 
@@ -13,6 +13,23 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [isOpen, onClose]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

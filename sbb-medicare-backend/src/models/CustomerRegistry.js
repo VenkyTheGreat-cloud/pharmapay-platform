@@ -13,7 +13,7 @@ class CustomerRegistry {
             `INSERT INTO customer_registry (mobile, name, registry_date)
              VALUES ($1, $2, $3)
              RETURNING *`,
-            [mobile.trim(), name.trim(), registry_date || new Date().toISOString()]
+            [mobile.trim(), name ? name.trim() : null, registry_date || new Date().toISOString()]
         );
 
         return result.rows[0];

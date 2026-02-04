@@ -32,6 +32,32 @@ export default function CustomersPage() {
         loadCustomers();
     }, []);
 
+    // Handle ESC key to close modals
+    useEffect(() => {
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape') {
+                if (showModal) {
+                    setShowModal(false);
+                }
+                if (showAddModal) {
+                    setShowAddModal(false);
+                }
+                if (showEditModal) {
+                    setShowEditModal(false);
+                    setCustomerToEdit(null);
+                }
+                if (customerToDelete) {
+                    setCustomerToDelete(null);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleEscKey);
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [showModal, showAddModal, showEditModal, customerToDelete]);
+
     const normalizeCustomer = (apiCustomer) => ({
         id: apiCustomer.id,
         name: apiCustomer.name || 'N/A',
