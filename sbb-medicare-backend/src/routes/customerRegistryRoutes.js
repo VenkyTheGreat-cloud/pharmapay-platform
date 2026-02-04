@@ -14,7 +14,7 @@ router.post(
     authorizeRoles('admin', 'store_manager'),
     [
         body('mobile').notEmpty().trim().matches(/^[0-9]{10}$/).withMessage('Mobile number is required and must be 10 digits'),
-        body('name').optional().trim().withMessage('Name is optional'),
+        body('name').optional().trim(),
         body('registry_date').optional().isISO8601().withMessage('Registry date must be a valid ISO 8601 date/time string'),
     ],
     customerRegistryController.createCustomerRegistry
@@ -48,7 +48,7 @@ router.put(
     authorizeRoles('admin', 'store_manager'),
     [
         body('mobile').optional().trim().matches(/^[0-9]{10}$/).withMessage('Mobile number must be 10 digits'),
-        body('name').optional().trim().withMessage('Name is optional'),
+        body('name').optional().trim(),
         body('registry_date').optional().isISO8601().withMessage('Registry date must be a valid ISO 8601 date/time string'),
     ],
     customerRegistryController.updateCustomerRegistry
