@@ -124,10 +124,21 @@ class Order {
         }
 
         // Date range filter (uses created_at - for orders created in date range)
-        // Convert to IST timezone for accurate date comparison
+        // Supports both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DD HH:MM:SS) formats
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
-                          AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            // Check if date_from and date_to contain time components
+            const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
+            const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
+            
+            if (hasTimeFrom || hasTimeTo) {
+                // Use timestamp comparison for datetime ranges
+                queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
+                              AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') <= $${paramCount + 1}::timestamp`;
+            } else {
+                // Use date comparison for date-only ranges
+                queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                              AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            }
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
@@ -203,10 +214,21 @@ class Order {
         }
 
         // Date range filter (uses created_at - for orders created in date range)
-        // Convert to IST timezone for accurate date comparison
+        // Supports both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DD HH:MM:SS) formats
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
-                          AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            // Check if date_from and date_to contain time components
+            const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
+            const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
+            
+            if (hasTimeFrom || hasTimeTo) {
+                // Use timestamp comparison for datetime ranges
+                queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
+                              AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') <= $${paramCount + 1}::timestamp`;
+            } else {
+                // Use date comparison for date-only ranges
+                queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                              AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            }
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
