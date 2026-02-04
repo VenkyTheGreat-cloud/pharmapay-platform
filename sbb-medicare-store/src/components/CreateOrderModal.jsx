@@ -232,9 +232,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             newErrors.area = 'Area name is required';
         }
 
-        if (!customerUpdateData.address.trim()) {
-            newErrors.address = 'Address is required';
-        }
+        // Address is optional, no validation needed
 
         return newErrors;
     };
@@ -254,7 +252,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             const updateData = {
                 name: customerUpdateData.name.trim(),
                 mobile: customerUpdateData.mobile.trim(),
-                address: customerUpdateData.address.trim(),
+                address: customerUpdateData.address.trim() || null, // Address is optional
                 area: customerUpdateData.area.trim(),
                 landmark: customerToUpdate?.landmark || null,
                 customerLat: customerToUpdate?.customerLat || customerToUpdate?.customer_lat || customerToUpdate?.latitude || null,
@@ -966,22 +964,17 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                                        Address <span className="text-red-500">*</span>
+                                        Address <span className="text-gray-400 text-xs">(Optional)</span>
                                     </label>
                                     <textarea
                                         name="address"
                                         value={customerUpdateData.address}
                                         onChange={handleCustomerUpdateChange}
                                         rows="3"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                            customerUpdateErrors.address ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                        placeholder="Enter complete address"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs"
+                                        placeholder="Enter complete address (optional)"
                                         disabled={isUpdatingCustomer}
                                     />
-                                    {customerUpdateErrors.address && (
-                                        <p className="text-red-500 text-xs mt-1">{customerUpdateErrors.address}</p>
-                                    )}
                                 </div>
 
                                 <div className="flex gap-3 pt-2">
