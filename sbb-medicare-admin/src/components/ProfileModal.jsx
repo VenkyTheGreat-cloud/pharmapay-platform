@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, Building, Key } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +14,23 @@ export default function ProfileModal({ isOpen, onClose }) {
     const [passwordError, setPasswordError] = useState('');
     const [passwordSuccess, setPasswordSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Handle ESC key to close modal
+    useEffect(() => {
+        const handleEscKey = (event) => {
+            if (event.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscKey);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscKey);
+        };
+    }, [isOpen, onClose]);
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
