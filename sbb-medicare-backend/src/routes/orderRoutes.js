@@ -39,6 +39,11 @@ router.put(
         body('totalAmount').optional().isFloat({ min: 0.01 }).withMessage('Total amount must be greater than 0'),
         body('customerLat').optional().isFloat().withMessage('Customer latitude must be a valid number'),
         body('customerLng').optional().isFloat().withMessage('Customer longitude must be a valid number'),
+        body('returnItems').optional().isBoolean().withMessage('Return items must be a boolean'),
+        body('returnItemsList').optional().isArray().withMessage('Return items list must be an array'),
+        body('returnItemsList.*.name').optional().notEmpty().trim().withMessage('Return item name is required'),
+        body('returnItemsList.*.quantity').optional().isInt({ min: 1 }).withMessage('Return item quantity must be a positive integer'),
+        body('returnAdjustAmount').optional().isFloat({ min: 0 }).withMessage('Return adjust amount must be a non-negative number'),
     ],
     orderController.updateOrder
 );
@@ -57,6 +62,9 @@ router.post(
         body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'BANK_TRANSFER']).withMessage('Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'),
         body('transactionReference').optional().isString().withMessage('Transaction reference must be a string'),
         body('returnItems').optional().isBoolean().withMessage('Return items must be a boolean'),
+        body('returnItemsList').optional().isArray().withMessage('Return items list must be an array'),
+        body('returnItemsList.*.name').optional().notEmpty().trim().withMessage('Return item name is required'),
+        body('returnItemsList.*.quantity').optional().isInt({ min: 1 }).withMessage('Return item quantity must be a positive integer'),
         body('returnAdjustAmount').optional().isFloat({ min: 0 }).withMessage('Return adjust amount must be a non-negative number'),
     ],
     orderController.createOrder

@@ -76,6 +76,30 @@ export default function OrdersPage() {
         loadOrders();
     }, [filters.selectedDate]);
 
+    // Handle Escape key to close modals
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                if (showViewModal) {
+                    setShowViewModal(false);
+                }
+                if (showAssignModal) {
+                    setShowAssignModal(false);
+                    setSelectedOrder(null);
+                    setSelectedDeliveryBoy('');
+                }
+            }
+        };
+
+        if (showViewModal || showAssignModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showViewModal, showAssignModal]);
+
     const loadOrders = async () => {
         try {
             setLoading(true);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
 import { X } from 'lucide-react';
 
@@ -96,6 +96,23 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             setIsSubmitting(false);
         }
     };
+
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen && !isSubmitting) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, isSubmitting, onClose]);
 
     if (!isOpen) return null;
 
