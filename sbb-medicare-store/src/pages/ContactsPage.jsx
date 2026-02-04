@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
-import { customerRegistryAPI } from '../services/api';
+import { useState, useEffect, useRef } from 'react';
+import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle, Search } from 'lucide-react';
+import { customerRegistryAPI, customersAPI } from '../services/api';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -24,10 +24,40 @@ export default function ContactsPage() {
     const [customerName, setCustomerName] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Customer dropdown states
+    const [customers, setCustomers] = useState([]);
+    const [loadingCustomers, setLoadingCustomers] = useState(false);
+    const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+    const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [isNewCustomer, setIsNewCustomer] = useState(false);
+    const customerSearchRef = useRef(null);
+    const customerDropdownRef = useRef(null);
 
     useEffect(() => {
         loadContacts();
+        loadCustomers();
     }, [selectedDate]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                customerDropdownRef.current &&
+                !customerDropdownRef.current.contains(event.target) &&
+                customerSearchRef.current &&
+                !customerSearchRef.current.contains(event.target)
+            ) {
+                setShowCustomerDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const loadContacts = async () => {
         try {
@@ -40,6 +70,62 @@ export default function ContactsPage() {
             alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading contacts. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadCustomers = async () => {
+        try {
+            setLoadingCustomers(true);
+            const response = await customersAPI.getAll({ page: 1, limit: 10000 });
+            const list = response.data?.data?.customers || response.data?.data?.data || [];
+            setCustomers(Array.isArray(list) ? list : []);
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            setCustomers([]);
+        } finally {
+            setLoadingCustomers(false);
+        }
+    };
+
+    // Filter customers based on search query (name or mobile)
+    const filteredCustomers = customers.filter(customer => {
+        if (!customerSearchQuery.trim()) return true;
+        const query = customerSearchQuery.toLowerCase();
+        const name = (customer.name || customer.full_name || '').toLowerCase();
+        const mobile = (customer.mobile || customer.mobile_number || '').toLowerCase();
+        return name.includes(query) || mobile.includes(query);
+    });
+
+    const handleCustomerSearch = (e) => {
+        const query = e.target.value;
+        setCustomerSearchQuery(query);
+        setShowCustomerDropdown(true);
+        setIsNewCustomer(false);
+        setSelectedCustomer(null);
+        
+        if (!query) {
+            setCustomerName('');
+            setMobileNumber('');
+        }
+    };
+
+    const handleCustomerSelect = (customer) => {
+        setSelectedCustomer(customer);
+        setCustomerName(customer.name || customer.full_name || '');
+        setMobileNumber(customer.mobile || customer.mobile_number || '');
+        setCustomerSearchQuery(`${customer.name || customer.full_name || ''} - ${customer.mobile || customer.mobile_number || ''}`);
+        setShowCustomerDropdown(false);
+        setIsNewCustomer(false);
+    };
+
+    const handleAddNewCustomer = () => {
+        setIsNewCustomer(true);
+        setSelectedCustomer(null);
+        setCustomerSearchQuery('');
+        setShowCustomerDropdown(false);
+        // Keep mobile number if user typed it, otherwise clear
+        if (!mobileNumber.trim()) {
+            setCustomerName('');
         }
     };
 
@@ -70,11 +156,6 @@ export default function ContactsPage() {
     const handleAddContact = async (e) => {
         e.preventDefault();
         
-        if (!customerName.trim()) {
-            alert('Please enter a customer name');
-            return;
-        }
-
         if (!mobileNumber.trim()) {
             alert('Please enter a mobile number');
             return;
@@ -93,15 +174,35 @@ export default function ContactsPage() {
             // Get current date and time in IST
             const registryDate = getCurrentISTDateTime();
             
+            // If it's a new customer (not selected from dropdown), create customer first
+            if (isNewCustomer || !selectedCustomer) {
+                try {
+                    await customersAPI.create({
+                        mobile: mobileNumber.trim(),
+                        name: customerName.trim() || null // Name is optional
+                    });
+                } catch (customerError) {
+                    // If customer already exists, that's okay - continue
+                    if (customerError.response?.status !== 400 && customerError.response?.status !== 409) {
+                        console.warn('Error creating customer entry:', customerError);
+                    }
+                }
+            }
+            
+            // Create customer registry entry
             await customerRegistryAPI.create({
                 mobile: mobileNumber.trim(),
-                name: customerName.trim(),
+                name: customerName.trim() || null, // Name is optional
                 registry_date: registryDate
             });
             
             // Clear the inputs
             setCustomerName('');
             setMobileNumber('');
+            setCustomerSearchQuery('');
+            setSelectedCustomer(null);
+            setIsNewCustomer(false);
+            setShowCustomerDropdown(false);
             
             // Reload contacts
             await loadContacts();
@@ -163,44 +264,131 @@ export default function ContactsPage() {
             <div className="px-4 mt-4 flex-shrink-0">
                 <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
                     <form onSubmit={handleAddContact} className="space-y-3">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Customer Name <span className="text-red-500">*</span>
-                                </label>
+                        {/* Customer Search/Select Dropdown */}
+                        <div className="relative">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Select Customer <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search className="h-4 w-4 text-gray-400" />
+                                </div>
                                 <input
+                                    ref={customerSearchRef}
                                     type="text"
-                                    value={customerName}
-                                    onChange={(e) => setCustomerName(e.target.value)}
-                                    placeholder="Enter customer name"
-                                    disabled={isSubmitting}
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Mobile Number <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={mobileNumber}
-                                    onChange={(e) => {
-                                        const value = e.target.value.replace(/\D/g, ''); // Only numbers
-                                        if (value.length <= 10) {
-                                            setMobileNumber(value);
+                                    value={customerSearchQuery}
+                                    onChange={handleCustomerSearch}
+                                    onFocus={() => {
+                                        setShowCustomerDropdown(true);
+                                        if (selectedCustomer) {
+                                            setCustomerSearchQuery('');
+                                            setSelectedCustomer(null);
+                                            setCustomerName('');
+                                            setMobileNumber('');
+                                            setIsNewCustomer(false);
+                                        }
+                                        if (!customerSearchQuery && customers.length > 0) {
+                                            setShowCustomerDropdown(true);
                                         }
                                     }}
-                                    placeholder="Enter 10-digit mobile number"
-                                    maxLength="10"
-                                    disabled={isSubmitting}
-                                    className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                    placeholder="Search by customer name or mobile number"
+                                    disabled={isSubmitting || loadingCustomers}
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-xs"
                                 />
                             </div>
+                            {showCustomerDropdown && filteredCustomers.length > 0 && (
+                                <div
+                                    ref={customerDropdownRef}
+                                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto"
+                                >
+                                    {filteredCustomers.map(customer => (
+                                        <div
+                                            key={customer.id}
+                                            onClick={() => handleCustomerSelect(customer)}
+                                            className="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                        >
+                                            <div className="font-medium text-gray-900 text-xs">
+                                                {customer.name || customer.full_name || 'N/A'}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                {customer.mobile || customer.mobile_number || 'N/A'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div
+                                        onClick={handleAddNewCustomer}
+                                        className="px-4 py-2 hover:bg-primary-50 cursor-pointer border-t border-gray-200 bg-gray-50"
+                                    >
+                                        <div className="font-medium text-primary-600 text-xs flex items-center gap-2">
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Add New Number
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {showCustomerDropdown && customerSearchQuery && filteredCustomers.length === 0 && (
+                                <div
+                                    ref={customerDropdownRef}
+                                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg"
+                                >
+                                    <div className="px-4 py-2 text-gray-500 text-xs">
+                                        No customers found
+                                    </div>
+                                    <div
+                                        onClick={handleAddNewCustomer}
+                                        className="px-4 py-2 hover:bg-primary-50 cursor-pointer border-t border-gray-200 bg-gray-50"
+                                    >
+                                        <div className="font-medium text-primary-600 text-xs flex items-center gap-2">
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Add New Number
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Customer Name and Mobile (shown when customer selected or new customer) */}
+                        {(selectedCustomer || isNewCustomer || customerName || mobileNumber) && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Customer Name <span className="text-gray-400 text-xs">(Optional)</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={customerName}
+                                        onChange={(e) => setCustomerName(e.target.value)}
+                                        placeholder="Enter customer name (optional)"
+                                        disabled={isSubmitting || (selectedCustomer && !isNewCustomer)}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Mobile Number <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={mobileNumber}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                                            if (value.length <= 10) {
+                                                setMobileNumber(value);
+                                            }
+                                        }}
+                                        placeholder="Enter 10-digit mobile number"
+                                        maxLength="10"
+                                        disabled={isSubmitting || (selectedCustomer && !isNewCustomer)}
+                                        className="w-full border border-gray-300 rounded px-3 py-2 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !customerName.trim() || !mobileNumber.trim()}
+                                disabled={isSubmitting || !mobileNumber.trim() || loadingCustomers}
                                 className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
                             >
                                 <Plus className="w-3.5 h-3.5" />
