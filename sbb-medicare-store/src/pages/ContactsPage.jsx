@@ -444,7 +444,14 @@ export default function ContactsPage() {
                                         const orderDateObj = orderCreatedDate ? new Date(orderCreatedDate) : null;
                                         
                                         return (
-                                            <tr key={customer.registry_id || index} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                            <tr 
+                                                key={customer.registry_id || index} 
+                                                className={`transition-colors border-b border-gray-100 ${
+                                                    hasOrder 
+                                                        ? 'bg-green-50 hover:bg-green-100' 
+                                                        : 'bg-white hover:bg-primary-50'
+                                                }`}
+                                            >
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 text-center">
                                                     {index + 1}
                                                 </td>
