@@ -19,6 +19,24 @@ export default function CustomersPage() {
         loadCustomers();
     }, []);
 
+    // Handle Escape key to close Customer Details Modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showViewModal) {
+                setShowViewModal(false);
+                setCustomerOrders([]);
+            }
+        };
+
+        if (showViewModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showViewModal]);
+
     const loadCustomers = async () => {
         try {
             setLoading(true);

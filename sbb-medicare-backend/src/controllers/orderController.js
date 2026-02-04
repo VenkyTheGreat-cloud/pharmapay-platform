@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
+const ReturnItem = require('../models/ReturnItem');
 const Customer = require('../models/Customer');
 const DeliveryBoy = require('../models/DeliveryBoy');
 const LocationUpdate = require('../models/LocationUpdate');
@@ -100,10 +101,11 @@ exports.getAllOrders = async (req, res, next) => {
         const orders = await Order.findAll(filters);
         const total = await Order.count(filters);
 
-        // Get payment summary and items for each order
+        // Get payment summary, items, and return items for each order
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             try {
                 const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
                 return {
                     ...order,
@@ -114,6 +116,11 @@ exports.getAllOrders = async (req, res, next) => {
                         price: parseFloat(item.price),
                         total: parseFloat(item.total)
                     })) : [],
+                    return_items_list: returnItemsList.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity
+                    })),
                     payment_summary: paymentSummary || {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -129,6 +136,7 @@ exports.getAllOrders = async (req, res, next) => {
                 return {
                     ...order,
                     items: [],
+                    return_items_list: [],
                     payment_summary: {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -174,10 +182,16 @@ exports.getTodayOrders = async (req, res, next) => {
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             try {
                 const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
                 return {
                     ...order,
                     items: items || [],
+                    return_items_list: returnItemsList.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity
+                    })),
                     payment_summary: paymentSummary || {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -192,6 +206,7 @@ exports.getTodayOrders = async (req, res, next) => {
                 return {
                     ...order,
                     items: [],
+                    return_items_list: [],
                     payment_summary: {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -281,12 +296,18 @@ exports.getOngoingOrders = async (req, res, next) => {
             });
             const ordersWithDetails = await Promise.all(orders.map(async (order) => {
                 const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
                 const isFullyPaid = paymentSummary?.is_fully_paid || false;
 
                 return { 
                     ...order, 
                     items,
+                    return_items_list: returnItemsList.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity
+                    })),
                     payment_summary: paymentSummary,
                     // Frontend can use this flag to hide the "collect payment" option
                     can_collect_payment: !isFullyPaid,
@@ -303,7 +324,16 @@ exports.getOngoingOrders = async (req, res, next) => {
 
         const ordersWithItems = await Promise.all(orders.map(async (order) => {
             const items = await OrderItem.findByOrderId(order.id);
-            return { ...order, items };
+            const returnItemsList = await ReturnItem.findByOrderId(order.id);
+            return { 
+                ...order, 
+                items,
+                return_items_list: returnItemsList.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity
+                }))
+            };
         }));
 
         res.json(successResponse({ orders: ordersWithItems, count: ordersWithItems.length }));
@@ -326,6 +356,7 @@ exports.getOrderById = async (req, res, next) => {
         }
 
         const items = await OrderItem.findByOrderId(order.id);
+        const returnItemsList = await ReturnItem.findByOrderId(order.id);
         const paymentSummary = await Payment.getPaymentSummary(order.id);
         const payments = await Payment.findByOrderId(order.id);
 
@@ -352,6 +383,11 @@ exports.getOrderById = async (req, res, next) => {
                 quantity: item.quantity,
                 price: parseFloat(item.price),
                 total: parseFloat(item.total)
+            })),
+            return_items_list: returnItemsList.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity
             })),
             payment_summary: paymentSummary,
             payments: payments,
@@ -382,6 +418,7 @@ exports.updateOrder = async (req, res, next) => {
             notes,
             customerComments,
             returnItems,
+            returnItemsList,
             returnAdjustAmount
         } = req.body;
 
@@ -488,7 +525,36 @@ exports.updateOrder = async (req, res, next) => {
             updates.customer_comments = customerComments ? customerComments.trim() : null;
         }
 
-        if (returnItems !== undefined) {
+        // Handle return items: support both legacy boolean and new array format
+        let returnItemsArray = [];
+        let shouldUpdateReturnItems = false;
+        
+        if (returnItemsList !== undefined) {
+            // New format: array of return items
+            if (returnItemsList === null || (Array.isArray(returnItemsList) && returnItemsList.length === 0)) {
+                // Clear return items
+                returnItemsArray = [];
+                updates.return_items = false;
+                updates.return_adjust_amount = 0;
+                shouldUpdateReturnItems = true;
+            } else if (Array.isArray(returnItemsList) && returnItemsList.length > 0) {
+                // Validate return items array
+                for (const item of returnItemsList) {
+                    if (!item.name || typeof item.name !== 'string' || item.name.trim() === '') {
+                        return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return item name is required and must be a non-empty string'));
+                    }
+                    if (!item.quantity || !Number.isInteger(parseInt(item.quantity)) || parseInt(item.quantity) <= 0) {
+                        return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return item quantity is required and must be a positive integer'));
+                    }
+                }
+                returnItemsArray = returnItemsList;
+                updates.return_items = true;
+                shouldUpdateReturnItems = true;
+            } else {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return items list must be an array'));
+            }
+        } else if (returnItems !== undefined) {
+            // Legacy boolean format
             const returnItemsFlag = returnItems === true || returnItems === 'true' || returnItems === 1;
             updates.return_items = returnItemsFlag;
         }
@@ -519,14 +585,36 @@ exports.updateOrder = async (req, res, next) => {
             
             updates.return_adjust_amount = returnAdjustAmountNum;
         }
+        
+        // If returnItemsList is provided but returnAdjustAmount is not, validate
+        if (shouldUpdateReturnItems && returnItemsArray.length > 0) {
+            const currentReturnAdjustAmount = updates.return_adjust_amount !== undefined 
+                ? updates.return_adjust_amount 
+                : parseFloat(order.return_adjust_amount || 0);
+            
+            if (currentReturnAdjustAmount <= 0) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be provided and greater than 0 when return items list is provided'));
+            }
+        }
 
         // If no updates provided
-        if (Object.keys(updates).length === 0) {
+        if (Object.keys(updates).length === 0 && !shouldUpdateReturnItems) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
         }
 
         // Update order
         const updatedOrder = await Order.update(orderId, updates);
+        
+        // Update return items if provided
+        if (shouldUpdateReturnItems) {
+            // Delete existing return items
+            await ReturnItem.deleteByOrderId(orderId);
+            
+            // Insert new return items if any
+            if (returnItemsArray.length > 0) {
+                await ReturnItem.createMany(orderId, returnItemsArray);
+            }
+        }
 
         logger.info('Order updated', {
             orderId,
@@ -534,13 +622,19 @@ exports.updateOrder = async (req, res, next) => {
             updatedFields: Object.keys(updates)
         });
 
-        // Get order items and payment summary for response
+        // Get order items, return items, and payment summary for response
         const items = await OrderItem.findByOrderId(updatedOrder.id);
+        const returnItemsList = await ReturnItem.findByOrderId(updatedOrder.id);
         const paymentSummary = await Payment.getPaymentSummary(updatedOrder.id);
 
         res.json(successResponse({
             ...updatedOrder,
             items,
+            return_items_list: returnItemsList.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity
+            })),
             payment_summary: paymentSummary
         }, 'Order updated successfully'));
     } catch (error) {
@@ -577,7 +671,8 @@ exports.createOrder = async (req, res, next) => {
             paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, BANK_TRANSFER)
             transactionReference, // Optional: Transaction reference
             customerComments,
-            returnItems,          // Optional: Boolean indicating if there are return items
+            returnItems,          // Optional: Boolean indicating if there are return items (legacy) OR array of return items
+            returnItemsList,      // Optional: Array of return items [{name, quantity}]
             returnAdjustAmount    // Optional: Amount to be deducted from total due to return items
         } = req.body;
         const storeId = req.user.userId;
@@ -594,7 +689,30 @@ exports.createOrder = async (req, res, next) => {
 
         const totalAmountNum = parseFloat(totalAmount);
         const paidAmountNum = paidAmount ? parseFloat(paidAmount) : 0;
-        const returnItemsFlag = returnItems === true || returnItems === 'true' || returnItems === 1;
+        
+        // Handle return items: support both legacy boolean and new array format
+        let returnItemsArray = [];
+        let returnItemsFlag = false;
+        
+        // If returnItemsList is provided (new format), use it
+        if (returnItemsList && Array.isArray(returnItemsList) && returnItemsList.length > 0) {
+            returnItemsArray = returnItemsList;
+            returnItemsFlag = true;
+            
+            // Validate return items array
+            for (const item of returnItemsArray) {
+                if (!item.name || typeof item.name !== 'string' || item.name.trim() === '') {
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return item name is required and must be a non-empty string'));
+                }
+                if (!item.quantity || !Number.isInteger(parseInt(item.quantity)) || parseInt(item.quantity) <= 0) {
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return item quantity is required and must be a positive integer'));
+                }
+            }
+        } else if (returnItems === true || returnItems === 'true' || returnItems === 1) {
+            // Legacy boolean format
+            returnItemsFlag = true;
+        }
+        
         const returnAdjustAmountNum = returnAdjustAmount ? parseFloat(returnAdjustAmount) : 0;
 
         // Validate return adjust amount
@@ -606,9 +724,14 @@ exports.createOrder = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount cannot exceed total amount'));
         }
 
-        // If returnItems is true, returnAdjustAmount should be > 0
+        // If returnItems is true (either from array or boolean), returnAdjustAmount should be > 0
         if (returnItemsFlag && returnAdjustAmountNum <= 0) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items is true'));
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items are present'));
+        }
+        
+        // If returnItemsList is provided, returnAdjustAmount should also be provided
+        if (returnItemsArray.length > 0 && returnAdjustAmountNum <= 0) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be provided when return items list is provided'));
         }
 
         // Calculate adjusted total (total_amount - return_adjust_amount)
@@ -735,6 +858,25 @@ exports.createOrder = async (req, res, next) => {
                 }
             }
 
+            // Create return items if provided
+            if (returnItemsArray.length > 0) {
+                const returnItemsValues = [];
+                const returnItemsPlaceholders = [];
+                let returnItemsParamCount = 1;
+
+                returnItemsArray.forEach((item) => {
+                    returnItemsPlaceholders.push(`($${returnItemsParamCount}, $${returnItemsParamCount + 1}, $${returnItemsParamCount + 2})`);
+                    returnItemsValues.push(order.id, item.name.trim(), parseInt(item.quantity));
+                    returnItemsParamCount += 3;
+                });
+
+                await client.query(
+                    `INSERT INTO return_items (order_id, name, quantity)
+                     VALUES ${returnItemsPlaceholders.join(', ')}`,
+                    returnItemsValues
+                );
+            }
+
             // Create status history
             const statusNotes = paidAmountNum > 0 
                 ? `Order created and assigned. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
@@ -751,6 +893,9 @@ exports.createOrder = async (req, res, next) => {
 
         // Calculate payment summary
         const paymentSummary = await Payment.getPaymentSummary(order.id);
+        
+        // Get return items
+        const returnItemsList = await ReturnItem.findByOrderId(order.id);
 
         // Send push notification to all delivery boys under admin
         logger.info('About to send push notification for new order', {
@@ -796,6 +941,11 @@ exports.createOrder = async (req, res, next) => {
 
         res.status(201).json(successResponse({
             ...order,
+            return_items_list: returnItemsList.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity
+            })),
             payment_summary: paymentSummary
         }, 'Order created successfully'));
     } catch (error) {
@@ -1162,10 +1312,11 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
         const orders = await Order.getPendingOrdersTillYesterday(filters);
         const total = await Order.countPendingOrdersTillYesterday(filters);
 
-        // Get payment summary and items for each order (same format as getAllOrders)
+        // Get payment summary, items, and return items for each order (same format as getAllOrders)
         const ordersWithDetails = await Promise.all(orders.map(async (order) => {
             try {
                 const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
                 const paymentSummary = await Payment.getPaymentSummary(order.id);
                 return {
                     ...order,
@@ -1176,6 +1327,11 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
                         price: parseFloat(item.price),
                         total: parseFloat(item.total)
                     })) : [],
+                    return_items_list: returnItemsList.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity
+                    })),
                     payment_summary: paymentSummary || {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -1191,6 +1347,7 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
                 return {
                     ...order,
                     items: [],
+                    return_items_list: [],
                     payment_summary: {
                         total_amount: parseFloat(order.total_amount || 0),
                         return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
@@ -1226,7 +1383,16 @@ exports.getOrdersByCustomerMobile = async (req, res, next) => {
 
         const ordersWithItems = await Promise.all(orders.map(async (order) => {
             const items = await OrderItem.findByOrderId(order.id);
-            return { ...order, items };
+            const returnItemsList = await ReturnItem.findByOrderId(order.id);
+            return { 
+                ...order, 
+                items,
+                return_items_list: returnItemsList.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity
+                }))
+            };
         }));
 
         res.json(successResponse(ordersWithItems));

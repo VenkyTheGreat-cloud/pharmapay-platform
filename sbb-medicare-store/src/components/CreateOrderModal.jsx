@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ordersAPI, customersAPI } from '../services/api';
-import { X, Search } from 'lucide-react';
+import { X, Search, Plus, Trash2 } from 'lucide-react';
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
@@ -24,6 +24,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [returnItemsList, setReturnItemsList] = useState([{ name: '', quantity: '' }]);
 
     useEffect(() => {
         if (isOpen) {
@@ -35,8 +36,26 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             setCustomerSearchQuery('');
             setSelectedCustomerName('');
             setShowCustomerDropdown(false);
+            setReturnItemsList([{ name: '', quantity: '' }]);
         }
     }, [isOpen]);
+
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen && !isSubmitting) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, isSubmitting, onClose]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -80,12 +99,45 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             setFormData(prev => ({ ...prev, [name]: limitedValue }));
         } else if (type === 'checkbox') {
             setFormData(prev => ({ ...prev, [name]: checked }));
+            // Reset return items list when checkbox is unchecked
+            if (name === 'returnItems' && !checked) {
+                setReturnItemsList([{ name: '', quantity: '' }]);
+            }
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
         
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    // Handle return items list changes
+    const handleReturnItemChange = (index, field, value) => {
+        const updatedList = [...returnItemsList];
+        updatedList[index] = { ...updatedList[index], [field]: value };
+        setReturnItemsList(updatedList);
+        
+        // Clear errors for return items
+        if (errors.returnItemsList) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.returnItemsList;
+                return newErrors;
+            });
+        }
+    };
+
+    // Add new return item entry
+    const handleAddReturnItem = () => {
+        setReturnItemsList([...returnItemsList, { name: '', quantity: '' }]);
+    };
+
+    // Remove return item entry
+    const handleRemoveReturnItem = (index) => {
+        if (returnItemsList.length > 1) {
+            const updatedList = returnItemsList.filter((_, i) => i !== index);
+            setReturnItemsList(updatedList);
         }
     };
 
@@ -170,8 +222,28 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             newErrors.paidAmount = `Paid Amount cannot be greater than Adjusted Total Amount (₹${adjustedTotal.toFixed(2)})`;
         }
 
-        // Validate return adjust amount if return items is checked
+        // Validate return items list if return items is checked
         if (formData.returnItems) {
+            // Validate return items list
+            const validItems = returnItemsList.filter(item => 
+                item.name && item.name.trim() && item.quantity && parseFloat(item.quantity) > 0
+            );
+            
+            if (validItems.length === 0) {
+                newErrors.returnItemsList = 'At least one return item with medicine name and quantity is required';
+            } else {
+                // Validate each item
+                returnItemsList.forEach((item, index) => {
+                    if (!item.name || !item.name.trim()) {
+                        newErrors[`returnItemName_${index}`] = 'Medicine name is required';
+                    }
+                    if (!item.quantity || parseFloat(item.quantity) <= 0) {
+                        newErrors[`returnItemQty_${index}`] = 'Quantity must be greater than 0';
+                    }
+                });
+            }
+
+            // Validate return adjust amount
             if (!formData.returnAdjustAmount || parseFloat(formData.returnAdjustAmount) <= 0) {
                 newErrors.returnAdjustAmount = 'Return Adjust Amount is required when Return Items is checked';
             } else if (parseFloat(formData.returnAdjustAmount) > totalAmount) {
@@ -222,10 +294,23 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 submitData.customerComments = formData.customerComments.trim();
             }
 
-            // Add returnItems and returnAdjustAmount
-            submitData.returnItems = formData.returnItems;
-            if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0) {
-                submitData.returnAdjustAmount = parseFloat(formData.returnAdjustAmount);
+            // Add returnItemsList and returnAdjustAmount
+            if (formData.returnItems) {
+                // Filter out empty items and format the list
+                const validReturnItems = returnItemsList
+                    .filter(item => item.name && item.name.trim() && item.quantity && parseFloat(item.quantity) > 0)
+                    .map(item => ({
+                        name: item.name.trim(),
+                        quantity: parseInt(item.quantity) || parseFloat(item.quantity)
+                    }));
+                
+                if (validReturnItems.length > 0) {
+                    submitData.returnItemsList = validReturnItems;
+                }
+                
+                if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0) {
+                    submitData.returnAdjustAmount = parseFloat(formData.returnAdjustAmount);
+                }
             }
 
             await ordersAPI.create(submitData);
@@ -244,6 +329,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 returnItems: false,
                 returnAdjustAmount: ''
             });
+            setReturnItemsList([{ name: '', quantity: '' }]);
             setErrors({});
             setCustomerSearchQuery('');
             setSelectedCustomerName('');
@@ -536,6 +622,80 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     </span>
                                 </label>
                             </div>
+
+                            {/* Return Items List */}
+                            {formData.returnItems && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="block text-xs font-medium text-gray-600">
+                                            Return Items List <span className="text-red-500">*</span>
+                                        </label>
+                                        {errors.returnItemsList && (
+                                            <p className="text-red-500 text-xs">{errors.returnItemsList}</p>
+                                        )}
+                                    </div>
+                                    
+                                    {returnItemsList.map((item, index) => (
+                                        <div key={index} className="flex gap-2 items-start">
+                                            <div className="flex-1 grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        value={item.name}
+                                                        onChange={(e) => handleReturnItemChange(index, 'name', e.target.value)}
+                                                        placeholder="Medicine Name"
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                                            errors[`returnItemName_${index}`] ? 'border-red-500' : 'border-gray-300'
+                                                        }`}
+                                                        disabled={isSubmitting}
+                                                    />
+                                                    {errors[`returnItemName_${index}`] && (
+                                                        <p className="text-red-500 text-xs mt-1">{errors[`returnItemName_${index}`]}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <input
+                                                        type="number"
+                                                        value={item.quantity}
+                                                        onChange={(e) => handleReturnItemChange(index, 'quantity', e.target.value)}
+                                                        placeholder="Quantity"
+                                                        min="1"
+                                                        step="1"
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                                            errors[`returnItemQty_${index}`] ? 'border-red-500' : 'border-gray-300'
+                                                        }`}
+                                                        disabled={isSubmitting}
+                                                    />
+                                                    {errors[`returnItemQty_${index}`] && (
+                                                        <p className="text-red-500 text-xs mt-1">{errors[`returnItemQty_${index}`]}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {returnItemsList.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveReturnItem(index)}
+                                                    className="mt-0.5 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                                                    disabled={isSubmitting}
+                                                    title="Remove item"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={handleAddReturnItem}
+                                        className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                                        disabled={isSubmitting}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add More
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Return Adjust Amount */}
                             {formData.returnItems && (

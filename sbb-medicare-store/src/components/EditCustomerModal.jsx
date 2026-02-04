@@ -101,6 +101,23 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
         }
     };
 
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen && !isSubmitting) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, isSubmitting, onClose]);
+
     if (!isOpen || !customer) return null;
 
     return (

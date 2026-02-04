@@ -66,6 +66,23 @@ export default function DashboardPage() {
         loadOrders();
     }, [selectedDate]);
 
+    // Handle Escape key to close Order Details Modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showViewModal) {
+                setShowViewModal(false);
+            }
+        };
+
+        if (showViewModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showViewModal]);
+
     const loadOrders = async () => {
         try {
             setLoading(true);
