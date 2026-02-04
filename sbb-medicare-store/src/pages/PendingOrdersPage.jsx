@@ -436,6 +436,39 @@ export default function PendingOrdersPage() {
                                                         {selectedOrder.returnItems || selectedOrder.return_items ? 'Yes' : 'No'}
                                                     </span>
                                                 </div>
+                                                
+                                                {/* Return Items List */}
+                                                {(selectedOrder.returnItems || selectedOrder.return_items) && 
+                                                 (selectedOrder.returnItemsList || selectedOrder.return_items_list) && 
+                                                 Array.isArray(selectedOrder.returnItemsList || selectedOrder.return_items_list) && 
+                                                 (selectedOrder.returnItemsList || selectedOrder.return_items_list).length > 0 && (
+                                                    <div className="pt-3 border-t">
+                                                        <h4 className="text-sm font-semibold text-gray-900 mb-2">Return Items List</h4>
+                                                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                            <table className="min-w-full divide-y divide-gray-200">
+                                                                <thead className="bg-gray-50">
+                                                                    <tr>
+                                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase">Medicine Name</th>
+                                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase">Quantity</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                                    {(selectedOrder.returnItemsList || selectedOrder.return_items_list).map((item, index) => (
+                                                                        <tr key={index} className="hover:bg-gray-50">
+                                                                            <td className="px-3 py-2 text-sm text-gray-900">
+                                                                                {item.name || 'N/A'}
+                                                                            </td>
+                                                                            <td className="px-3 py-2 text-sm text-gray-900">
+                                                                                {item.quantity || 'N/A'}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
                                                 {(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) && (
                                                     <div className="flex justify-between items-center pt-2 border-t">
                                                         <span className="text-sm font-medium text-gray-700">Return Adjust Amount</span>
