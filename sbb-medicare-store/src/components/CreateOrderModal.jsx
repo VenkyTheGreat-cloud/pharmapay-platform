@@ -25,6 +25,18 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [returnItemsList, setReturnItemsList] = useState([{ name: '', quantity: '' }]);
+    
+    // Customer update modal states
+    const [showCustomerUpdateModal, setShowCustomerUpdateModal] = useState(false);
+    const [customerToUpdate, setCustomerToUpdate] = useState(null);
+    const [customerUpdateData, setCustomerUpdateData] = useState({
+        name: '',
+        mobile: '',
+        area: '',
+        address: ''
+    });
+    const [customerUpdateErrors, setCustomerUpdateErrors] = useState({});
+    const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -43,19 +55,26 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     // Handle Escape key to close modal
     useEffect(() => {
         const handleEscape = (e) => {
-            if (e.key === 'Escape' && isOpen && !isSubmitting) {
-                onClose();
+            if (e.key === 'Escape') {
+                if (showCustomerUpdateModal && !isUpdatingCustomer) {
+                    setShowCustomerUpdateModal(false);
+                    setCustomerToUpdate(null);
+                    setCustomerUpdateData({ name: '', mobile: '', area: '', address: '' });
+                    setCustomerUpdateErrors({});
+                } else if (isOpen && !isSubmitting) {
+                    onClose();
+                }
             }
         };
 
-        if (isOpen) {
+        if (isOpen || showCustomerUpdateModal) {
             document.addEventListener('keydown', handleEscape);
         }
 
         return () => {
             document.removeEventListener('keydown', handleEscape);
         };
-    }, [isOpen, isSubmitting, onClose]);
+    }, [isOpen, isSubmitting, showCustomerUpdateModal, isUpdatingCustomer, onClose]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -161,12 +180,126 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     };
 
     const handleCustomerSelect = (customer) => {
-        setFormData(prev => ({ ...prev, customerId: customer.id.toString() }));
-        setSelectedCustomerName(`${customer.name || customer.full_name} - ${customer.mobile || customer.mobile_number}`);
-        setCustomerSearchQuery('');
-        setShowCustomerDropdown(false);
-        if (errors.customerId) {
-            setErrors(prev => ({ ...prev, customerId: '' }));
+        // Check if customer has area name
+        const area = customer.area || customer.areaName || customer.area_name || '';
+        const address = customer.address || '';
+        
+        if (!area || !area.trim()) {
+            // Show update modal if area is missing
+            setCustomerToUpdate(customer);
+            setCustomerUpdateData({
+                name: customer.name || customer.full_name || '',
+                mobile: customer.mobile || customer.mobile_number || '',
+                area: area,
+                address: address
+            });
+            setShowCustomerUpdateModal(true);
+            setShowCustomerDropdown(false);
+        } else {
+            // Customer has area, proceed with selection
+            setFormData(prev => ({ ...prev, customerId: customer.id.toString() }));
+            setSelectedCustomerName(`${customer.name || customer.full_name} - ${customer.mobile || customer.mobile_number}`);
+            setCustomerSearchQuery('');
+            setShowCustomerDropdown(false);
+            if (errors.customerId) {
+                setErrors(prev => ({ ...prev, customerId: '' }));
+            }
+        }
+    };
+
+    const handleCustomerUpdateChange = (e) => {
+        const { name, value } = e.target;
+        setCustomerUpdateData(prev => ({ ...prev, [name]: value }));
+        if (customerUpdateErrors[name]) {
+            setCustomerUpdateErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const validateCustomerUpdate = () => {
+        const newErrors = {};
+
+        if (!customerUpdateData.name.trim()) {
+            newErrors.name = 'Customer name is required';
+        }
+
+        if (!customerUpdateData.mobile.trim()) {
+            newErrors.mobile = 'Mobile number is required';
+        } else if (!/^\d{10}$/.test(customerUpdateData.mobile.trim())) {
+            newErrors.mobile = 'Mobile number must be 10 digits';
+        }
+
+        if (!customerUpdateData.area.trim()) {
+            newErrors.area = 'Area name is required';
+        }
+
+        if (!customerUpdateData.address.trim()) {
+            newErrors.address = 'Address is required';
+        }
+
+        return newErrors;
+    };
+
+    const handleCustomerUpdateSubmit = async (e) => {
+        e.preventDefault();
+
+        const validationErrors = validateCustomerUpdate();
+        if (Object.keys(validationErrors).length > 0) {
+            setCustomerUpdateErrors(validationErrors);
+            return;
+        }
+
+        try {
+            setIsUpdatingCustomer(true);
+            
+            const updateData = {
+                name: customerUpdateData.name.trim(),
+                mobile: customerUpdateData.mobile.trim(),
+                address: customerUpdateData.address.trim(),
+                area: customerUpdateData.area.trim(),
+                landmark: customerToUpdate?.landmark || null,
+                customerLat: customerToUpdate?.customerLat || customerToUpdate?.customer_lat || customerToUpdate?.latitude || null,
+                customerLng: customerToUpdate?.customerLng || customerToUpdate?.customer_lng || customerToUpdate?.longitude || null
+            };
+
+            await customersAPI.update(customerToUpdate.id, updateData);
+            
+            // Create updated customer object
+            const refreshedCustomer = {
+                ...customerToUpdate,
+                name: updateData.name,
+                mobile: updateData.mobile,
+                area: updateData.area,
+                areaName: updateData.area,
+                area_name: updateData.area,
+                address: updateData.address
+            };
+            
+            // Update the customer in the customers list
+            setCustomers(prevCustomers => 
+                prevCustomers.map(c => 
+                    c.id === customerToUpdate.id ? refreshedCustomer : c
+                )
+            );
+            
+            // Now proceed with customer selection
+            setFormData(prev => ({ ...prev, customerId: refreshedCustomer.id.toString() }));
+            setSelectedCustomerName(`${refreshedCustomer.name || refreshedCustomer.full_name} - ${refreshedCustomer.mobile || refreshedCustomer.mobile_number}`);
+            setCustomerSearchQuery('');
+            setShowCustomerUpdateModal(false);
+            setCustomerToUpdate(null);
+            setCustomerUpdateData({ name: '', mobile: '', area: '', address: '' });
+            setCustomerUpdateErrors({});
+            
+            if (errors.customerId) {
+                setErrors(prev => ({ ...prev, customerId: '' }));
+            }
+            
+            alert('Customer details updated successfully!');
+        } catch (error) {
+            console.error('Error updating customer:', error);
+            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating customer. Please try again.');
+        } finally {
+            setIsUpdatingCustomer(false);
         }
     };
 
@@ -744,6 +877,140 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                     )}
                 </div>
             </div>
+
+            {/* Customer Update Modal */}
+            {showCustomerUpdateModal && customerToUpdate && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={(e) => e.target === e.currentTarget && setShowCustomerUpdateModal(false)}>
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+                        <div className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-800">Update Customer Details</h2>
+                                    <p className="text-xs text-gray-600 mt-1">Please provide area name and address for this customer</p>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowCustomerUpdateModal(false);
+                                        setCustomerToUpdate(null);
+                                        setCustomerUpdateData({ name: '', mobile: '', area: '', address: '' });
+                                        setCustomerUpdateErrors({});
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                    disabled={isUpdatingCustomer}
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleCustomerUpdateSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Customer Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={customerUpdateData.name}
+                                        onChange={handleCustomerUpdateChange}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                            customerUpdateErrors.name ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        placeholder="Enter customer name"
+                                        disabled={isUpdatingCustomer}
+                                    />
+                                    {customerUpdateErrors.name && (
+                                        <p className="text-red-500 text-xs mt-1">{customerUpdateErrors.name}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Mobile Number <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="mobile"
+                                        value={customerUpdateData.mobile}
+                                        onChange={handleCustomerUpdateChange}
+                                        maxLength="10"
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                            customerUpdateErrors.mobile ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        placeholder="10-digit mobile number"
+                                        disabled={isUpdatingCustomer}
+                                    />
+                                    {customerUpdateErrors.mobile && (
+                                        <p className="text-red-500 text-xs mt-1">{customerUpdateErrors.mobile}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Area Name <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="area"
+                                        value={customerUpdateData.area}
+                                        onChange={handleCustomerUpdateChange}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                            customerUpdateErrors.area ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        placeholder="Enter area name"
+                                        disabled={isUpdatingCustomer}
+                                    />
+                                    {customerUpdateErrors.area && (
+                                        <p className="text-red-500 text-xs mt-1">{customerUpdateErrors.area}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                        Address <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        name="address"
+                                        value={customerUpdateData.address}
+                                        onChange={handleCustomerUpdateChange}
+                                        rows="3"
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
+                                            customerUpdateErrors.address ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                        placeholder="Enter complete address"
+                                        disabled={isUpdatingCustomer}
+                                    />
+                                    {customerUpdateErrors.address && (
+                                        <p className="text-red-500 text-xs mt-1">{customerUpdateErrors.address}</p>
+                                    )}
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isUpdatingCustomer}
+                                        className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed transition-all shadow-md text-xs font-medium"
+                                    >
+                                        {isUpdatingCustomer ? 'Updating...' : 'Update & Continue'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowCustomerUpdateModal(false);
+                                            setCustomerToUpdate(null);
+                                            setCustomerUpdateData({ name: '', mobile: '', area: '', address: '' });
+                                            setCustomerUpdateErrors({});
+                                        }}
+                                        disabled={isUpdatingCustomer}
+                                        className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 disabled:cursor-not-allowed text-xs font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -8,6 +8,7 @@ const Payment = require('../models/Payment');
 const logger = require('../config/logger');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
 const { query, transaction } = require('../config/database');
+const ExcelJS = require('exceljs');
 
 // Helper: normalize incoming date string to YYYY-MM-DD (for consistent filtering)
 const normalizeDateParam = (rawDate) => {
@@ -894,8 +895,8 @@ exports.createOrder = async (req, res, next) => {
         // Calculate payment summary
         const paymentSummary = await Payment.getPaymentSummary(order.id);
         
-        // Get return items
-        const returnItemsList = await ReturnItem.findByOrderId(order.id);
+        // Get return items from database
+        const returnItemsFromDb = await ReturnItem.findByOrderId(order.id);
 
         // Send push notification to all delivery boys under admin
         logger.info('About to send push notification for new order', {
@@ -941,7 +942,7 @@ exports.createOrder = async (req, res, next) => {
 
         res.status(201).json(successResponse({
             ...order,
-            return_items_list: returnItemsList.map(item => ({
+            return_items_list: returnItemsFromDb.map(item => ({
                 id: item.id,
                 name: item.name,
                 quantity: item.quantity
@@ -1461,6 +1462,261 @@ exports.getDashboardStats = async (req, res, next) => {
             })
         );
     } catch (error) {
+        next(error);
+    }
+};
+
+// Export orders to Excel
+exports.exportOrdersToExcel = async (req, res, next) => {
+    try {
+        const { date, date_from, date_to, from_time, to_time } = req.query;
+
+        let dateFrom, dateTo;
+
+        // Support both formats: single date with time range OR date range
+        if (date) {
+            // Single date with time range format
+            if (!from_time || !to_time) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'date, from_time, and to_time are required (format: date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM)'));
+            }
+
+            const normalizedDate = normalizeDateParam(date);
+            if (!normalizedDate) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid date format. Use YYYY-MM-DD'));
+            }
+
+            // Validate time format (HH:MM or HH:MM:SS)
+            const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9](:([0-5][0-9]))?$/;
+            if (!timeRegex.test(from_time) || !timeRegex.test(to_time)) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid time format. Use HH:MM or HH:MM:SS (24-hour format)'));
+            }
+
+            // Combine date with time
+            dateFrom = `${normalizedDate} ${from_time}`;
+            dateTo = `${normalizedDate} ${to_time}`;
+
+            // If from_time is greater than to_time, assume to_time is next day
+            const fromTimeParts = from_time.split(':').map(Number);
+            const toTimeParts = to_time.split(':').map(Number);
+            const fromMinutes = fromTimeParts[0] * 60 + fromTimeParts[1];
+            const toMinutes = toTimeParts[0] * 60 + toTimeParts[1];
+
+            if (toMinutes <= fromMinutes) {
+                // to_time is on the next day
+                const nextDay = new Date(normalizedDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                const nextDayStr = nextDay.toISOString().split('T')[0];
+                dateTo = `${nextDayStr} ${to_time}`;
+            }
+        } else if (date_from && date_to) {
+            // Date range format (backward compatibility)
+            dateFrom = normalizeDateParam(date_from);
+            dateTo = normalizeDateParam(date_to);
+
+            if (!dateFrom || !dateTo) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid date format. Use YYYY-MM-DD'));
+            }
+        } else {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Either (date, from_time, to_time) or (date_from, date_to) are required'));
+        }
+
+        // Store original query params for filename generation
+        const originalDate = date;
+        const originalFromTime = from_time;
+        const originalToTime = to_time;
+
+        // Build filters based on user role
+        const filters = {
+            date_from: dateFrom,
+            date_to: dateTo
+        };
+
+        // Filter based on user role
+        if (req.user.role === 'admin') {
+            // Admin: see orders for all stores in their group
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
+            filters.store_ids = storeIds;
+        } else if (req.user.role === 'store_manager') {
+            // Store manager: use adminId from token to get group
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
+            filters.store_ids = storeIds;
+        }
+
+        // Fetch all orders in the date range (no pagination for export)
+        const orders = await Order.findAll(filters);
+
+        if (!orders || orders.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No orders found for the specified date range'));
+        }
+
+        // Get detailed information for each order
+        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+            try {
+                const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                const payments = await Payment.findByOrderId(order.id);
+
+                return {
+                    ...order,
+                    items: items || [],
+                    return_items_list: returnItemsList || [],
+                    payment_summary: paymentSummary,
+                    payments: payments || []
+                };
+            } catch (err) {
+                logger.error('Error getting order details for export', { orderId: order.id, error: err.message });
+                return {
+                    ...order,
+                    items: [],
+                    return_items_list: [],
+                    payment_summary: {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: parseFloat(order.total_amount || 0),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    },
+                    payments: []
+                };
+            }
+        }));
+
+        // Create Excel workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Orders');
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Order ID', key: 'id', width: 10 },
+            { header: 'Order Number', key: 'order_number', width: 20 },
+            { header: 'Customer Name', key: 'customer_name', width: 25 },
+            { header: 'Customer Phone', key: 'customer_phone', width: 15 },
+            { header: 'Customer Address', key: 'customer_address', width: 40 },
+            { header: 'Store Name', key: 'store_name', width: 25 },
+            { header: 'Delivery Boy', key: 'delivery_boy_name', width: 25 },
+            { header: 'Delivery Boy Mobile', key: 'delivery_boy_mobile', width: 15 },
+            { header: 'Total Amount', key: 'total_amount', width: 15 },
+            { header: 'Return Adjust Amount', key: 'return_adjust_amount', width: 18 },
+            { header: 'Total Paid', key: 'total_paid', width: 15 },
+            { header: 'Remaining Amount', key: 'remaining_amount', width: 18 },
+            { header: 'Payment Status', key: 'payment_status', width: 15 },
+            { header: 'Order Status', key: 'status', width: 15 },
+            { header: 'Payment Mode', key: 'payment_mode', width: 15 },
+            { header: 'Items', key: 'items', width: 50 },
+            { header: 'Return Items', key: 'return_items', width: 50 },
+            { header: 'Order Created At', key: 'created_at', width: 20 },
+            { header: 'Assigned At', key: 'assigned_at', width: 20 },
+            { header: 'Delivered At', key: 'delivered_at', width: 20 },
+            { header: 'Notes', key: 'notes', width: 30 },
+            { header: 'Customer Comments', key: 'customer_comments', width: 30 }
+        ];
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add data rows
+        ordersWithDetails.forEach((order) => {
+            // Format items as string
+            const itemsStr = order.items.map(item => 
+                `${item.name} (Qty: ${item.quantity}, Price: ${item.price}, Total: ${item.total})`
+            ).join('; ');
+
+            // Format return items as string
+            const returnItemsStr = order.return_items_list.map(item => 
+                `${item.name} (Qty: ${item.quantity})`
+            ).join('; ');
+
+            // Format dates
+            const formatDate = (date) => {
+                if (!date) return '';
+                const d = new Date(date);
+                return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            };
+
+            worksheet.addRow({
+                id: order.id,
+                order_number: order.order_number || '',
+                customer_name: order.customer_name || '',
+                customer_phone: order.customer_phone || '',
+                customer_address: order.customer_address || '',
+                store_name: order.store_name || '',
+                delivery_boy_name: order.delivery_boy_name || 'Unassigned',
+                delivery_boy_mobile: order.delivery_boy_mobile || '',
+                total_amount: parseFloat(order.total_amount || 0).toFixed(2),
+                return_adjust_amount: parseFloat(order.return_adjust_amount || 0).toFixed(2),
+                total_paid: parseFloat(order.payment_summary?.total_paid || 0).toFixed(2),
+                remaining_amount: parseFloat(order.payment_summary?.remaining_amount || 0).toFixed(2),
+                payment_status: order.payment_status || 'PENDING',
+                status: order.status || '',
+                payment_mode: order.payment_mode || '',
+                items: itemsStr || 'No items',
+                return_items: returnItemsStr || 'No return items',
+                created_at: formatDate(order.created_at),
+                assigned_at: formatDate(order.assigned_at),
+                delivered_at: formatDate(order.delivered_at),
+                notes: order.notes || '',
+                customer_comments: order.customer_comments || ''
+            });
+        });
+
+        // Format number columns
+        const numberColumns = ['total_amount', 'return_adjust_amount', 'total_paid', 'remaining_amount'];
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) { // Skip header
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        // Generate filename with date range
+        let filename;
+        if (originalDate && originalFromTime && originalToTime) {
+            // Single date with time range format
+            const dateStr = originalDate.replace(/-/g, '');
+            const fromTimeStr = originalFromTime.replace(/:/g, '');
+            const toTimeStr = originalToTime.replace(/:/g, '');
+            filename = `orders_${dateStr}_${fromTimeStr}_to_${toTimeStr}_${new Date().getTime()}.xlsx`;
+        } else {
+            // Date range format
+            filename = `orders_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
+        }
+
+        // Set response headers
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+        // Write to response
+        await workbook.xlsx.write(res);
+        res.end();
+
+        logger.info('Orders exported to Excel', {
+            dateFrom,
+            dateTo,
+            orderCount: ordersWithDetails.length,
+            exportedBy: req.user.userId,
+            userRole: req.user.role
+        });
+
+    } catch (error) {
+        logger.error('Error exporting orders to Excel', {
+            error: error.message,
+            stack: error.stack,
+            query: req.query
+        });
         next(error);
     }
 };

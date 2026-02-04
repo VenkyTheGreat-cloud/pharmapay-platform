@@ -23,6 +23,9 @@ router.get('/ongoing', checkStoreAccess, orderController.getOngoingOrders);
 // Dashboard statistics for date range
 router.get('/dashboard', checkStoreAccess, orderController.getDashboardStats);
 
+// Export orders to Excel (date range)
+router.get('/export/excel', checkStoreAccess, authorizeRoles('admin', 'store_manager'), orderController.exportOrdersToExcel);
+
 // Get order by ID
 router.get('/:id', checkStoreAccess, orderController.getOrderById);
 

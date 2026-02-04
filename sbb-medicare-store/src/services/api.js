@@ -437,6 +437,18 @@ export const ordersAPI = {
         }
         return api.delete(`/orders/${id}`);
     },
+    // GET /orders/export/excel?date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM
+    exportExcel: (params) => {
+        if (API_DISABLED) {
+            // Return a mock blob for testing
+            const mockBlob = new Blob(['Mock Excel Data'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/orders/export/excel', { 
+            params,
+            responseType: 'blob' // Important: Set responseType to 'blob' for file downloads
+        });
+    },
     getByCustomerMobile: (mobile, storeId) => {
         if (API_DISABLED) {
             return mockResolve({

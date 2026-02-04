@@ -11,7 +11,8 @@ import {
     User,
     Store,
     Phone,
-    Clock
+    Clock,
+    FileDown
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -35,6 +36,7 @@ export default function Layout({ children }) {
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
         { name: 'Contacts', href: '/contacts', icon: Phone },
+        { name: 'Reports', href: '/reports', icon: FileDown },
     ];
 
     const isActive = (href) => location.pathname === href;
