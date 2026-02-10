@@ -1695,13 +1695,16 @@ exports.exportOrdersToExcel = async (req, res, next) => {
             filename = `orders_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
         }
 
+        // Write workbook to buffer first to ensure file is complete
+        const buffer = await workbook.xlsx.writeBuffer();
+
         // Set response headers
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', buffer.length);
 
-        // Write to response
-        await workbook.xlsx.write(res);
-        res.end();
+        // Send the buffer
+        res.send(buffer);
 
         logger.info('Orders exported to Excel', {
             dateFrom,
