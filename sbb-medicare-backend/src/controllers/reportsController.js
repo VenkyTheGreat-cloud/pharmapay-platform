@@ -1,6 +1,7 @@
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const ExcelJS = require('exceljs');
 
 // Helper: normalize incoming date string to YYYY-MM-DD
 const normalizeDateParam = (rawDate) => {
@@ -185,6 +186,11 @@ exports.getDeliveryBoyReport = async (req, res, next) => {
             role: req.user.role
         });
 
+        // Check if Excel export is requested
+        if (req.query.format === 'excel') {
+            return exportDeliveryBoyReportToExcel(res, dateFrom, dateTo, deliveryBoys, summary);
+        }
+
         res.json(successResponse({
             date_range: {
                 from_date: dateFrom,
@@ -347,6 +353,11 @@ exports.getCustomerReport = async (req, res, next) => {
             role: req.user.role
         });
 
+        // Check if Excel export is requested
+        if (req.query.format === 'excel') {
+            return exportCustomerReportToExcel(res, dateFrom, dateTo, customers, summary);
+        }
+
         res.json(successResponse({
             date_range: {
                 from_date: dateFrom,
@@ -488,6 +499,11 @@ exports.getReturnItemsReport = async (req, res, next) => {
             requested_by: req.user.userId,
             role: req.user.role
         });
+
+        // Check if Excel export is requested
+        if (req.query.format === 'excel') {
+            return exportReturnItemsReportToExcel(res, dateFrom, dateTo, returnItems, summary);
+        }
 
         res.json(successResponse({
             date_range: {
@@ -659,6 +675,11 @@ exports.getSalesReport = async (req, res, next) => {
             role: req.user.role
         });
 
+        // Check if Excel export is requested
+        if (req.query.format === 'excel') {
+            return exportSalesReportToExcel(res, dateFrom, dateTo, summary, daily_breakdown);
+        }
+
         res.json(successResponse({
             date_range: {
                 from_date: dateFrom,
@@ -675,5 +696,498 @@ exports.getSalesReport = async (req, res, next) => {
             query: req.query
         });
         next(error);
+    }
+};
+
+// Excel export helper functions
+const exportDeliveryBoyReportToExcel = async (res, dateFrom, dateTo, deliveryBoys, summary) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Delivery Boy Report');
+
+        worksheet.columns = [
+            { header: 'Delivery Boy ID', key: 'delivery_boy_id', width: 15 },
+            { header: 'Name', key: 'name', width: 25 },
+            { header: 'Mobile', key: 'mobile', width: 15 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Store Name', key: 'store_name', width: 25 },
+            { header: 'Total Orders', key: 'total_orders', width: 15 },
+            { header: 'Delivered Orders', key: 'delivered_orders', width: 18 },
+            { header: 'Assigned Orders', key: 'assigned_orders', width: 18 },
+            { header: 'Picked Up Orders', key: 'picked_up_orders', width: 18 },
+            { header: 'In Transit Orders', key: 'in_transit_orders', width: 18 },
+            { header: 'Payment Collection', key: 'payment_collection', width: 20 },
+            { header: 'Cancelled Orders', key: 'cancelled_orders', width: 18 },
+            { header: 'Total Order Value', key: 'total_order_value', width: 18 },
+            { header: 'Total Collected', key: 'total_collected', width: 18 },
+            { header: 'Pending Amount', key: 'pending_amount', width: 18 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        deliveryBoys.forEach(db => {
+            worksheet.addRow({
+                delivery_boy_id: db.delivery_boy_id,
+                name: db.delivery_boy_name || '',
+                mobile: db.delivery_boy_mobile || '',
+                email: db.delivery_boy_email || '',
+                store_name: db.store_name || '',
+                total_orders: db.statistics.total_orders,
+                delivered_orders: db.statistics.delivered_orders,
+                assigned_orders: db.statistics.assigned_orders,
+                picked_up_orders: db.statistics.picked_up_orders,
+                in_transit_orders: db.statistics.in_transit_orders,
+                payment_collection: db.statistics.payment_collection_orders,
+                cancelled_orders: db.statistics.cancelled_orders,
+                total_order_value: parseFloat(db.statistics.total_order_value || 0).toFixed(2),
+                total_collected: parseFloat(db.statistics.total_collected_amount || 0).toFixed(2),
+                pending_amount: parseFloat(db.statistics.pending_amount || 0).toFixed(2)
+            });
+        });
+
+        worksheet.addRow({});
+        worksheet.addRow({
+            delivery_boy_id: 'SUMMARY',
+            name: '',
+            mobile: '',
+            email: '',
+            store_name: '',
+            total_orders: summary.total_orders,
+            delivered_orders: summary.total_delivered_orders,
+            assigned_orders: '',
+            picked_up_orders: '',
+            in_transit_orders: '',
+            payment_collection: '',
+            cancelled_orders: '',
+            total_order_value: parseFloat(summary.total_order_value || 0).toFixed(2),
+            total_collected: parseFloat(summary.total_collected_amount || 0).toFixed(2),
+            pending_amount: parseFloat(summary.total_pending_amount || 0).toFixed(2)
+        });
+        worksheet.getRow(worksheet.rowCount).font = { bold: true };
+
+        const numberColumns = ['total_order_value', 'total_collected', 'pending_amount'];
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber < worksheet.rowCount) {
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        const filename = `delivery_boy_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
+
+        let buffer;
+        try {
+            buffer = await workbook.xlsx.writeBuffer();
+        } catch (writeError) {
+            logger.error('Error writing Excel buffer', { error: writeError.message });
+            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+        }
+
+        if (res.headersSent) {
+            logger.error('Headers already sent before Excel export');
+            return;
+        }
+
+        logger.info('Delivery boy report exported to Excel', {
+            dateFrom,
+            dateTo,
+            delivery_boys_count: deliveryBoys.length,
+            fileSize: buffer.length
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        res.end(buffer);
+    } catch (error) {
+        logger.error('Error exporting delivery boy report to Excel', {
+            error: error.message,
+            stack: error.stack
+        });
+        if (!res.headersSent) {
+            res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to export report to Excel'));
+        }
+    }
+};
+
+const exportCustomerReportToExcel = async (res, dateFrom, dateTo, customers, summary) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Customer Report');
+
+        worksheet.columns = [
+            { header: 'Customer ID', key: 'customer_id', width: 15 },
+            { header: 'Name', key: 'name', width: 25 },
+            { header: 'Mobile', key: 'mobile', width: 15 },
+            { header: 'Area', key: 'area', width: 20 },
+            { header: 'Store Name', key: 'store_name', width: 25 },
+            { header: 'Total Orders', key: 'total_orders', width: 15 },
+            { header: 'Delivered Orders', key: 'delivered_orders', width: 18 },
+            { header: 'Cancelled Orders', key: 'cancelled_orders', width: 18 },
+            { header: 'Total Order Value', key: 'total_order_value', width: 18 },
+            { header: 'Return Adjustment', key: 'return_adjustment', width: 18 },
+            { header: 'Total Paid', key: 'total_paid', width: 18 },
+            { header: 'Average Order Value', key: 'average_order_value', width: 20 },
+            { header: 'Last Order Date', key: 'last_order_date', width: 20 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        const formatDate = (date) => {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+        };
+
+        customers.forEach(c => {
+            worksheet.addRow({
+                customer_id: c.customer_id,
+                name: c.customer_name || '',
+                mobile: c.customer_mobile || '',
+                area: c.customer_area || '',
+                store_name: c.store_name || '',
+                total_orders: c.statistics.total_orders,
+                delivered_orders: c.statistics.delivered_orders,
+                cancelled_orders: c.statistics.cancelled_orders,
+                total_order_value: parseFloat(c.statistics.total_order_value || 0).toFixed(2),
+                return_adjustment: parseFloat(c.statistics.total_return_adjustment || 0).toFixed(2),
+                total_paid: parseFloat(c.statistics.total_paid_amount || 0).toFixed(2),
+                average_order_value: parseFloat(c.statistics.average_order_value || 0).toFixed(2),
+                last_order_date: formatDate(c.statistics.last_order_date)
+            });
+        });
+
+        worksheet.addRow({});
+        worksheet.addRow({
+            customer_id: 'SUMMARY',
+            name: '',
+            mobile: '',
+            area: '',
+            store_name: '',
+            total_orders: summary.total_orders,
+            delivered_orders: summary.total_delivered_orders,
+            cancelled_orders: '',
+            total_order_value: parseFloat(summary.total_order_value || 0).toFixed(2),
+            return_adjustment: parseFloat(summary.total_return_adjustment || 0).toFixed(2),
+            total_paid: parseFloat(summary.total_paid_amount || 0).toFixed(2),
+            average_order_value: '',
+            last_order_date: ''
+        });
+        worksheet.getRow(worksheet.rowCount).font = { bold: true };
+
+        const numberColumns = ['total_order_value', 'return_adjustment', 'total_paid', 'average_order_value'];
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber < worksheet.rowCount) {
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        const filename = `customer_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
+
+        let buffer;
+        try {
+            buffer = await workbook.xlsx.writeBuffer();
+        } catch (writeError) {
+            logger.error('Error writing Excel buffer', { error: writeError.message });
+            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+        }
+
+        if (res.headersSent) {
+            logger.error('Headers already sent before Excel export');
+            return;
+        }
+
+        logger.info('Customer report exported to Excel', {
+            dateFrom,
+            dateTo,
+            customers_count: customers.length,
+            fileSize: buffer.length
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        res.end(buffer);
+    } catch (error) {
+        logger.error('Error exporting customer report to Excel', {
+            error: error.message,
+            stack: error.stack
+        });
+        if (!res.headersSent) {
+            res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to export report to Excel'));
+        }
+    }
+};
+
+const exportReturnItemsReportToExcel = async (res, dateFrom, dateTo, returnItems, summary) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Return Items Report');
+
+        worksheet.columns = [
+            { header: 'Return Item ID', key: 'return_item_id', width: 15 },
+            { header: 'Item Name', key: 'item_name', width: 30 },
+            { header: 'Quantity', key: 'quantity', width: 12 },
+            { header: 'Return Date', key: 'return_date', width: 20 },
+            { header: 'Order ID', key: 'order_id', width: 12 },
+            { header: 'Order Number', key: 'order_number', width: 20 },
+            { header: 'Order Date', key: 'order_date', width: 20 },
+            { header: 'Order Total', key: 'order_total', width: 15 },
+            { header: 'Return Adjust Amount', key: 'return_adjust_amount', width: 20 },
+            { header: 'Order Status', key: 'order_status', width: 18 },
+            { header: 'Customer Name', key: 'customer_name', width: 25 },
+            { header: 'Customer Phone', key: 'customer_phone', width: 15 },
+            { header: 'Store Name', key: 'store_name', width: 25 }
+        ];
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        const formatDate = (date) => {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+        };
+
+        returnItems.forEach(ri => {
+            worksheet.addRow({
+                return_item_id: ri.return_item_id,
+                item_name: ri.item_name || '',
+                quantity: ri.quantity,
+                return_date: formatDate(ri.return_date),
+                order_id: ri.order.order_id,
+                order_number: ri.order.order_number || '',
+                order_date: formatDate(ri.order.order_date),
+                order_total: parseFloat(ri.order.order_total || 0).toFixed(2),
+                return_adjust_amount: parseFloat(ri.order.return_adjust_amount || 0).toFixed(2),
+                order_status: ri.order.order_status || '',
+                customer_name: ri.order.customer_name || '',
+                customer_phone: ri.order.customer_phone || '',
+                store_name: ri.order.store_name || ''
+            });
+        });
+
+        worksheet.addRow({});
+        worksheet.addRow({
+            return_item_id: 'SUMMARY',
+            item_name: '',
+            quantity: summary.total_return_items,
+            return_date: '',
+            order_id: summary.total_orders_with_returns,
+            order_number: '',
+            order_date: '',
+            order_total: parseFloat(summary.total_adjustment_amount || 0).toFixed(2),
+            return_adjust_amount: '',
+            order_status: '',
+            customer_name: '',
+            customer_phone: '',
+            store_name: ''
+        });
+        worksheet.getRow(worksheet.rowCount).font = { bold: true };
+
+        const numberColumns = ['order_total', 'return_adjust_amount'];
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1 && rowNumber < worksheet.rowCount) {
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        const filename = `return_items_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
+
+        let buffer;
+        try {
+            buffer = await workbook.xlsx.writeBuffer();
+        } catch (writeError) {
+            logger.error('Error writing Excel buffer', { error: writeError.message });
+            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+        }
+
+        if (res.headersSent) {
+            logger.error('Headers already sent before Excel export');
+            return;
+        }
+
+        logger.info('Return items report exported to Excel', {
+            dateFrom,
+            dateTo,
+            return_items_count: returnItems.length,
+            fileSize: buffer.length
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        res.end(buffer);
+    } catch (error) {
+        logger.error('Error exporting return items report to Excel', {
+            error: error.message,
+            stack: error.stack
+        });
+        if (!res.headersSent) {
+            res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to export report to Excel'));
+        }
+    }
+};
+
+const exportSalesReportToExcel = async (res, dateFrom, dateTo, summary, daily_breakdown) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        
+        const summarySheet = workbook.addWorksheet('Summary');
+        summarySheet.columns = [
+            { header: 'Metric', key: 'metric', width: 30 },
+            { header: 'Value', key: 'value', width: 20 }
+        ];
+
+        summarySheet.getRow(1).font = { bold: true };
+        summarySheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        const summaryData = [
+            { metric: 'Total Orders', value: summary.total_orders },
+            { metric: 'Delivered Orders', value: summary.delivered_orders },
+            { metric: 'Assigned Orders', value: summary.assigned_orders },
+            { metric: 'Picked Up Orders', value: summary.picked_up_orders },
+            { metric: 'In Transit Orders', value: summary.in_transit_orders },
+            { metric: 'Payment Collection Orders', value: summary.payment_collection_orders },
+            { metric: 'Cancelled Orders', value: summary.cancelled_orders },
+            { metric: 'Orders with Returns', value: summary.orders_with_returns },
+            { metric: 'Unique Customers', value: summary.unique_customers },
+            { metric: 'Total Revenue', value: parseFloat(summary.total_revenue || 0).toFixed(2) },
+            { metric: 'Total Return Adjustment', value: parseFloat(summary.total_return_adjustment || 0).toFixed(2) },
+            { metric: 'Net Revenue', value: parseFloat(summary.net_revenue || 0).toFixed(2) },
+            { metric: 'Total Cash Collected', value: parseFloat(summary.total_cash_collected || 0).toFixed(2) },
+            { metric: 'Total Bank Collected', value: parseFloat(summary.total_bank_collected || 0).toFixed(2) },
+            { metric: 'Total Collected', value: parseFloat(summary.total_collected || 0).toFixed(2) },
+            { metric: 'Pending Collection', value: parseFloat(summary.pending_collection || 0).toFixed(2) },
+            { metric: 'Average Order Value', value: parseFloat(summary.average_order_value || 0).toFixed(2) }
+        ];
+
+        summaryData.forEach(row => {
+            summarySheet.addRow(row);
+        });
+
+        const dailySheet = workbook.addWorksheet('Daily Breakdown');
+        dailySheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Orders Count', key: 'orders_count', width: 15 },
+            { header: 'Revenue', key: 'revenue', width: 15 },
+            { header: 'Return Adjustment', key: 'return_adjustment', width: 20 },
+            { header: 'Collected', key: 'collected', width: 15 }
+        ];
+
+        dailySheet.getRow(1).font = { bold: true };
+        dailySheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        daily_breakdown.forEach(day => {
+            dailySheet.addRow({
+                date: day.date,
+                orders_count: day.orders_count,
+                revenue: parseFloat(day.revenue || 0).toFixed(2),
+                return_adjustment: parseFloat(day.return_adjustment || 0).toFixed(2),
+                collected: parseFloat(day.collected || 0).toFixed(2)
+            });
+        });
+
+        const numberColumns = ['revenue', 'return_adjustment', 'collected'];
+        dailySheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) {
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        const filename = `sales_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
+
+        let buffer;
+        try {
+            buffer = await workbook.xlsx.writeBuffer();
+        } catch (writeError) {
+            logger.error('Error writing Excel buffer', { error: writeError.message });
+            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+        }
+
+        if (res.headersSent) {
+            logger.error('Headers already sent before Excel export');
+            return;
+        }
+
+        logger.info('Sales report exported to Excel', {
+            dateFrom,
+            dateTo,
+            fileSize: buffer.length
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        res.end(buffer);
+    } catch (error) {
+        logger.error('Error exporting sales report to Excel', {
+            error: error.message,
+            stack: error.stack
+        });
+        if (!res.headersSent) {
+            res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to export report to Excel'));
+        }
     }
 };
