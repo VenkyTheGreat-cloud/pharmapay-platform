@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
+import { useIdleTimeout } from '../hooks/useIdleTimeout';
+import IdleTimeoutWarning from '../components/IdleTimeoutWarning';
 
 const AuthContext = createContext(null);
 
@@ -54,9 +56,38 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         setUser(null);
+        // Redirect to login page
+        window.location.href = '/login';
     };
+
+    // Idle timeout configuration
+    // Idle timeout: 30-60 minutes (using 30 minutes as default, can be configured)
+    // Warning: 2-3 minutes before timeout (using 2 minutes)
+    const IDLE_TIMEOUT_MINUTES = 30; // Can be changed to 60 if needed
+    const WARNING_MINUTES = 2; // Warning 2 minutes before timeout
+
+    const handleIdleTimeout = () => {
+        // User has been idle, log them out
+        logout();
+    };
+
+    const handleWarning = () => {
+        // Warning is shown automatically by the hook
+        // This callback can be used for additional actions if needed
+    };
+
+    // Initialize idle timeout (hook must be called unconditionally)
+    // The hook will handle the enabled state internally
+    const { isWarning, timeRemaining, extendSession } = useIdleTimeout({
+        idleTimeoutMinutes: IDLE_TIMEOUT_MINUTES,
+        warningMinutes: WARNING_MINUTES,
+        onIdle: handleIdleTimeout,
+        onWarning: handleWarning,
+        enabled: !!user, // Only enable when user is logged in
+    });
 
     const updateUser = (userData) => {
         const updatedUser = { ...user, ...userData };
@@ -73,7 +104,20 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+            {/* Idle Timeout Warning Modal */}
+            {user && (
+                <IdleTimeoutWarning
+                    isOpen={isWarning}
+                    timeRemaining={timeRemaining}
+                    onExtend={extendSession}
+                    onLogout={logout}
+                />
+            )}
+        </AuthContext.Provider>
+    );
 };
 
 export const useAuth = () => {

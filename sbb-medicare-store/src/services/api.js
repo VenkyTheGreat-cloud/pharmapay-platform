@@ -23,6 +23,10 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // Don't set Content-Type for blob requests (let browser set it)
+        if (config.responseType === 'blob') {
+            delete config.headers['Content-Type'];
+        }
         return config;
     },
     (error) => {
@@ -32,7 +36,22 @@ api.interceptors.request.use(
 
 // Response interceptor to handle 401/403 and normalize errors
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // For blob responses, ensure the blob has the correct type from response headers
+        if (response.config?.responseType === 'blob' && response.data instanceof Blob) {
+            const contentType = response.headers['content-type'] || 
+                              response.headers['Content-Type'] || 
+                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            
+            // If blob type doesn't match the content-type header, recreate it
+            if (response.data.type !== contentType && contentType.includes('spreadsheet')) {
+                response.data = new Blob([response.data], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+            }
+        }
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401) {
             // Unauthorized - token missing or invalid

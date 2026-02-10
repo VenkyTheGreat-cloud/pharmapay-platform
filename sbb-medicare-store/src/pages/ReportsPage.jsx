@@ -31,7 +31,7 @@ const REPORT_TYPES = [
 ];
 
 export default function ReportsPage() {
-    const [reportType, setReportType] = useState('orders');
+    const [reportType, setReportType] = useState('');
     const [fromDate, setFromDate] = useState(getTodayIST());
     const [fromTime, setFromTime] = useState('00:00:00');
     const [toDate, setToDate] = useState(getTodayIST());
@@ -92,6 +92,11 @@ export default function ReportsPage() {
     };
 
     const validateInputs = () => {
+        if (!reportType) {
+            alert('Please select a report type');
+            return false;
+        }
+
         if (!fromDate || !toDate) {
             alert('Please select both From Date and To Date');
             return false;
@@ -212,25 +217,47 @@ export default function ReportsPage() {
             }
 
             // Handle file download
-            const blob = response.data;
+            let blob = response.data;
             
+            // Check response headers for content type
+            const contentType = response.headers?.['content-type'] || 
+                              response.headers?.['Content-Type'] || 
+                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            
+            // Ensure we have a proper Blob with correct MIME type
             if (blob instanceof Blob) {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-                
-                setTimeout(() => {
-                    alert('Report downloaded successfully!');
-                }, 100);
+                // If blob type is incorrect or missing, create a new blob with correct type
+                const correctType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                if (!blob.type || blob.type === 'application/octet-stream' || blob.type !== correctType) {
+                    blob = new Blob([blob], { type: correctType });
+                }
             } else {
-                console.warn('Unexpected response format:', response);
-                alert('Report downloaded successfully!');
+                // If response.data is not a Blob, try to create one
+                console.warn('Response data is not a Blob, attempting to create one:', typeof response.data);
+                blob = new Blob([response.data], { 
+                    type: contentType.includes('excel') || contentType.includes('spreadsheet') 
+                        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        : contentType
+                });
             }
+            
+            // Verify blob is valid before downloading
+            if (!(blob instanceof Blob)) {
+                throw new Error('Invalid blob data received from server');
+            }
+            
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            setTimeout(() => {
+                alert('Report downloaded successfully!');
+            }, 100);
         } catch (error) {
             console.error('Error downloading report:', error);
             
@@ -445,7 +472,7 @@ export default function ReportsPage() {
                         <div className="flex justify-end pt-2">
                             <button
                                 onClick={handleDownload}
-                                disabled={isDownloading || !fromDate || !toDate || !fromTime || !toTime}
+                                disabled={isDownloading || !reportType || !fromDate || !toDate || !fromTime || !toTime}
                                 className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-2.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-2 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
                             >
                                 {isDownloading ? (
