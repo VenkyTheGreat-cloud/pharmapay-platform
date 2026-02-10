@@ -835,6 +835,29 @@ class Order {
         });
     }
 
+    // Mark order as delivered when customer receives at store (no delivery boy)
+    static async markDeliveredAtStore(orderId) {
+        const updateQuery = `
+            UPDATE orders
+            SET status = 'DELIVERED',
+                delivered_at = CURRENT_TIMESTAMP,
+                notes = 
+                    CASE 
+                        WHEN notes IS NULL OR notes = '' 
+                            THEN 'Received by customer at store'
+                        ELSE notes || ' | Received by customer at store'
+                    END
+            WHERE id = $1
+            RETURNING *;
+        `;
+
+        const result = await query(updateQuery, [orderId]);
+        if (result.rowCount === 0) {
+            throw new Error('NOT_FOUND');
+        }
+        return result.rows[0];
+    }
+
     // Update order
     static async update(id, updates) {
         const fields = [];

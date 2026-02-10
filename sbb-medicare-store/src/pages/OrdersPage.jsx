@@ -200,13 +200,24 @@ export default function OrdersPage() {
 
     const handleAssign = async () => {
         if (!selectedDeliveryBoy) {
-            alert('Please select a delivery boy');
+            alert('Please select an option');
             return;
         }
 
         try {
-            await ordersAPI.assign(selectedOrder.id, selectedDeliveryBoy);
-            alert('Order assigned successfully!');
+            // Special case: customer received order directly at store
+            if (selectedDeliveryBoy === 'store_customer') {
+                if (!confirm('Mark this order as DELIVERED (Customer received at store)?')) {
+                    return;
+                }
+                await ordersAPI.assign(selectedOrder.id, null, { customerReceivedAtStore: true });
+                alert('Order marked as delivered (customer received at store)!');
+            } else {
+                // Normal assignment to delivery boy
+                await ordersAPI.assign(selectedOrder.id, selectedDeliveryBoy);
+                alert('Order assigned successfully!');
+            }
+
             setShowAssignModal(false);
             setSelectedOrder(null);
             setSelectedDeliveryBoy('');
@@ -552,14 +563,23 @@ export default function OrdersPage() {
                             </p>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Select Delivery Boy
+                                    Select Delivery Boy or Store Option
                                 </label>
                                 <select
                                     value={selectedDeliveryBoy}
                                     onChange={(e) => setSelectedDeliveryBoy(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
                                 >
-                                    <option value="">Select a delivery boy</option>
+                                    <option value="">Select an option</option>
+                                    {/* Store-side completion option */}
+                                    <option value="store_customer">
+                                        Customer received at store (mark as DELIVERED)
+                                    </option>
+                                    {/* Divider-like disabled option */}
+                                    <option value="" disabled>
+                                        -----------------------------
+                                    </option>
+                                    {/* Delivery boys list */}
                                     {deliveryBoys.length === 0 ? (
                                         <option value="" disabled>No approved delivery boys available</option>
                                     ) : (
@@ -570,6 +590,9 @@ export default function OrdersPage() {
                                         ))
                                     )}
                                 </select>
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Choose <span className="font-semibold">Customer received at store</span> when the customer directly collects the order at the store.
+                                </p>
                             </div>
                             <div className="flex gap-3">
                                 <button
