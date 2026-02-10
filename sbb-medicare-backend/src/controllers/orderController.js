@@ -957,10 +957,10 @@ exports.createOrder = async (req, res, next) => {
     }
 };
 
-// Assign order to delivery boy
+// Assign order to delivery boy OR mark as received at store
 exports.assignOrder = async (req, res, next) => {
     try {
-        const { deliveryBoyId } = req.body;
+        const { deliveryBoyId, customerReceivedAtStore } = req.body;
         const orderId = req.params.id;
 
         // Get order
@@ -974,9 +974,52 @@ exports.assignOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your store'));
         }
 
+        // If customer has received order at store, mark as DELIVERED directly (no delivery boy)
+        if (customerReceivedAtStore === true) {
+            // Do not allow if already delivered or cancelled
+            if (order.status === 'DELIVERED' || order.status === 'CANCELLED') {
+                return res.status(400).json(
+                    errorResponse(
+                        'INVALID_STATUS',
+                        `Cannot mark order as received at store because it is already ${order.status}.`
+                    )
+                );
+            }
+
+            const updatedOrder = await Order.markDeliveredAtStore(orderId);
+
+            logger.info('Order marked as delivered at store', {
+                orderId,
+                markedBy: req.user.userId,
+                previousStatus: order.status
+            });
+
+            return res.json(
+                successResponse(
+                    {
+                        ...updatedOrder,
+                        received_at_store: true
+                    },
+                    'Order marked as delivered (customer received at store)'
+                )
+            );
+        }
+
+        // For normal assignment, deliveryBoyId is required
+        if (!deliveryBoyId) {
+            return res
+                .status(400)
+                .json(errorResponse('VALIDATION_ERROR', 'Either deliveryBoyId or customerReceivedAtStore must be provided'));
+        }
+
         // Allow assignment if order is ASSIGNED or REJECTED
         if (order.status !== 'ASSIGNED' && order.status !== 'REJECTED') {
-            return res.status(400).json(errorResponse('INVALID_STATUS', `Cannot assign order with status: ${order.status}. Order must be ASSIGNED or REJECTED.`));
+            return res.status(400).json(
+                errorResponse(
+                    'INVALID_STATUS',
+                    `Cannot assign order with status: ${order.status}. Order must be ASSIGNED or REJECTED.`
+                )
+            );
         }
 
         // Get delivery boy
@@ -986,7 +1029,9 @@ exports.assignOrder = async (req, res, next) => {
         }
 
         if (deliveryBoy.status !== 'approved') {
-            return res.status(400).json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
+            return res
+                .status(400)
+                .json(errorResponse('DELIVERY_BOY_NOT_APPROVED', 'Delivery boy is not approved'));
         }
 
         // Assign order (handles both new assignment and reassignment of rejected orders)
@@ -994,11 +1039,16 @@ exports.assignOrder = async (req, res, next) => {
 
         logger.info('Order assigned', { orderId, deliveryBoyId, assignedBy: req.user.userId });
 
-        res.json(successResponse({
-            assignedBy: req.user.userId,
-            assignedByName: req.user.name || 'User',
-            assignedTime: updatedOrder.assigned_at
-        }, 'Order assigned successfully'));
+        res.json(
+            successResponse(
+                {
+                    assignedBy: req.user.userId,
+                    assignedByName: req.user.name || 'User',
+                    assignedTime: updatedOrder.assigned_at
+                },
+                'Order assigned successfully'
+            )
+        );
     } catch (error) {
         next(error);
     }

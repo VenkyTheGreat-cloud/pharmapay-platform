@@ -73,13 +73,21 @@ router.post(
     orderController.createOrder
 );
 
-// Assign order to delivery boy
+// Assign order to delivery boy or mark as received at store
 router.post(
     '/:id/assign',
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
     [
-        body('deliveryBoyId').notEmpty().withMessage('Delivery boy ID is required'),
+        // Either deliveryBoyId OR customerReceivedAtStore must be provided
+        body('deliveryBoyId')
+            .optional()
+            .notEmpty()
+            .withMessage('Delivery boy ID cannot be empty'),
+        body('customerReceivedAtStore')
+            .optional()
+            .isBoolean()
+            .withMessage('customerReceivedAtStore must be a boolean'),
     ],
     orderController.assignOrder
 );

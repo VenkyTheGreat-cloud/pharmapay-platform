@@ -408,7 +408,9 @@ export const ordersAPI = {
         }
         return api.post('/orders', data);
     },
-    assign: (id, deliveryBoyId) => {
+    // Assign order to delivery boy or mark as received at store
+    // If options.customerReceivedAtStore is true, backend should treat as "customer received at store"
+    assign: (id, deliveryBoyId, options = {}) => {
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -416,7 +418,11 @@ export const ordersAPI = {
                 data: { assignedBy: 1, assignedByName: 'Mock Manager', assignedTime: new Date().toISOString() },
             });
         }
-        return api.post(`/orders/${id}/assign`, { deliveryBoyId });
+        const payload = {
+            deliveryBoyId,
+            ...options,
+        };
+        return api.post(`/orders/${id}/assign`, payload);
     },
     accept: (id) => {
         if (API_DISABLED) {
