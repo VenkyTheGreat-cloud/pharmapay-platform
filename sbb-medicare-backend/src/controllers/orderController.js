@@ -420,7 +420,11 @@ exports.updateOrder = async (req, res, next) => {
             customerComments,
             returnItems,
             returnItemsList,
-            returnAdjustAmount
+            returnAdjustAmount,
+            // Optional: update payment before closing/marking delivered
+            paidAmount,
+            paymentMode,
+            transactionReference
         } = req.body;
 
         // Get order
@@ -598,13 +602,114 @@ exports.updateOrder = async (req, res, next) => {
             }
         }
 
-        // If no updates provided
-        if (Object.keys(updates).length === 0 && !shouldUpdateReturnItems) {
+        /**
+         * Handle payment update (store user adjusting paid amount before closing order)
+         * Logic:
+         * - You can only INCREASE the paid amount via this endpoint (not decrease)
+         * - New paidAmount cannot exceed adjusted total (total_amount - return_adjust_amount)
+         * - Creates an additional payment record for the difference
+         */
+        let createdPayment = null;
+        if (paidAmount !== undefined || paymentMode !== undefined || transactionReference !== undefined) {
+            const paidAmountNum = paidAmount !== undefined ? parseFloat(paidAmount) : null;
+            if (paidAmountNum !== null && (isNaN(paidAmountNum) || paidAmountNum < 0)) {
+                return res.status(400).json(
+                    errorResponse('VALIDATION_ERROR', 'Paid amount must be a non-negative number')
+                );
+            }
+
+            // Get current payment summary BEFORE update to know current total_paid
+            const currentSummary = await Payment.getPaymentSummary(orderId);
+            const currentTotalPaid = currentSummary ? currentSummary.total_paid : 0;
+
+            // Determine latest total and return_adjust values (including pending updates)
+            const latestTotalAmount =
+                updates.total_amount !== undefined
+                    ? updates.total_amount
+                    : parseFloat(order.total_amount || 0);
+            const latestReturnAdjust =
+                updates.return_adjust_amount !== undefined
+                    ? updates.return_adjust_amount
+                    : parseFloat(order.return_adjust_amount || 0);
+
+            const adjustedTotal = latestTotalAmount - latestReturnAdjust;
+
+            // If paidAmount provided, treat it as desired NEW total paid
+            const targetTotalPaid =
+                paidAmountNum !== null ? paidAmountNum : currentTotalPaid;
+
+            // Validate target total paid vs adjusted total
+            if (targetTotalPaid > adjustedTotal) {
+                return res.status(400).json(
+                    errorResponse(
+                        'VALIDATION_ERROR',
+                        `Paid amount cannot exceed adjusted total amount (${adjustedTotal.toFixed(2)})`
+                    )
+                );
+            }
+
+            // You cannot reduce already collected amount using this endpoint
+            if (targetTotalPaid < currentTotalPaid) {
+                return res.status(400).json(
+                    errorResponse(
+                        'VALIDATION_ERROR',
+                        'Paid amount cannot be less than already collected amount'
+                    )
+                );
+            }
+
+            const additionalAmount = targetTotalPaid - currentTotalPaid;
+
+            if (additionalAmount > 0) {
+                // When adding extra payment, paymentMode is required
+                if (!paymentMode) {
+                    return res.status(400).json(
+                        errorResponse(
+                            'VALIDATION_ERROR',
+                            'Payment mode is required when increasing paid amount'
+                        )
+                    );
+                }
+
+                const validModes = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
+                const normalizedMode = paymentMode.toUpperCase();
+                if (!validModes.includes(normalizedMode)) {
+                    return res.status(400).json(
+                        errorResponse(
+                            'VALIDATION_ERROR',
+                            'Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'
+                        )
+                    );
+                }
+
+                let cashAmount = 0;
+                let bankAmount = 0;
+                if (normalizedMode === 'CASH') {
+                    cashAmount = additionalAmount;
+                } else {
+                    bankAmount = additionalAmount;
+                }
+
+                // Create additional payment as store-created (created_by = NULL)
+                createdPayment = await Payment.create({
+                    order_id: orderId,
+                    payment_mode: normalizedMode,
+                    cash_amount: cashAmount,
+                    bank_amount: bankAmount,
+                    transaction_reference: transactionReference || null,
+                    receipt_photo_url: null,
+                    created_by: null
+                });
+            }
+        }
+
+        // If no updates provided and no payment changes
+        if (Object.keys(updates).length === 0 && !shouldUpdateReturnItems && !createdPayment) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
         }
 
-        // Update order
-        const updatedOrder = await Order.update(orderId, updates);
+        // Update order (details + amounts)
+        const updatedOrder = Object.keys(updates).length > 0 ? await Order.update(orderId, updates) : order;
         
         // Update return items if provided
         if (shouldUpdateReturnItems) {
