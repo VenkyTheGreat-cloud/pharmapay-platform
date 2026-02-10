@@ -1696,23 +1696,42 @@ exports.exportOrdersToExcel = async (req, res, next) => {
         }
 
         // Write workbook to buffer first to ensure file is complete
-        const buffer = await workbook.xlsx.writeBuffer();
+        let buffer;
+        try {
+            buffer = await workbook.xlsx.writeBuffer();
+        } catch (writeError) {
+            logger.error('Error writing Excel buffer', { error: writeError.message });
+            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+        }
 
-        // Set response headers
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-Length', buffer.length);
+        // Check if response headers were already sent (should not happen, but safety check)
+        if (res.headersSent) {
+            logger.error('Headers already sent before Excel export');
+            return;
+        }
 
-        // Send the buffer
-        res.send(buffer);
-
+        // Log before sending response
         logger.info('Orders exported to Excel', {
             dateFrom,
             dateTo,
             orderCount: ordersWithDetails.length,
             exportedBy: req.user.userId,
-            userRole: req.user.role
+            userRole: req.user.role,
+            fileSize: buffer.length
         });
+
+        // Set response headers AFTER buffer is created
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+
+        // Send the buffer and end the response explicitly
+        // Using res.end() ensures the response is properly finalized
+        res.end(buffer);
 
     } catch (error) {
         logger.error('Error exporting orders to Excel', {
