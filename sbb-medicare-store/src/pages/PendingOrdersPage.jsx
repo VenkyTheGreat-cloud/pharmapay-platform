@@ -329,7 +329,9 @@ export default function PendingOrdersPage() {
                                     </div>
 
                                     {/* Delivery Boy Information */}
-                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) &&
+                                     !selectedOrder.customer_received_at_store &&
+                                     !selectedOrder.customerReceivedAtStore && (
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
                                             <div className="bg-gray-50 p-4 rounded-lg space-y-2">

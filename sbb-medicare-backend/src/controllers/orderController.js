@@ -986,6 +986,24 @@ exports.assignOrder = async (req, res, next) => {
                 );
             }
 
+            // Ensure there is no pending amount before marking as delivered
+            const paymentSummary = await Payment.getPaymentSummary(order.id);
+
+            if (!paymentSummary || paymentSummary.remaining_amount > 0) {
+                const remaining = paymentSummary ? paymentSummary.remaining_amount : null;
+                logger.warn('Attempt to mark order as delivered at store with pending amount', {
+                    orderId,
+                    remaining_amount: remaining
+                });
+
+                return res.status(400).json(
+                    errorResponse(
+                        'PENDING_AMOUNT_NOT_ZERO',
+                        'Cannot mark order as delivered because pending amount is not zero. Please collect full payment first.'
+                    )
+                );
+            }
+
             const updatedOrder = await Order.markDeliveredAtStore(orderId);
 
             logger.info('Order marked as delivered at store', {
