@@ -784,19 +784,39 @@ const exportDeliveryBoyReportToExcel = async (res, dateFrom, dateTo, deliveryBoy
 
         const filename = `delivery_boy_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
 
+        // Write workbook to buffer first to ensure file is complete
         let buffer;
         try {
             buffer = await workbook.xlsx.writeBuffer();
+            
+            // Validate buffer
+            if (!buffer || !Buffer.isBuffer(buffer)) {
+                logger.error('Invalid buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            
+            if (buffer.length === 0) {
+                logger.error('Empty buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
         } catch (writeError) {
-            logger.error('Error writing Excel buffer', { error: writeError.message });
-            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            logger.error('Error writing Excel buffer', { 
+                error: writeError.message,
+                stack: writeError.stack 
+            });
+            if (!res.headersSent) {
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            return;
         }
 
+        // Check if response headers were already sent
         if (res.headersSent) {
             logger.error('Headers already sent before Excel export');
             return;
         }
 
+        // Log before sending response
         logger.info('Delivery boy report exported to Excel', {
             dateFrom,
             dateTo,
@@ -804,6 +824,7 @@ const exportDeliveryBoyReportToExcel = async (res, dateFrom, dateTo, deliveryBoy
             fileSize: buffer.length
         });
 
+        // Set response headers AFTER buffer is created
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.setHeader('Content-Length', buffer.length);
@@ -812,6 +833,7 @@ const exportDeliveryBoyReportToExcel = async (res, dateFrom, dateTo, deliveryBoy
         res.setHeader('Expires', '0');
         res.setHeader('X-Content-Type-Options', 'nosniff');
 
+        // Send the buffer and end the response explicitly
         res.end(buffer);
     } catch (error) {
         logger.error('Error exporting delivery boy report to Excel', {
@@ -908,19 +930,39 @@ const exportCustomerReportToExcel = async (res, dateFrom, dateTo, customers, sum
 
         const filename = `customer_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
 
+        // Write workbook to buffer first to ensure file is complete
         let buffer;
         try {
             buffer = await workbook.xlsx.writeBuffer();
+            
+            // Validate buffer
+            if (!buffer || !Buffer.isBuffer(buffer)) {
+                logger.error('Invalid buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            
+            if (buffer.length === 0) {
+                logger.error('Empty buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
         } catch (writeError) {
-            logger.error('Error writing Excel buffer', { error: writeError.message });
-            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            logger.error('Error writing Excel buffer', { 
+                error: writeError.message,
+                stack: writeError.stack 
+            });
+            if (!res.headersSent) {
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            return;
         }
 
+        // Check if response headers were already sent
         if (res.headersSent) {
             logger.error('Headers already sent before Excel export');
             return;
         }
 
+        // Log before sending response
         logger.info('Customer report exported to Excel', {
             dateFrom,
             dateTo,
@@ -928,6 +970,7 @@ const exportCustomerReportToExcel = async (res, dateFrom, dateTo, customers, sum
             fileSize: buffer.length
         });
 
+        // Set response headers AFTER buffer is created
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.setHeader('Content-Length', buffer.length);
@@ -936,6 +979,7 @@ const exportCustomerReportToExcel = async (res, dateFrom, dateTo, customers, sum
         res.setHeader('Expires', '0');
         res.setHeader('X-Content-Type-Options', 'nosniff');
 
+        // Send the buffer and end the response explicitly
         res.end(buffer);
     } catch (error) {
         logger.error('Error exporting customer report to Excel', {
@@ -1032,19 +1076,39 @@ const exportReturnItemsReportToExcel = async (res, dateFrom, dateTo, returnItems
 
         const filename = `return_items_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
 
+        // Write workbook to buffer first to ensure file is complete
         let buffer;
         try {
             buffer = await workbook.xlsx.writeBuffer();
+            
+            // Validate buffer
+            if (!buffer || !Buffer.isBuffer(buffer)) {
+                logger.error('Invalid buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            
+            if (buffer.length === 0) {
+                logger.error('Empty buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
         } catch (writeError) {
-            logger.error('Error writing Excel buffer', { error: writeError.message });
-            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            logger.error('Error writing Excel buffer', { 
+                error: writeError.message,
+                stack: writeError.stack 
+            });
+            if (!res.headersSent) {
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            return;
         }
 
+        // Check if response headers were already sent
         if (res.headersSent) {
             logger.error('Headers already sent before Excel export');
             return;
         }
 
+        // Log before sending response
         logger.info('Return items report exported to Excel', {
             dateFrom,
             dateTo,
@@ -1052,6 +1116,7 @@ const exportReturnItemsReportToExcel = async (res, dateFrom, dateTo, returnItems
             fileSize: buffer.length
         });
 
+        // Set response headers AFTER buffer is created
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.setHeader('Content-Length', buffer.length);
@@ -1060,6 +1125,7 @@ const exportReturnItemsReportToExcel = async (res, dateFrom, dateTo, returnItems
         res.setHeader('Expires', '0');
         res.setHeader('X-Content-Type-Options', 'nosniff');
 
+        // Send the buffer and end the response explicitly
         res.end(buffer);
     } catch (error) {
         logger.error('Error exporting return items report to Excel', {
@@ -1153,25 +1219,46 @@ const exportSalesReportToExcel = async (res, dateFrom, dateTo, summary, daily_br
 
         const filename = `sales_report_${dateFrom.replace(/[:\s]/g, '_')}_to_${dateTo.replace(/[:\s]/g, '_')}_${new Date().getTime()}.xlsx`;
 
+        // Write workbook to buffer first to ensure file is complete
         let buffer;
         try {
             buffer = await workbook.xlsx.writeBuffer();
+            
+            // Validate buffer
+            if (!buffer || !Buffer.isBuffer(buffer)) {
+                logger.error('Invalid buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            
+            if (buffer.length === 0) {
+                logger.error('Empty buffer generated for Excel export');
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
         } catch (writeError) {
-            logger.error('Error writing Excel buffer', { error: writeError.message });
-            return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            logger.error('Error writing Excel buffer', { 
+                error: writeError.message,
+                stack: writeError.stack 
+            });
+            if (!res.headersSent) {
+                return res.status(500).json(errorResponse('EXPORT_ERROR', 'Failed to generate Excel file'));
+            }
+            return;
         }
 
+        // Check if response headers were already sent
         if (res.headersSent) {
             logger.error('Headers already sent before Excel export');
             return;
         }
 
+        // Log before sending response
         logger.info('Sales report exported to Excel', {
             dateFrom,
             dateTo,
             fileSize: buffer.length
         });
 
+        // Set response headers AFTER buffer is created
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
         res.setHeader('Content-Length', buffer.length);
@@ -1180,6 +1267,7 @@ const exportSalesReportToExcel = async (res, dateFrom, dateTo, summary, daily_br
         res.setHeader('Expires', '0');
         res.setHeader('X-Content-Type-Options', 'nosniff');
 
+        // Send the buffer and end the response explicitly
         res.end(buffer);
     } catch (error) {
         logger.error('Error exporting sales report to Excel', {
