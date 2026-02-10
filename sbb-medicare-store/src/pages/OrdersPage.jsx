@@ -207,6 +207,25 @@ export default function OrdersPage() {
         try {
             // Special case: customer received order directly at store
             if (selectedDeliveryBoy === 'store_customer') {
+                // Before marking as delivered at store, ensure no pending amount
+                let remaining = 0;
+                if (selectedOrder.payment_summary) {
+                    remaining = Number(selectedOrder.payment_summary.remaining_amount || 0);
+                } else {
+                    const total =
+                        Number(selectedOrder.amount || selectedOrder.total_amount || 0);
+                    const paid =
+                        Number(selectedOrder.paidAmount || selectedOrder.paid_amount || 0);
+                    remaining = total - paid;
+                }
+
+                if (remaining > 0.01) {
+                    alert(
+                        'Pending amount should be zero before marking this order as delivered (Customer received at store).'
+                    );
+                    return;
+                }
+
                 if (!confirm('Mark this order as DELIVERED (Customer received at store)?')) {
                     return;
                 }
@@ -684,7 +703,9 @@ export default function OrdersPage() {
                                     </div>
 
                                     {/* Delivery Boy Information */}
-                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) &&
+                                     !selectedOrder.customer_received_at_store &&
+                                     !selectedOrder.customerReceivedAtStore && (
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
                                             <div className="bg-gray-50 p-4 rounded-lg space-y-2">

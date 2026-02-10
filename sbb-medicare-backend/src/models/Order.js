@@ -841,6 +841,8 @@ class Order {
             UPDATE orders
             SET status = 'DELIVERED',
                 delivered_at = CURRENT_TIMESTAMP,
+                assigned_delivery_boy_id = NULL,
+                assigned_at = NULL,
                 notes = 
                     CASE 
                         WHEN notes IS NULL OR notes = '' 
