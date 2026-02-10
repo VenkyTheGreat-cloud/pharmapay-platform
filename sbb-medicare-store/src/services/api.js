@@ -437,7 +437,9 @@ export const ordersAPI = {
         }
         return api.delete(`/orders/${id}`);
     },
-    // GET /orders/export/excel?date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM
+    // GET /orders/export/excel
+    // Option 1: Single date with time range: date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM
+    // Option 2: Date range: date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
     exportExcel: (params) => {
         if (API_DISABLED) {
             // Return a mock blob for testing
@@ -584,6 +586,73 @@ export const customerRegistryAPI = {
             });
         }
         return api.get('/customer-registry/with-orders', { params: { date } });
+    },
+};
+
+// Reports API
+export const reportsAPI = {
+    // Delivery Boy Report
+    // GET /reports/delivery-boy?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS&delivery_boy_id=1 (optional)
+    // Note: Backend endpoint needs to be implemented
+    exportDeliveryBoyReport: (params) => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Delivery Boy Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/reports/delivery-boy', { 
+            params,
+            responseType: 'blob'
+        });
+    },
+    
+    // Customer Report
+    // GET /reports/customer?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS&customer_id=1 (optional)
+    // Note: Backend endpoint needs to be implemented
+    exportCustomerReport: (params) => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Customer Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/reports/customer', { 
+            params,
+            responseType: 'blob'
+        });
+    },
+    
+    // Return Item Report
+    // GET /reports/return-items?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS
+    // Note: Backend endpoint needs to be implemented
+    exportReturnItemsReport: (params) => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Return Items Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/reports/return-items', { 
+            params,
+            responseType: 'blob'
+        });
+    },
+    
+    // Orders Report (using existing endpoint)
+    // GET /orders/export/excel
+    // Option 1: date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM
+    // Option 2: date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+    exportOrdersReport: (params) => {
+        return ordersAPI.exportExcel(params);
+    },
+    
+    // Sale Report
+    // GET /reports/sales?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS
+    // Note: Backend endpoint needs to be implemented
+    exportSalesReport: (params) => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Sales Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/reports/sales', { 
+            params,
+            responseType: 'blob'
+        });
     },
 };
 
