@@ -638,6 +638,17 @@ exports.updateOrder = async (req, res, next) => {
             const targetTotalPaid =
                 paidAmountNum !== null ? paidAmountNum : currentTotalPaid;
 
+            logger.info('Payment update check', {
+                orderId,
+                currentTotalPaid,
+                targetTotalPaid,
+                adjustedTotal,
+                latestTotalAmount,
+                latestReturnAdjust,
+                paidAmountProvided: paidAmount !== undefined,
+                paymentModeProvided: paymentMode !== undefined
+            });
+
             // Validate target total paid vs adjusted total
             if (targetTotalPaid > adjustedTotal) {
                 return res.status(400).json(
@@ -653,12 +664,18 @@ exports.updateOrder = async (req, res, next) => {
                 return res.status(400).json(
                     errorResponse(
                         'VALIDATION_ERROR',
-                        'Paid amount cannot be less than already collected amount'
+                        `Paid amount cannot be less than already collected amount (${currentTotalPaid.toFixed(2)})`
                     )
                 );
             }
 
             const additionalAmount = targetTotalPaid - currentTotalPaid;
+
+            logger.info('Payment calculation', {
+                orderId,
+                additionalAmount,
+                willCreatePayment: additionalAmount > 0
+            });
 
             if (additionalAmount > 0) {
                 // When adding extra payment, paymentMode is required
@@ -690,15 +707,45 @@ exports.updateOrder = async (req, res, next) => {
                     bankAmount = additionalAmount;
                 }
 
+                logger.info('Creating payment', {
+                    orderId,
+                    additionalAmount,
+                    normalizedMode,
+                    cashAmount,
+                    bankAmount
+                });
+
                 // Create additional payment as store-created (created_by = NULL)
-                createdPayment = await Payment.create({
-                    order_id: orderId,
-                    payment_mode: normalizedMode,
-                    cash_amount: cashAmount,
-                    bank_amount: bankAmount,
-                    transaction_reference: transactionReference || null,
-                    receipt_photo_url: null,
-                    created_by: null
+                try {
+                    createdPayment = await Payment.create({
+                        order_id: orderId,
+                        payment_mode: normalizedMode,
+                        cash_amount: cashAmount,
+                        bank_amount: bankAmount,
+                        transaction_reference: transactionReference || null,
+                        receipt_photo_url: null,
+                        created_by: null
+                    });
+                    
+                    logger.info('Payment created successfully', {
+                        orderId,
+                        paymentId: createdPayment?.id,
+                        amount: additionalAmount
+                    });
+                } catch (paymentError) {
+                    logger.error('Error creating payment', {
+                        orderId,
+                        error: paymentError.message,
+                        stack: paymentError.stack
+                    });
+                    throw paymentError;
+                }
+            } else if (additionalAmount === 0 && paidAmountNum !== null) {
+                // User provided paidAmount but it equals current total - no payment needed
+                logger.info('No payment needed - paid amount equals current total', {
+                    orderId,
+                    paidAmount: paidAmountNum,
+                    currentTotalPaid
                 });
             }
         }
@@ -708,8 +755,19 @@ exports.updateOrder = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'No fields to update'));
         }
 
-        // Update order (details + amounts)
+        // Update order (details + amounts) - do this AFTER payment creation
+        // so that if total_amount changes, payment was created with correct calculation
         const updatedOrder = Object.keys(updates).length > 0 ? await Order.update(orderId, updates) : order;
+        
+        // If payment was created, log it for debugging
+        if (createdPayment) {
+            logger.info('Payment created during order update', {
+                orderId,
+                paymentId: createdPayment.id,
+                paymentAmount: (createdPayment.cash_amount || 0) + (createdPayment.bank_amount || 0),
+                paymentMode: createdPayment.payment_mode
+            });
+        }
         
         // Update return items if provided
         if (shouldUpdateReturnItems) {
