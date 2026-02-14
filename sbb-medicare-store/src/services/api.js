@@ -39,14 +39,14 @@ api.interceptors.response.use(
     (response) => {
         // For blob responses, ensure the blob has the correct type from response headers
         if (response.config?.responseType === 'blob' && response.data instanceof Blob) {
-            const contentType = response.headers['content-type'] || 
-                              response.headers['Content-Type'] || 
-                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            
+            const contentType = response.headers['content-type'] ||
+                response.headers['Content-Type'] ||
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
             // If blob type doesn't match the content-type header, recreate it
             if (response.data.type !== contentType && contentType.includes('spreadsheet')) {
-                response.data = new Blob([response.data], { 
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                response.data = new Blob([response.data], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                 });
             }
         }
@@ -448,6 +448,20 @@ export const ordersAPI = {
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Order updated (mock)', data: { id, ...data } });
         }
+        // If data contains a file, use FormData for multipart/form-data upload
+        if (data.returnItemsPhoto instanceof File) {
+            const formData = new FormData();
+            Object.keys(data).forEach(key => {
+                if (data[key] !== undefined && data[key] !== null) {
+                    formData.append(key, data[key]);
+                }
+            });
+            return api.put(`/orders/${id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+        }
         return api.put(`/orders/${id}`, data);
     },
     updateStatus: (id, data) => {
@@ -471,7 +485,7 @@ export const ordersAPI = {
             const mockBlob = new Blob(['Mock Excel Data'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             return Promise.resolve({ data: mockBlob });
         }
-        return api.get('/orders/export/excel', { 
+        return api.get('/orders/export/excel', {
             params,
             responseType: 'blob' // Important: Set responseType to 'blob' for file downloads
         });
@@ -628,12 +642,12 @@ export const reportsAPI = {
             ...params,
             format: 'excel'
         };
-        return api.get('/reports/delivery-boy', { 
+        return api.get('/reports/delivery-boy', {
             params: requestParams,
             responseType: 'blob'
         });
     },
-    
+
     // Customer Report
     // GET /api/reports/customer?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS&format=excel&customer_id=1 (optional)
     exportCustomerReport: (params) => {
@@ -646,12 +660,12 @@ export const reportsAPI = {
             ...params,
             format: 'excel'
         };
-        return api.get('/reports/customer', { 
+        return api.get('/reports/customer', {
             params: requestParams,
             responseType: 'blob'
         });
     },
-    
+
     // Return Item Report
     // GET /api/reports/return-items?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS&format=excel
     exportReturnItemsReport: (params) => {
@@ -664,12 +678,12 @@ export const reportsAPI = {
             ...params,
             format: 'excel'
         };
-        return api.get('/reports/return-items', { 
+        return api.get('/reports/return-items', {
             params: requestParams,
             responseType: 'blob'
         });
     },
-    
+
     // Orders Report (using existing endpoint)
     // GET /orders/export/excel
     // Option 1: date=YYYY-MM-DD&from_time=HH:MM&to_time=HH:MM
@@ -677,7 +691,7 @@ export const reportsAPI = {
     exportOrdersReport: (params) => {
         return ordersAPI.exportExcel(params);
     },
-    
+
     // Sale Report
     // GET /api/reports/sales?from_date=YYYY-MM-DD&from_time=HH:MM:SS&to_date=YYYY-MM-DD&to_time=HH:MM:SS&format=excel
     exportSalesReport: (params) => {
@@ -690,7 +704,7 @@ export const reportsAPI = {
             ...params,
             format: 'excel'
         };
-        return api.get('/reports/sales', { 
+        return api.get('/reports/sales', {
             params: requestParams,
             responseType: 'blob'
         });
