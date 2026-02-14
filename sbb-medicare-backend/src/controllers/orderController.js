@@ -848,13 +848,13 @@ exports.createOrder = async (req, res, next) => {
             orderNumber,
             customerId,
             totalAmount,
-            paidAmount,           // Optional: Amount already paid
-            paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, CREDIT)
-            transactionReference, // Optional: Transaction reference
-            customerComments,
-            returnItems,          // Optional: Boolean indicating if there are return items (legacy) OR array of return items
-            returnItemsList,      // Optional: Array of return items [{name, quantity}]
-            returnAdjustAmount    // Optional: Amount to be deducted from total due to return items
+            paidAmount, paid_amount,           // Optional: Amount already paid
+            paymentMode, payment_mode,          // Optional: Payment mode (CASH, CARD, UPI, CREDIT)
+            transactionReference, transaction_reference, // Optional: Transaction reference
+            customerComments, customer_comments,
+            returnItems, return_items,          // Optional: Boolean indicating if there are return items (legacy) OR array of return items
+            returnItemsList, return_items_list,      // Optional: Array of return items [{name, quantity}]
+            returnAdjustAmount, return_adjust_amount    // Optional: Amount to be deducted from total due to return items
         } = req.body;
         const storeId = req.user.userId;
 
@@ -869,15 +869,23 @@ exports.createOrder = async (req, res, next) => {
         }
 
         const totalAmountNum = parseFloat(totalAmount);
-        const paidAmountNum = paidAmount ? parseFloat(paidAmount) : 0;
+        const paidAmountVal = paidAmount !== undefined ? paidAmount : paid_amount;
+        const paidAmountNum = paidAmountVal ? parseFloat(paidAmountVal) : 0;
+
+        const paymentModeVal = paymentMode || payment_mode;
+        const transactionReferenceVal = transactionReference || transaction_reference;
+        const customerCommentsVal = customerComments || customer_comments;
 
         // Handle return items: support both legacy boolean and new array format
         let returnItemsArray = [];
         let returnItemsFlag = false;
 
+        const returnItemsListVal = returnItemsList || return_items_list;
+        const returnItemsVal = returnItems !== undefined ? returnItems : return_items;
+
         // If returnItemsList is provided (new format), use it
-        if (returnItemsList && Array.isArray(returnItemsList) && returnItemsList.length > 0) {
-            returnItemsArray = returnItemsList;
+        if (returnItemsListVal && Array.isArray(returnItemsListVal) && returnItemsListVal.length > 0) {
+            returnItemsArray = returnItemsListVal;
             returnItemsFlag = true;
 
             // Validate return items array
@@ -889,12 +897,13 @@ exports.createOrder = async (req, res, next) => {
                     return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return item quantity is required and must be a positive integer'));
                 }
             }
-        } else if (returnItems === true || returnItems === 'true' || returnItems === 1) {
+        } else if (returnItemsVal === true || returnItemsVal === 'true' || returnItemsVal === 1) {
             // Legacy boolean format
             returnItemsFlag = true;
         }
 
-        const returnAdjustAmountNum = returnAdjustAmount ? parseFloat(returnAdjustAmount) : 0;
+        const returnAdjustAmountVal = returnAdjustAmount !== undefined ? returnAdjustAmount : return_adjust_amount;
+        const returnAdjustAmountNum = returnAdjustAmountVal ? parseFloat(returnAdjustAmountVal) : 0;
 
         // Validate return adjust amount
         if (returnAdjustAmountNum < 0) {
@@ -929,11 +938,11 @@ exports.createOrder = async (req, res, next) => {
 
         // Validate payment mode if paid amount is provided
         if (paidAmountNum > 0) {
-            if (!paymentMode) {
+            if (!paymentModeVal) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode is required when paid amount is provided'));
             }
             const validPaymentModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
-            const normalizedMode = paymentMode.toUpperCase();
+            const normalizedMode = paymentModeVal.toUpperCase();
             if (!validPaymentModes.includes(normalizedMode)) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, or CREDIT'));
             }
@@ -973,7 +982,7 @@ exports.createOrder = async (req, res, next) => {
         }
 
         // Normalize payment mode
-        const normalizedPaymentMode = paidAmountNum > 0 ? paymentMode.toUpperCase() : null;
+        const normalizedPaymentMode = paidAmountNum > 0 ? paymentModeVal.toUpperCase() : null;
 
         // Create order (no items)
         const order = await transaction(async (client) => {
@@ -991,6 +1000,10 @@ exports.createOrder = async (req, res, next) => {
 
             // Create order with provided order number
             // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
+
+
+            // Create order with provided order number
+            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
@@ -1000,7 +1013,7 @@ exports.createOrder = async (req, res, next) => {
                  RETURNING *`,
                 [orderNumber.trim(), customerId, null, storeId,
                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
-                    totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerComments,
+                    totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerCommentsVal,
                     returnItemsFlag, returnAdjustAmountNum]
             );
 
@@ -1025,11 +1038,13 @@ exports.createOrder = async (req, res, next) => {
                     `INSERT INTO payments (order_id, payment_mode, cash_amount, bank_amount,
                                           transaction_reference, status, created_by)
                      VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NULL)`,
-                    [order.id, normalizedPaymentMode, cashAmount, bankAmount, transactionReference || null]
+                    [order.id, normalizedPaymentMode, cashAmount, bankAmount, transactionReferenceVal || null]
                 );
 
                 // If fully paid, mark order as DELIVERED
-                if (initialPaymentStatus === 'PAID') {
+                // If fully paid, mark order as DELIVERED
+                // BUT only if there are NO return items (delivery boy needs to pick them up)
+                if (initialPaymentStatus === 'PAID' && !returnItemsFlag && returnItemsArray.length === 0) {
                     await client.query(
                         `UPDATE orders 
                          SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP
