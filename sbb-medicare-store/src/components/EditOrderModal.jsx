@@ -13,6 +13,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [returnItemsPhoto, setReturnItemsPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
 
     useEffect(() => {
         if (isOpen && order) {
@@ -20,7 +22,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
             const totalAmount = order.totalAmount || order.total_amount || order.amount || '';
             const paidAmount = order.paidAmount || order.paid_amount || 0;
             const remainingAmount = totalAmount ? (parseFloat(totalAmount) - parseFloat(paidAmount)).toFixed(2) : '';
-            
+
             setFormData({
                 totalAmount: totalAmount.toString(),
                 paidAmount: paidAmount.toString(),
@@ -30,6 +32,17 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                 customerComments: order.customerComments || order.customer_comments || order.note || ''
             });
             setErrors({});
+
+            // Set existing photo preview
+            const existingPhoto = order.return_items_photo_url || order.returnItemsPhotoUrl || null;
+            if (existingPhoto) {
+                const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://sbb-medicare-api.onrender.com/api';
+                const baseUrl = API_BASE_URL.replace('/api', '');
+                setPhotoPreview(existingPhoto.startsWith('http') || existingPhoto.startsWith('data:') ? existingPhoto : `${baseUrl}${existingPhoto}`);
+            } else {
+                setPhotoPreview(null);
+            }
+            setReturnItemsPhoto(null);
         } else {
             // Reset form when modal closes
             setFormData({
@@ -63,7 +76,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         // Calculate remaining amount when totalAmount or paidAmount changes
         if (name === 'totalAmount' || name === 'paidAmount') {
             const newFormData = { ...formData, [name]: value };
@@ -75,9 +88,17 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
-        
+
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setReturnItemsPhoto(file);
+            setPhotoPreview(URL.createObjectURL(file));
         }
     };
 
@@ -132,6 +153,11 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                 submitData.customerComments = formData.customerComments.trim();
             }
 
+            // Include return items photo if newly selected
+            if (returnItemsPhoto) {
+                submitData.returnItemsPhoto = returnItemsPhoto;
+            }
+
             await ordersAPI.update(order.id, submitData);
             alert('Order updated successfully!');
 
@@ -171,7 +197,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                         {/* Non-editable Order Details */}
                         <div className="bg-gray-50 p-4 rounded-lg space-y-3 mb-4">
                             <h3 className="text-xs font-medium text-gray-800 mb-3">Order Details (Read Only)</h3>
-                            
+
                             {/* Customer Name */}
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -322,9 +348,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 onChange={handleChange}
                                 step="0.01"
                                 min="0"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                    errors.totalAmount ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.totalAmount ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="Enter bill amount"
                                 disabled={isSubmitting}
                             />
@@ -345,9 +370,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 onChange={handleChange}
                                 step="0.01"
                                 min="0"
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                    errors.paidAmount ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.paidAmount ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="0.00"
                                 disabled={isSubmitting}
                             />
@@ -380,9 +404,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                     name="paymentMode"
                                     value={formData.paymentMode}
                                     onChange={handleChange}
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                        errors.paymentMode ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.paymentMode ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     disabled={isSubmitting}
                                 >
                                     <option value="">Select payment mode</option>
@@ -435,7 +458,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                    className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed transition-all shadow-md"
+                                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed transition-all shadow-md"
                             >
                                 {isSubmitting ? 'Updating...' : 'Update Order'}
                             </button>

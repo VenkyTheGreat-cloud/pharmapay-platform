@@ -67,7 +67,7 @@ const mockApiService = {
     console.log('🔵 MOCK API: Login called - email/mobile:', emailOrMobile);
     console.log('🔵 MOCK API: Password provided:', password ? 'Yes' : 'No');
     await delay(500);
-    
+
     // Always return success - no validation needed
     const response = {
       data: {
@@ -80,7 +80,7 @@ const mockApiService = {
         },
       },
     };
-    
+
     console.log('✅ MOCK API: Login successful - returning mock user');
     return response;
   },
@@ -147,11 +147,22 @@ const mockApiService = {
     return { data: order };
   },
 
-  updateOrderStatus: async (id, status, notes = '') => {
+  updateOrderStatus: async (id, status, notes = '', returnItemsPhotoUri = null) => {
     console.log('🔵 MOCK API: UpdateOrderStatus called - id:', id, 'status:', status);
+    if (returnItemsPhotoUri) {
+      console.log('🔵 MOCK API: Return items photo provided:', returnItemsPhotoUri);
+    }
     await delay(400);
     mockOrders = mockOrders.map((o) =>
-      o.id === parseInt(id) ? { ...o, status, updated_at: new Date().toISOString(), notes } : o
+      o.id === parseInt(id)
+        ? {
+          ...o,
+          status,
+          updated_at: new Date().toISOString(),
+          notes,
+          return_items_photo_url: returnItemsPhotoUri ? 'mock-url-for-photo' : o.return_items_photo_url,
+        }
+        : o
     );
     return { data: mockOrders.find((o) => o.id === parseInt(id)) };
   },
@@ -292,8 +303,30 @@ const realApiService = {
 
   getOrderById: (id) => api.get(CONFIG.ENDPOINTS.ORDER_BY_ID(id)),
 
-  updateOrderStatus: (id, status, notes = '') =>
-    api.put(CONFIG.ENDPOINTS.UPDATE_ORDER_STATUS(id), { status, notes }),
+  updateOrderStatus: (id, status, notes = '', returnItemsPhotoUri = null) => {
+    if (returnItemsPhotoUri) {
+      const formData = new FormData();
+      formData.append('status', status);
+      formData.append('notes', notes);
+
+      const filename = returnItemsPhotoUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+      formData.append('returnItemsPhoto', {
+        uri: returnItemsPhotoUri,
+        name: filename,
+        type,
+      });
+
+      return api.put(CONFIG.ENDPOINTS.UPDATE_ORDER_STATUS(id), formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
+    return api.put(CONFIG.ENDPOINTS.UPDATE_ORDER_STATUS(id), { status, notes });
+  },
 
   getOrderHistory: (id) => api.get(CONFIG.ENDPOINTS.ORDER_HISTORY(id)),
 
