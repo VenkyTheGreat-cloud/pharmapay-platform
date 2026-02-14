@@ -1255,7 +1255,7 @@ exports.assignOrder = async (req, res, next) => {
 // Update order status
 exports.updateOrderStatus = async (req, res, next) => {
     try {
-        const { status, notes, returnItemsPhotoUrl } = req.body;
+        const { status, notes, returnItemsPhotoUrl, return_items_photo_url } = req.body;
         const orderId = req.params.id;
 
         // Get order
@@ -1276,9 +1276,10 @@ exports.updateOrderStatus = async (req, res, next) => {
             if (req.file && req.file.fieldname === 'returnItemsPhoto') {
                 // File upload via multipart/form-data
                 finalReturnItemsPhotoUrl = `/uploads/${req.file.filename}`;
-            } else if (returnItemsPhotoUrl !== undefined) {
+            } else if (returnItemsPhotoUrl !== undefined || return_items_photo_url !== undefined) {
                 // URL or base64 string
-                finalReturnItemsPhotoUrl = returnItemsPhotoUrl ? returnItemsPhotoUrl.trim() : null;
+                const photoUrl = returnItemsPhotoUrl || return_items_photo_url;
+                finalReturnItemsPhotoUrl = photoUrl ? photoUrl.trim() : null;
             }
 
             // If no photo in current request, check if one was already uploaded previously
