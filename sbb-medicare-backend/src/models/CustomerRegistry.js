@@ -192,7 +192,7 @@ class CustomerRegistry {
 
         // Filter by store IDs if provided (for orders)
         if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
-            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            queryText += ` WHERE o.store_id = ANY($${paramCount})`;
             params.push(storeIds);
             paramCount++;
         }
