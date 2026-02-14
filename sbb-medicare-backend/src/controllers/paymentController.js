@@ -147,15 +147,15 @@ exports.collectPayment = async (req, res, next) => {
         let payment_mode = (req.body.payment_mode || 'CASH').toUpperCase();
         const transaction_reference = req.body.transaction_reference;
         
-        // Normalize payment_mode to match database enum (CASH, CARD, UPI, BANK_TRANSFER, SPLIT)
+        // Normalize payment_mode to match database enum (CASH, CARD, UPI, CREDIT, SPLIT)
         if (payment_mode === 'CASH') {
             payment_mode = 'CASH';
         } else if (payment_mode === 'CARD') {
             payment_mode = 'CARD';
         } else if (payment_mode === 'UPI') {
             payment_mode = 'UPI';
-        } else if (payment_mode === 'BANK' || payment_mode === 'BANK_TRANSFER') {
-            payment_mode = 'BANK_TRANSFER';
+        } else if (payment_mode === 'CREDIT') {
+            payment_mode = 'CREDIT';
         } else if (payment_mode === 'SPLIT') {
             payment_mode = 'SPLIT';
         }
@@ -167,8 +167,8 @@ exports.collectPayment = async (req, res, next) => {
         if (!amount || parseFloat(amount) <= 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Valid amount is required'));
         }
-        if (!['CASH', 'CARD', 'UPI', 'BANK_TRANSFER', 'SPLIT'].includes(payment_mode)) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, BANK_TRANSFER, or SPLIT'));
+        if (!['CASH', 'CARD', 'UPI', 'CREDIT', 'SPLIT'].includes(payment_mode)) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, CREDIT, or SPLIT'));
         }
 
         // Verify order exists
@@ -214,18 +214,62 @@ exports.collectPayment = async (req, res, next) => {
         // Prepare payment data
         let cash_amount = 0;
         let bank_amount = 0;
+        let final_transaction_reference = transaction_reference || null;
 
         if (payment_mode === 'CASH') {
             cash_amount = totalAmount;
-        } else if (payment_mode === 'CARD' || payment_mode === 'UPI' || payment_mode === 'BANK_TRANSFER') {
+        } else if (payment_mode === 'CARD' || payment_mode === 'UPI' || payment_mode === 'CREDIT') {
             bank_amount = totalAmount;
         } else if (payment_mode === 'SPLIT') {
-            // For split, expect cash_amount and bank_amount in request
-            cash_amount = parseFloat(req.body.cash_amount || 0);
-            bank_amount = parseFloat(req.body.bank_amount || 0);
-            if (!cash_amount || !bank_amount || (cash_amount + bank_amount) !== totalAmount) {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'For split payment, both cash_amount and bank_amount are required and must equal the total amount'));
+            // Enhanced SPLIT: Support multiple payment modes
+            // Accept splitPayments array: [{"mode": "CASH", "amount": 300}, {"mode": "UPI", "amount": 400, "transactionReference": "UPI123"}, ...]
+            const splitPayments = req.body.splitPayments || [];
+            
+            if (!Array.isArray(splitPayments) || splitPayments.length < 2) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'For SPLIT payment, splitPayments array with at least 2 payment modes is required'));
             }
+
+            // Validate split payments
+            const validModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
+            let calculatedTotal = 0;
+            const splitDetails = [];
+
+            for (const split of splitPayments) {
+                const mode = (split.mode || '').toUpperCase();
+                const splitAmount = parseFloat(split.amount || 0);
+
+                if (!validModes.includes(mode)) {
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', `Invalid payment mode in split: ${mode}. Must be one of: CASH, CARD, UPI, CREDIT`));
+                }
+
+                if (splitAmount <= 0) {
+                    return res.status(400).json(errorResponse('VALIDATION_ERROR', `Amount must be greater than 0 for ${mode} payment`));
+                }
+
+                calculatedTotal += splitAmount;
+
+                // Calculate cash_amount and bank_amount
+                if (mode === 'CASH') {
+                    cash_amount += splitAmount;
+                } else {
+                    bank_amount += splitAmount;
+                }
+
+                // Store split details
+                splitDetails.push({
+                    mode,
+                    amount: splitAmount,
+                    transactionReference: split.transactionReference || null
+                });
+            }
+
+            // Validate total
+            if (Math.abs(calculatedTotal - totalAmount) > 0.01) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', `Sum of split payments (${calculatedTotal}) must equal total amount (${totalAmount})`));
+            }
+
+            // Store split details as JSON in transaction_reference
+            final_transaction_reference = JSON.stringify(splitDetails);
         }
 
         // Create payment
@@ -234,7 +278,7 @@ exports.collectPayment = async (req, res, next) => {
             payment_mode,
             cash_amount,
             bank_amount,
-            transaction_reference: transaction_reference || null,
+            transaction_reference: final_transaction_reference,
             receipt_photo_url,
             created_by: req.user.userId // Delivery boy ID (BIGINT)
         });

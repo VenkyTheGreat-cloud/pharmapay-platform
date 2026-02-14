@@ -514,7 +514,10 @@ export default function OrdersPage() {
                                                                 </button>
                                                             )}
                                                             {/* Show Assign button for: unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
-                                                            {((order.status === 'REJECTED' || order.status === 'rejected') ||
+                                                            {/* Hide assign button for orders marked as "Customer received at store" */}
+                                                            {!order.customer_received_at_store &&
+                                                             !order.customerReceivedAtStore &&
+                                                             ((order.status === 'REJECTED' || order.status === 'rejected') ||
                                                               !(order.deliveryBoyId || order.assigned_delivery_boy_id) ||
                                                               (order.status === 'ASSIGNED' || order.status === 'assigned')) && (
                                                                 <button

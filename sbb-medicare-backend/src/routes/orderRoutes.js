@@ -34,6 +34,7 @@ router.put(
     '/:id',
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
+    upload.single('returnItemsPhoto'), // Allow file upload for return items photo
     [
         body('orderNumber').optional().notEmpty().trim().withMessage('Order number cannot be empty'),
         body('customerId').optional().notEmpty().withMessage('Customer ID cannot be empty'),
@@ -47,6 +48,7 @@ router.put(
         body('returnItemsList.*.name').optional().notEmpty().trim().withMessage('Return item name is required'),
         body('returnItemsList.*.quantity').optional().isInt({ min: 1 }).withMessage('Return item quantity must be a positive integer'),
         body('returnAdjustAmount').optional().isFloat({ min: 0 }).withMessage('Return adjust amount must be a non-negative number'),
+        body('returnItemsPhotoUrl').optional().isString().withMessage('Return items photo URL must be a string'),
     ],
     orderController.updateOrder
 );
@@ -62,7 +64,7 @@ router.post(
         body('customerId').notEmpty().withMessage('Customer ID is required'),
         body('totalAmount').isFloat({ min: 0.01 }).withMessage('Total amount is required and must be greater than 0'),
         body('paidAmount').optional().isFloat({ min: 0 }).withMessage('Paid amount must be a positive number'),
-        body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'BANK_TRANSFER']).withMessage('Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'),
+        body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'CREDIT']).withMessage('Payment mode must be CASH, CARD, UPI, or CREDIT'),
         body('transactionReference').optional().isString().withMessage('Transaction reference must be a string'),
         body('returnItems').optional().isBoolean().withMessage('Return items must be a boolean'),
         body('returnItemsList').optional().isArray().withMessage('Return items list must be an array'),
@@ -107,9 +109,11 @@ router.post(
 // Update order status
 router.put(
     '/:id/status',
+    upload.single('returnItemsPhoto'), // Allow file upload for return items photo
     [
         body('status').isIn(['ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'])
             .withMessage('Invalid status'),
+        body('returnItemsPhotoUrl').optional().isString().withMessage('Return items photo URL must be a string'),
     ],
     orderController.updateOrderStatus
 );
