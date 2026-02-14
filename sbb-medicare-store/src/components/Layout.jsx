@@ -35,7 +35,7 @@ export default function Layout({ children }) {
         { name: 'Orders', href: '/orders', icon: Package },
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
-        { name: 'Contacts', href: '/contacts', icon: Phone },
+        { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileDown },
     ];
 

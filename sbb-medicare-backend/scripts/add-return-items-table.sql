@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS return_items (
 
 -- Create index for return_items
 CREATE INDEX IF NOT EXISTS idx_return_items_order_id ON return_items(order_id);
+  

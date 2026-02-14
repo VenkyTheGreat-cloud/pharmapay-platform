@@ -114,11 +114,14 @@ class Order {
         }
 
         // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        // EXCLUDE orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
         if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
             queryText += ` AND (
                 (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
                 OR o.assigned_delivery_boy_id = $${paramCount + 1}
             )`;
+            // Exclude orders delivered at store (DELIVERED with no delivery boy assigned)
+            queryText += ` AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)`;
             params.push(filters.store_ids, filters.delivery_boy_id);
             paramCount += 2;
         }
@@ -204,11 +207,14 @@ class Order {
         }
 
         // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        // EXCLUDE orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
         if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
             queryText += ` AND (
                 (assigned_delivery_boy_id IS NULL AND store_id = ANY($${paramCount}::uuid[]))
                 OR assigned_delivery_boy_id = $${paramCount + 1}
             )`;
+            // Exclude orders delivered at store (DELIVERED with no delivery boy assigned)
+            queryText += ` AND NOT (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)`;
             params.push(filters.store_ids, filters.delivery_boy_id);
             paramCount += 2;
         }
@@ -290,6 +296,7 @@ class Order {
     // Shows:
     // 1. Unassigned orders (assigned_delivery_boy_id IS NULL) for the delivery boy's admin group
     // 2. Orders assigned to this delivery boy (assigned_delivery_boy_id = deliveryBoyId)
+    // EXCLUDES: Orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
     static async getOngoingOrdersForDeliveryBoy(deliveryBoyId, storeIds = null) {
         let queryText = `
             SELECT o.*, 
@@ -301,6 +308,7 @@ class Order {
              LEFT JOIN users u ON o.store_id = u.id
              LEFT JOIN customers c ON o.customer_id = c.id
              WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+               AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)
         `;
         const params = [];
         let paramCount = 1;
@@ -518,6 +526,8 @@ class Order {
     }
 
     // Get orders by customer mobile
+    // Note: Excludes orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
+    // These orders should not be visible to delivery boys
     static async getByCustomerMobile(mobile, storeId = null) {
         let queryText = `
             SELECT o.*, 
@@ -527,6 +537,7 @@ class Order {
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.customer_phone = $1
+              AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)
         `;
         const params = [mobile];
         let paramCount = 2;

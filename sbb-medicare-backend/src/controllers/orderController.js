@@ -421,6 +421,7 @@ exports.updateOrder = async (req, res, next) => {
             returnItems,
             returnItemsList,
             returnAdjustAmount,
+            returnItemsPhotoUrl,
             // Optional: update payment before closing/marking delivered
             paidAmount,
             paymentMode,
@@ -602,6 +603,22 @@ exports.updateOrder = async (req, res, next) => {
             }
         }
 
+        // Handle return items photo URL
+        // Support both file upload and URL/base64
+        let finalReturnItemsPhotoUrl = null;
+        if (req.file && req.file.fieldname === 'returnItemsPhoto') {
+            // File upload via multipart/form-data
+            finalReturnItemsPhotoUrl = `/uploads/${req.file.filename}`;
+        } else if (returnItemsPhotoUrl !== undefined) {
+            // URL or base64 string
+            finalReturnItemsPhotoUrl = returnItemsPhotoUrl ? returnItemsPhotoUrl.trim() : null;
+        }
+
+        // If return items photo is provided, add to updates
+        if (finalReturnItemsPhotoUrl !== null) {
+            updates.return_items_photo_url = finalReturnItemsPhotoUrl;
+        }
+
         /**
          * Handle payment update (store user adjusting paid amount before closing order)
          * Logic:
@@ -688,13 +705,13 @@ exports.updateOrder = async (req, res, next) => {
                     );
                 }
 
-                const validModes = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
+                const validModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
                 const normalizedMode = paymentMode.toUpperCase();
                 if (!validModes.includes(normalizedMode)) {
                     return res.status(400).json(
                         errorResponse(
                             'VALIDATION_ERROR',
-                            'Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'
+                            'Payment mode must be CASH, CARD, UPI, or CREDIT'
                         )
                     );
                 }
@@ -832,7 +849,7 @@ exports.createOrder = async (req, res, next) => {
             customerId, 
             totalAmount, 
             paidAmount,           // Optional: Amount already paid
-            paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, BANK_TRANSFER)
+            paymentMode,          // Optional: Payment mode (CASH, CARD, UPI, CREDIT)
             transactionReference, // Optional: Transaction reference
             customerComments,
             returnItems,          // Optional: Boolean indicating if there are return items (legacy) OR array of return items
@@ -915,10 +932,10 @@ exports.createOrder = async (req, res, next) => {
             if (!paymentMode) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode is required when paid amount is provided'));
             }
-            const validPaymentModes = ['CASH', 'CARD', 'UPI', 'BANK_TRANSFER'];
+            const validPaymentModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
             const normalizedMode = paymentMode.toUpperCase();
             if (!validPaymentModes.includes(normalizedMode)) {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, or BANK_TRANSFER'));
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, or CREDIT'));
             }
         }
 
@@ -997,7 +1014,7 @@ exports.createOrder = async (req, res, next) => {
                 // Set amounts based on payment mode
                 if (normalizedPaymentMode === 'CASH') {
                     cashAmount = paidAmountNum;
-                } else if (['CARD', 'UPI', 'BANK_TRANSFER'].includes(normalizedPaymentMode)) {
+                } else if (['CARD', 'UPI', 'CREDIT'].includes(normalizedPaymentMode)) {
                     bankAmount = paidAmountNum;
                 }
 
@@ -1238,7 +1255,7 @@ exports.assignOrder = async (req, res, next) => {
 // Update order status
 exports.updateOrderStatus = async (req, res, next) => {
     try {
-        const { status, notes } = req.body;
+        const { status, notes, returnItemsPhotoUrl } = req.body;
         const orderId = req.params.id;
 
         // Get order
@@ -1252,10 +1269,42 @@ exports.updateOrderStatus = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not assigned to you'));
         }
 
+        // If marking as DELIVERED and return items exist, validate return items photo
+        if (status === 'DELIVERED' && order.return_items === true) {
+            // Handle return items photo URL
+            let finalReturnItemsPhotoUrl = null;
+            if (req.file && req.file.fieldname === 'returnItemsPhoto') {
+                // File upload via multipart/form-data
+                finalReturnItemsPhotoUrl = `/uploads/${req.file.filename}`;
+            } else if (returnItemsPhotoUrl !== undefined) {
+                // URL or base64 string
+                finalReturnItemsPhotoUrl = returnItemsPhotoUrl ? returnItemsPhotoUrl.trim() : null;
+            }
+
+            // If return items photo is not provided, return error
+            if (!finalReturnItemsPhotoUrl) {
+                return res.status(400).json(errorResponse(
+                    'VALIDATION_ERROR',
+                    'Return items photo is required when marking order as delivered with return items'
+                ));
+            }
+
+            // Update order with return items photo URL
+            await query(
+                `UPDATE orders SET return_items_photo_url = $1 WHERE id = $2`,
+                [finalReturnItemsPhotoUrl, orderId]
+            );
+        }
+
         // Update status
         const updatedOrder = await Order.updateStatus(orderId, status, req.user.userId, notes);
 
-        logger.info('Order status updated', { orderId, status, updatedBy: req.user.userId });
+        logger.info('Order status updated', { 
+            orderId, 
+            status, 
+            updatedBy: req.user.userId,
+            hasReturnItemsPhoto: status === 'DELIVERED' && order.return_items === true
+        });
 
         const items = await OrderItem.findByOrderId(updatedOrder.id);
 
