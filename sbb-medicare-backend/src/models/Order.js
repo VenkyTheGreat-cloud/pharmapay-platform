@@ -34,8 +34,8 @@ class Order {
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
                 [orderNumber, customer_id, assigned_delivery_boy_id, store_id,
-                 customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                 total_amount, customer_comments, return_items, return_adjust_amount]
+                    customer_name, customer_phone, customer_address, customer_lat, customer_lng,
+                    total_amount, customer_comments, return_items, return_adjust_amount]
             );
 
             const order = orderResult.rows[0];
@@ -132,7 +132,7 @@ class Order {
             // Check if date_from and date_to contain time components
             const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
             const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
-            
+
             if (hasTimeFrom || hasTimeTo) {
                 // Use timestamp comparison for datetime ranges
                 queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
@@ -225,7 +225,7 @@ class Order {
             // Check if date_from and date_to contain time components
             const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
             const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
-            
+
             if (hasTimeFrom || hasTimeTo) {
                 // Use timestamp comparison for datetime ranges
                 queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
@@ -269,7 +269,7 @@ class Order {
             status: ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
         };
         if (storeId) filters.store_id = storeId;
-        
+
         let queryText = `
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
@@ -322,7 +322,7 @@ class Order {
                 OR o.assigned_delivery_boy_id = $${paramCount + 1}
             )`;
             params.push(storeIds, deliveryBoyId);
-            
+
             // Log for debugging
             const logger = require('../config/logger');
             logger.info('Delivery boy order query - with storeIds', {
@@ -338,7 +338,7 @@ class Order {
             const { query: dbQuery } = require('../config/database');
             const dbResult = await dbQuery('SELECT store_id FROM delivery_boys WHERE id = $1', [deliveryBoyId]);
             const deliveryBoyStoreId = dbResult.rows[0]?.store_id;
-            
+
             if (deliveryBoyStoreId) {
                 // Show unassigned orders for this store OR orders assigned to this delivery boy
                 queryText += ` AND (
@@ -439,7 +439,7 @@ class Order {
             LEFT JOIN users u ON o.store_id = u.id
             LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.status != 'DELIVERED'
-              AND DATE(o.created_at) < CURRENT_DATE
+              AND DATE(o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')
         `;
         const params = [];
         let paramCount = 1;
@@ -492,7 +492,7 @@ class Order {
             SELECT COUNT(*) as total 
             FROM orders o
             WHERE o.status != 'DELIVERED'
-              AND DATE(o.created_at) < CURRENT_DATE
+              AND DATE(o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')
         `;
         const params = [];
         let paramCount = 1;
@@ -581,10 +581,10 @@ class Order {
             }
 
             // Create status history
-            const notes = currentStatus === 'REJECTED' 
+            const notes = currentStatus === 'REJECTED'
                 ? 'Order reassigned to delivery boy (previously rejected)'
                 : 'Order assigned to delivery boy';
-            
+
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
@@ -627,7 +627,7 @@ class Order {
             // Create status history
             let changedByValue = null;
             let historyNotes = notes || 'Order accepted by delivery boy';
-            
+
             // Get delivery boy name for notes
             try {
                 const deliveryBoyResult = await client.query(
@@ -686,7 +686,7 @@ class Order {
             // Create status history
             let changedByValue = null;
             let historyNotes = reason || 'Order rejected by delivery boy';
-            
+
             // Get delivery boy name for notes
             try {
                 const deliveryBoyResult = await client.query(
@@ -695,8 +695,8 @@ class Order {
                 );
                 if (deliveryBoyResult.rows.length > 0) {
                     const dbName = deliveryBoyResult.rows[0].name;
-                    historyNotes = reason 
-                        ? `Rejected by ${dbName}: ${reason}` 
+                    historyNotes = reason
+                        ? `Rejected by ${dbName}: ${reason}`
                         : `Rejected by delivery boy: ${dbName}`;
                 }
             } catch (err) {
@@ -785,7 +785,7 @@ class Order {
             // Check if changedBy is a delivery boy ID (numeric) or UUID (has dashes)
             let changedByValue = null;
             let historyNotes = notes || '';
-            
+
             // If status changed to ASSIGNED and order was unassigned, add note
             if (status === 'ASSIGNED' && order.assigned_delivery_boy_id !== null) {
                 try {
@@ -795,7 +795,7 @@ class Order {
                     );
                     if (deliveryBoyResult.rows.length > 0) {
                         const dbName = deliveryBoyResult.rows[0].name;
-                        historyNotes = notes 
+                        historyNotes = notes
                             ? `${notes} (Order unassigned from ${dbName} - now available to all delivery boys)`
                             : `Order status changed to ASSIGNED. Unassigned from ${dbName} - now available to all delivery boys.`;
                     }
@@ -806,11 +806,11 @@ class Order {
                     }
                 }
             }
-            
+
             // UUIDs contain dashes, delivery boy IDs are just numbers
             const changedByStr = String(changedBy || '');
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changedByStr);
-            
+
             if (isUUID) {
                 // This is a UUID (admin/store manager)
                 changedByValue = changedBy;
