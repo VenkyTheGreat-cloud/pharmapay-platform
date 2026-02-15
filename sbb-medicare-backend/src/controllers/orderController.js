@@ -1039,6 +1039,7 @@ exports.createOrder = async (req, res, next) => {
                                           transaction_reference, status, created_by)
                      VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NULL)`,
                     [order.id, normalizedPaymentMode, cashAmount, bankAmount, transactionReferenceVal || null]
+                );
             }
 
             // Create return items if provided
