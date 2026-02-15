@@ -6,14 +6,15 @@ class CustomerRegistry {
         const {
             mobile,
             name,
-            registry_date
+            registry_date,
+            store_id
         } = registryData;
 
         const result = await query(
-            `INSERT INTO customer_registry (mobile, name, registry_date)
-             VALUES ($1, $2, $3)
+            `INSERT INTO customer_registry (mobile, name, registry_date, store_id)
+             VALUES ($1, $2, $3, $4)
              RETURNING *`,
-            [mobile.trim(), name ? name.trim() : null, registry_date || new Date().toISOString()]
+            [mobile.trim(), name ? name.trim() : null, registry_date || new Date().toISOString(), store_id || null]
         );
 
         return result.rows[0];
@@ -156,6 +157,7 @@ class CustomerRegistry {
     // Handles duplicate mobile numbers by returning the latest registration entry per mobile
     static async getRegisteredCustomersWithOrders(date, storeIds = null) {
         // First, get distinct mobile numbers with their latest registry entry for the date
+        // Filter by store_id in the customer_registry table itself
         let queryText = `
             WITH latest_registrations AS (
                 SELECT DISTINCT ON (cr.mobile)
@@ -163,9 +165,22 @@ class CustomerRegistry {
                     cr.name as customer_name,
                     cr.mobile as customer_mobile,
                     cr.registry_date,
-                    cr.created_at as registry_created_at
+                    cr.created_at as registry_created_at,
+                    cr.store_id
                 FROM customer_registry cr
                 WHERE DATE(cr.registry_date) = $1::date
+        `;
+        const params = [date];
+        let paramCount = 2;
+
+        // Filter customer_registry by store_id if provided
+        if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
+            queryText += ` AND cr.store_id = ANY($${paramCount})`;
+            params.push(storeIds);
+            paramCount++;
+        }
+
+        queryText += `
                 ORDER BY cr.mobile, cr.registry_date DESC, cr.created_at DESC
             )
             SELECT 
@@ -187,14 +202,10 @@ class CustomerRegistry {
             LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone 
                 AND DATE(o.created_at) = $1::date
         `;
-        const params = [date];
-        let paramCount = 2;
 
-        // Filter by store IDs if provided (for orders)
+        // Also filter orders by store_id if provided (for consistency)
         if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
-            queryText += ` WHERE o.store_id = ANY($${paramCount})`;
-            params.push(storeIds);
-            paramCount++;
+            queryText += ` AND (o.store_id IS NULL OR o.store_id = ANY($2))`;
         }
 
         queryText += ' ORDER BY lr.registry_date DESC, o.created_at DESC';

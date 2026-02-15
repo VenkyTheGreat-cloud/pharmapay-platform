@@ -56,14 +56,27 @@ exports.createCustomerRegistry = async (req, res, next) => {
         // Normalize datetime (accepts both date and datetime)
         const normalizedDateTime = registry_date ? normalizeDateTimeParam(registry_date) : new Date().toISOString();
 
+        // Get store_id from authenticated user
+        // For admin, use their primary store; for store_manager, use their store
+        let storeId = null;
+        if (req.user.role === 'admin' || req.user.role === 'store_manager') {
+            const User = require('../models/User');
+            const userStores = await User.getStoreIdsForAdmin(
+                req.user.role === 'admin' ? req.user.userId : req.user.adminId
+            );
+            // Use the first store if multiple stores exist
+            storeId = userStores && userStores.length > 0 ? userStores[0] : null;
+        }
+
         // Create registry entry - name is optional
         const registry = await CustomerRegistry.create({
             mobile: mobile.trim(),
             name: name ? name.trim() : null,
-            registry_date: normalizedDateTime
+            registry_date: normalizedDateTime,
+            store_id: storeId
         });
 
-        logger.info('Customer registry entry created', { id: registry.id, mobile: registry.mobile, name: registry.name });
+        logger.info('Customer registry entry created', { id: registry.id, mobile: registry.mobile, name: registry.name, store_id: storeId });
 
         res.status(201).json(successResponse(registry, 'Customer registry entry created successfully'));
     } catch (error) {
