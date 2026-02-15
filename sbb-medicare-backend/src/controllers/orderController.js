@@ -1039,19 +1039,6 @@ exports.createOrder = async (req, res, next) => {
                                           transaction_reference, status, created_by)
                      VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NULL)`,
                     [order.id, normalizedPaymentMode, cashAmount, bankAmount, transactionReferenceVal || null]
-                );
-
-                // If fully paid, mark order as DELIVERED
-                // If fully paid, mark order as DELIVERED
-                // BUT only if there are NO return items (delivery boy needs to pick them up)
-                if (initialPaymentStatus === 'PAID' && !returnItemsFlag && returnItemsArray.length === 0) {
-                    await client.query(
-                        `UPDATE orders 
-                         SET status = 'DELIVERED', delivered_at = CURRENT_TIMESTAMP
-                         WHERE id = $1`,
-                        [order.id]
-                    );
-                }
             }
 
             // Create return items if provided
