@@ -20,8 +20,15 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
         if (isOpen && order) {
             // Initialize form with order data
             const totalAmount = order.totalAmount || order.total_amount || order.amount || '';
-            const paidAmount = order.paidAmount || order.paid_amount || 0;
-            const remainingAmount = totalAmount ? (parseFloat(totalAmount) - parseFloat(paidAmount)).toFixed(2) : '';
+
+            // Read from payment_summary if available, otherwise fallback to direct properties
+            const paidAmount = order.payment_summary?.total_paid
+                ? Number(order.payment_summary.total_paid)
+                : (order.paidAmount || order.paid_amount || 0);
+
+            const remainingAmount = order.payment_summary?.remaining_amount !== undefined
+                ? Number(order.payment_summary.remaining_amount).toFixed(2)
+                : (totalAmount ? (parseFloat(totalAmount) - parseFloat(paidAmount)).toFixed(2) : '');
 
             setFormData({
                 totalAmount: totalAmount.toString(),
