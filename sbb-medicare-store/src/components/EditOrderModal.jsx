@@ -7,6 +7,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
         totalAmount: '',
         paidAmount: '',
         remainingAmount: '',
+        returnAdjustAmount: '',
         paymentMode: '',
         transactionReference: '',
         customerComments: ''
@@ -34,6 +35,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                 totalAmount: totalAmount.toString(),
                 paidAmount: paidAmount.toString(),
                 remainingAmount: remainingAmount,
+                returnAdjustAmount: (order.returnAdjustAmount || order.return_adjust_amount || '').toString(),
                 paymentMode: order.paymentMode || order.payment_mode || '',
                 transactionReference: order.transactionReference || order.transaction_reference || '',
                 customerComments: order.customerComments || order.customer_comments || order.note || ''
@@ -56,6 +58,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                 totalAmount: '',
                 paidAmount: '',
                 remainingAmount: '',
+                returnAdjustAmount: '',
                 paymentMode: '',
                 transactionReference: '',
                 customerComments: ''
@@ -84,12 +87,15 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // Calculate remaining amount when totalAmount or paidAmount changes
-        if (name === 'totalAmount' || name === 'paidAmount') {
+        // Calculate remaining amount when relevant fields change
+        if (name === 'totalAmount' || name === 'paidAmount' || name === 'returnAdjustAmount') {
             const newFormData = { ...formData, [name]: value };
             const total = parseFloat(newFormData.totalAmount) || 0;
             const paid = parseFloat(newFormData.paidAmount) || 0;
-            const remaining = total - paid;
+            const returnAdjust = (order.returnItems || order.return_items)
+                ? (parseFloat(newFormData.returnAdjustAmount) || 0)
+                : 0;
+            const remaining = total - returnAdjust - paid;
             newFormData.remainingAmount = remaining >= 0 ? remaining.toFixed(2) : '0.00';
             setFormData(newFormData);
         } else {
@@ -128,6 +134,17 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
             }
         }
 
+        if (order.returnItems || order.return_items) {
+            const returnAdjustAmount = parseFloat(formData.returnAdjustAmount) || 0;
+            const totalAmount = parseFloat(formData.totalAmount) || 0;
+
+            if (returnAdjustAmount < 0) {
+                newErrors.returnAdjustAmount = 'Return Adjust Amount cannot be negative';
+            } else if (returnAdjustAmount > totalAmount) {
+                newErrors.returnAdjustAmount = 'Return Adjust Amount cannot be greater than Bill Amount';
+            }
+        }
+
         return newErrors;
     };
 
@@ -158,6 +175,11 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
 
             if (formData.customerComments && formData.customerComments.trim()) {
                 submitData.customerComments = formData.customerComments.trim();
+            }
+
+            // Include return adjust amount if return items is true
+            if (order.returnItems || order.return_items) {
+                submitData.returnAdjustAmount = parseFloat(formData.returnAdjustAmount) || 0;
             }
 
             // Include return items photo if newly selected
@@ -321,21 +343,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 />
                             </div>
 
-                            {/* Return Adjust Amount */}
-                            {(order.returnAdjustAmount || order.return_adjust_amount) && (
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                        Return Adjust Amount
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={`₹${(Number(order.returnAdjustAmount || order.return_adjust_amount) || 0).toFixed(2)}`}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 cursor-not-allowed"
-                                        readOnly
-                                        disabled
-                                    />
-                                </div>
-                            )}
+
                         </div>
 
                         {/* Editable Fields Section */}
@@ -364,6 +372,30 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 <p className="text-red-500 text-xs mt-1">{errors.totalAmount}</p>
                             )}
                         </div>
+
+                        {/* Return Adjust Amount (Editable if Return Items is True) */}
+                        {(order.returnItems || order.return_items) && (
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Return Adjust Amount
+                                </label>
+                                <input
+                                    type="number"
+                                    name="returnAdjustAmount"
+                                    value={formData.returnAdjustAmount}
+                                    onChange={handleChange}
+                                    step="0.01"
+                                    min="0"
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.returnAdjustAmount ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder="0.00"
+                                    disabled={isSubmitting}
+                                />
+                                {errors.returnAdjustAmount && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.returnAdjustAmount}</p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Paid Amount */}
                         <div>
