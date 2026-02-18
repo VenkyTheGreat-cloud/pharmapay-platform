@@ -585,9 +585,11 @@ exports.updateOrder = async (req, res, next) => {
                 ? updates.return_items
                 : (order.return_items === true);
 
+            /* 
             if (currentReturnItems && returnAdjustAmountNum <= 0) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items is true'));
             }
+            */
 
             updates.return_adjust_amount = returnAdjustAmountNum;
         }
@@ -598,9 +600,11 @@ exports.updateOrder = async (req, res, next) => {
                 ? updates.return_adjust_amount
                 : parseFloat(order.return_adjust_amount || 0);
 
+            /* 
             if (currentReturnAdjustAmount <= 0) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be provided and greater than 0 when return items list is provided'));
             }
+            */
         }
 
         // Handle return items photo URL
@@ -914,15 +918,19 @@ exports.createOrder = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount cannot exceed total amount'));
         }
 
+        /* 
         // If returnItems is true (either from array or boolean), returnAdjustAmount should be > 0
         if (returnItemsFlag && returnAdjustAmountNum <= 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be greater than 0 when return items are present'));
         }
+        */
 
+        /* 
         // If returnItemsList is provided, returnAdjustAmount should also be provided
         if (returnItemsArray.length > 0 && returnAdjustAmountNum <= 0) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Return adjust amount must be provided when return items list is provided'));
         }
+        */
 
         // Calculate adjusted total (total_amount - return_adjust_amount)
         const adjustedTotal = totalAmountNum - returnAdjustAmountNum;

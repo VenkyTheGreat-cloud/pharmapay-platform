@@ -825,7 +825,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {formData.returnItems && (
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                                        Return Adjust Amount <span className="text-red-500">*</span>
+                                        Return Adjust Amount
                                     </label>
                                     <input
                                         type="number"
