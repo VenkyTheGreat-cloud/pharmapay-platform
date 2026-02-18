@@ -25,7 +25,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [returnItemsList, setReturnItemsList] = useState([{ name: '', quantity: '' }]);
-    
+
     // Customer update modal states
     const [showCustomerUpdateModal, setShowCustomerUpdateModal] = useState(false);
     const [customerToUpdate, setCustomerToUpdate] = useState(null);
@@ -110,7 +110,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        
+
         // For order number, only allow digits and limit to 8 characters
         if (name === 'orderNumber') {
             const numericValue = value.replace(/\D/g, ''); // Remove non-digits
@@ -125,7 +125,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
-        
+
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -136,7 +136,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         const updatedList = [...returnItemsList];
         updatedList[index] = { ...updatedList[index], [field]: value };
         setReturnItemsList(updatedList);
-        
+
         // Clear errors for return items
         if (errors.returnItemsList) {
             setErrors(prev => {
@@ -183,7 +183,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         // Check if customer has area name
         const area = customer.area || customer.areaName || customer.area_name || '';
         const address = customer.address || '';
-        
+
         if (!area || !area.trim()) {
             // Show update modal if area is missing
             setCustomerToUpdate(customer);
@@ -248,7 +248,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         try {
             setIsUpdatingCustomer(true);
-            
+
             const updateData = {
                 name: customerUpdateData.name.trim(),
                 mobile: customerUpdateData.mobile.trim(),
@@ -260,7 +260,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             };
 
             await customersAPI.update(customerToUpdate.id, updateData);
-            
+
             // Create updated customer object
             const refreshedCustomer = {
                 ...customerToUpdate,
@@ -271,14 +271,14 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 area_name: updateData.area,
                 address: updateData.address
             };
-            
+
             // Update the customer in the customers list
-            setCustomers(prevCustomers => 
-                prevCustomers.map(c => 
+            setCustomers(prevCustomers =>
+                prevCustomers.map(c =>
                     c.id === customerToUpdate.id ? refreshedCustomer : c
                 )
             );
-            
+
             // Now proceed with customer selection
             setFormData(prev => ({ ...prev, customerId: refreshedCustomer.id.toString() }));
             setSelectedCustomerName(`${refreshedCustomer.name || refreshedCustomer.full_name} - ${refreshedCustomer.mobile || refreshedCustomer.mobile_number}`);
@@ -287,11 +287,11 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             setCustomerToUpdate(null);
             setCustomerUpdateData({ name: '', mobile: '', area: '', address: '' });
             setCustomerUpdateErrors({});
-            
+
             if (errors.customerId) {
                 setErrors(prev => ({ ...prev, customerId: '' }));
             }
-            
+
             alert('Customer details updated successfully!');
         } catch (error) {
             console.error('Error updating customer:', error);
@@ -304,10 +304,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const calculateRemainingAmount = () => {
         const total = parseFloat(formData.totalAmount) || 0;
         const paid = parseFloat(formData.paidAmount) || 0;
-        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
-            ? parseFloat(formData.returnAdjustAmount) || 0 
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount
+            ? parseFloat(formData.returnAdjustAmount) || 0
             : 0;
-        
+
         // Calculate: Total Amount - Return Adjust Amount - Paid Amount
         const adjustedTotal = total - returnAdjustAmount;
         return Math.max(0, adjustedTotal - paid);
@@ -315,8 +315,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const calculateAdjustedTotal = () => {
         const total = parseFloat(formData.totalAmount) || 0;
-        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
-            ? parseFloat(formData.returnAdjustAmount) || 0 
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount
+            ? parseFloat(formData.returnAdjustAmount) || 0
             : 0;
         return Math.max(0, total - returnAdjustAmount);
     };
@@ -340,8 +340,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         const paidAmount = parseFloat(formData.paidAmount) || 0;
         const totalAmount = parseFloat(formData.totalAmount) || 0;
-        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount 
-            ? parseFloat(formData.returnAdjustAmount) || 0 
+        const returnAdjustAmount = formData.returnItems && formData.returnAdjustAmount
+            ? parseFloat(formData.returnAdjustAmount) || 0
             : 0;
         const adjustedTotal = Math.max(0, totalAmount - returnAdjustAmount);
 
@@ -356,10 +356,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         // Validate return items list if return items is checked
         if (formData.returnItems) {
             // Validate return items list
-            const validItems = returnItemsList.filter(item => 
+            const validItems = returnItemsList.filter(item =>
                 item.name && item.name.trim() && item.quantity && parseFloat(item.quantity) > 0
             );
-            
+
             if (validItems.length === 0) {
                 newErrors.returnItemsList = 'At least one return item with medicine name and quantity is required';
             } else {
@@ -374,10 +374,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 });
             }
 
-            // Validate return adjust amount
-            if (!formData.returnAdjustAmount || parseFloat(formData.returnAdjustAmount) <= 0) {
-                newErrors.returnAdjustAmount = 'Return Adjust Amount is required when Return Items is checked';
-            } else if (parseFloat(formData.returnAdjustAmount) > totalAmount) {
+            // Validate return adjust amount (optional)
+            if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) < 0) {
+                newErrors.returnAdjustAmount = 'Return Adjust Amount cannot be negative';
+            } else if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > totalAmount) {
                 newErrors.returnAdjustAmount = 'Return Adjust Amount cannot be greater than Total Amount';
             }
         }
@@ -434,11 +434,11 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                         name: item.name.trim(),
                         quantity: parseInt(item.quantity) || parseFloat(item.quantity)
                     }));
-                
+
                 if (validReturnItems.length > 0) {
                     submitData.returnItemsList = validReturnItems;
                 }
-                
+
                 if (formData.returnAdjustAmount && parseFloat(formData.returnAdjustAmount) > 0) {
                     submitData.returnAdjustAmount = parseFloat(formData.returnAdjustAmount);
                 }
@@ -513,9 +513,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     maxLength="8"
                                     pattern="[0-9]{1,8}"
                                     inputMode="numeric"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                        errors.orderNumber ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.orderNumber ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="Enter 1-8 digit order number"
                                     disabled={isSubmitting}
                                 />
@@ -551,9 +550,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             }
                                         }}
                                         placeholder="Search by customer name or mobile number"
-                                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                            errors.customerId ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.customerId ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         disabled={isSubmitting}
                                     />
                                 </div>
@@ -605,9 +603,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     min="0"
                                     step="0.01"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                        errors.totalAmount ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.totalAmount ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="0.00"
                                     disabled={isSubmitting}
                                 />
@@ -647,9 +644,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     onChange={handleChange}
                                     min="0"
                                     step="0.01"
-                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                        errors.paidAmount ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.paidAmount ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="0.00"
                                     disabled={isSubmitting}
                                 />
@@ -687,9 +683,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         name="paymentMode"
                                         value={formData.paymentMode}
                                         onChange={handleChange}
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                            errors.paymentMode ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.paymentMode ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         disabled={isSubmitting}
                                     >
                                         <option value="">Select payment mode</option>
@@ -765,7 +760,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             <p className="text-red-500 text-xs">{errors.returnItemsList}</p>
                                         )}
                                     </div>
-                                    
+
                                     {returnItemsList.map((item, index) => (
                                         <div key={index} className="flex gap-2 items-start">
                                             <div className="flex-1 grid grid-cols-2 gap-2">
@@ -775,9 +770,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                                         value={item.name}
                                                         onChange={(e) => handleReturnItemChange(index, 'name', e.target.value)}
                                                         placeholder="Medicine Name"
-                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                                            errors[`returnItemName_${index}`] ? 'border-red-500' : 'border-gray-300'
-                                                        }`}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${errors[`returnItemName_${index}`] ? 'border-red-500' : 'border-gray-300'
+                                                            }`}
                                                         disabled={isSubmitting}
                                                     />
                                                     {errors[`returnItemName_${index}`] && (
@@ -792,9 +786,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                                         placeholder="Quantity"
                                                         min="1"
                                                         step="1"
-                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                                            errors[`returnItemQty_${index}`] ? 'border-red-500' : 'border-gray-300'
-                                                        }`}
+                                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${errors[`returnItemQty_${index}`] ? 'border-red-500' : 'border-gray-300'
+                                                            }`}
                                                         disabled={isSubmitting}
                                                     />
                                                     {errors[`returnItemQty_${index}`] && (
@@ -815,7 +808,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             )}
                                         </div>
                                     ))}
-                                    
+
                                     <button
                                         type="button"
                                         onClick={handleAddReturnItem}
@@ -841,9 +834,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         onChange={handleChange}
                                         min="0"
                                         step="0.01"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                            errors.returnAdjustAmount ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.returnAdjustAmount ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="0.00"
                                         disabled={isSubmitting}
                                     />
@@ -910,9 +902,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         name="name"
                                         value={customerUpdateData.name}
                                         onChange={handleCustomerUpdateChange}
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                            customerUpdateErrors.name ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${customerUpdateErrors.name ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="Enter customer name"
                                         disabled={isUpdatingCustomer}
                                     />
@@ -931,9 +922,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         value={customerUpdateData.mobile}
                                         onChange={handleCustomerUpdateChange}
                                         maxLength="10"
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                            customerUpdateErrors.mobile ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${customerUpdateErrors.mobile ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="10-digit mobile number"
                                         disabled={isUpdatingCustomer}
                                     />
@@ -951,9 +941,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         name="area"
                                         value={customerUpdateData.area}
                                         onChange={handleCustomerUpdateChange}
-                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${
-                                            customerUpdateErrors.area ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs ${customerUpdateErrors.area ? 'border-red-500' : 'border-gray-300'
+                                            }`}
                                         placeholder="Enter area name"
                                         disabled={isUpdatingCustomer}
                                     />
