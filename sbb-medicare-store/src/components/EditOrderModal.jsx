@@ -131,8 +131,6 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
         if (paidAmount > 0) {
             if (!formData.paymentMode || formData.paymentMode.trim() === '') {
                 newErrors.paymentMode = 'Payment Mode is required when paid amount is greater than 0';
-            } else if ((formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') && (!formData.transactionReference || !formData.transactionReference.trim())) {
-                newErrors.transactionReference = 'Transaction Reference is required for Bank Transfer and Credit';
             }
         }
 
@@ -464,7 +462,7 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                         {(parseFloat(formData.paidAmount) || 0) > 0 && (
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Transaction Reference {(formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') ? <span className="text-red-500">* (Required)</span> : '(Optional)'}
+                                    Transaction Reference <span className="text-gray-400 text-xs">(Optional)</span>
                                 </label>
                                 <input
                                     type="text"
