@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS orders (
     total_amount DECIMAL(10,2) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'ASSIGNED' CHECK (status IN ('ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED')),
     payment_status VARCHAR(50) DEFAULT 'PENDING' CHECK (payment_status IN ('PENDING', 'PAID', 'PARTIAL')),
-    payment_mode VARCHAR(20) CHECK (payment_mode IN ('CASH', 'CARD', 'UPI', 'CREDIT', 'SPLIT')),
+    payment_mode VARCHAR(20) CHECK (payment_mode IN ('CASH', 'BANK', 'CREDIT', 'SPLIT')),
     notes TEXT,
     customer_comments TEXT,
     return_items_photo_url TEXT,
@@ -127,7 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE TABLE IF NOT EXISTS payments (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT REFERENCES orders(id) ON DELETE CASCADE,
-    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('CASH', 'CARD', 'UPI', 'CREDIT', 'SPLIT')),
+    payment_mode VARCHAR(50) NOT NULL CHECK (payment_mode IN ('CASH', 'BANK', 'CREDIT', 'SPLIT')),
     cash_amount DECIMAL(10,2) DEFAULT 0,
     bank_amount DECIMAL(10,2) DEFAULT 0,
     transaction_reference VARCHAR(255),
