@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ordersAPI, customersAPI, customerRegistryAPI, contactsAPI } from '../services/api';
+import { ordersAPI, customersAPI, customerRegistryAPI } from '../services/api';
 import { X, Search, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
 // Helper function to get today's date in IST format (YYYY-MM-DD)
@@ -107,12 +107,48 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const loadCustomers = async () => {
         try {
-            // Fetch all registered contacts (registry history) instead of only today's
-            const response = await contactsAPI.getAll({ limit: 10000 });
-            const list = response.data?.data?.contacts || [];
-            setCustomers(Array.isArray(list) ? list : []);
+            // 1. Fetch all customers from main database
+            const customersRes = await customersAPI.getAll({ page: 1, limit: 10000 });
+            const customersList = customersRes.data?.data?.customers ||
+                customersRes.data?.data?.data ||
+                customersRes.data?.data || [];
+
+            // Create a map of customer profiles indexed by mobile for fast lookup
+            const customerMap = new Map();
+            if (Array.isArray(customersList)) {
+                customersList.forEach(c => {
+                    const mobile = c.mobile || c.mobile_number;
+                    if (mobile) customerMap.set(String(mobile), c);
+                });
+            }
+
+            // 2. Fetch today's registry (Day Calls)
+            const today = getTodayIST();
+            const registryRes = await customerRegistryAPI.getWithOrders(today);
+            const registryList = registryRes.data?.data?.customers || [];
+
+            // 3. Merge: Only show registry customers, but pull in full details from main DB
+            const mergedList = registryList.map(registryItem => {
+                const mobile = registryItem.customer_mobile || registryItem.mobile;
+                const profile = customerMap.get(String(mobile));
+
+                return {
+                    ...registryItem,
+                    // Registry entry ID is the unique key for the dropdown list
+                    id: registryItem.id || registryItem.registry_id,
+                    // Prefer registry name, fallback to profile name
+                    name: registryItem.customer_name || registryItem.name || profile?.name || 'Unknown',
+                    mobile: mobile,
+                    // Set area_name for UI display consistency
+                    area_name: profile?.area || profile?.areaName || registryItem.area_name || '',
+                    address: profile?.address || registryItem.address || '',
+                    customer_id: registryItem.customer_id || profile?.id
+                };
+            });
+
+            setCustomers(mergedList);
         } catch (error) {
-            console.error('Error loading customers from registry history:', error);
+            console.error('Error loading merged customer data:', error);
             setCustomers([]);
         }
     };
