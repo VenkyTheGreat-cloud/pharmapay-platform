@@ -402,12 +402,11 @@ const generateCustomerRegistryExcel = async (res, entries, filters) => {
 
         // Define columns
         worksheet.columns = [
-            { header: 'ID', key: 'id', width: 10 },
+            { header: 'Sl.No', key: 'sl_no', width: 10 },
             { header: 'Mobile', key: 'mobile', width: 15 },
             { header: 'Name', key: 'name', width: 25 },
-            { header: 'Registry Date & Time', key: 'registry_date', width: 25 },
             { header: 'Created At', key: 'created_at', width: 25 },
-            { header: 'Store ID', key: 'store_id', width: 10 }
+            { header: 'Orders Created', key: 'orders_created', width: 15 }
         ];
 
         // Style header row
@@ -419,19 +418,18 @@ const generateCustomerRegistryExcel = async (res, entries, filters) => {
         };
 
         // Add rows
-        entries.forEach(entry => {
+        entries.forEach((entry, index) => {
             const formatDateTime = (dt) => {
                 if (!dt) return '';
                 return new Date(dt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
             };
 
             worksheet.addRow({
-                id: entry.id,
+                sl_no: index + 1,
                 mobile: entry.mobile,
                 name: entry.name || '',
-                registry_date: formatDateTime(entry.registry_date),
                 created_at: formatDateTime(entry.created_at),
-                store_id: entry.store_id || ''
+                orders_created: entry.has_order ? 'Yes' : 'No'
             });
         });
 

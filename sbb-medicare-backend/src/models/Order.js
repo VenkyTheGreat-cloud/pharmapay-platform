@@ -57,7 +57,8 @@ class Order {
             `SELECT o.*, 
                     db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                     u.name as store_name, u.store_name as store_store_name,
-                    c.area as customer_area
+                    c.area as customer_area,
+                    (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
              FROM orders o
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
@@ -83,7 +84,8 @@ class Order {
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                    u.name as store_name,
-                   c.area as customer_area
+                   c.area as customer_area,
+                   (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN users u ON o.store_id = u.id
@@ -433,7 +435,8 @@ class Order {
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                    u.name as store_name,
-                   c.area as customer_area
+                   c.area as customer_area,
+                   (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN users u ON o.store_id = u.id
