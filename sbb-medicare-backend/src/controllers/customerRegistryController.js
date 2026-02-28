@@ -1,6 +1,7 @@
 const CustomerRegistry = require('../models/CustomerRegistry');
 const logger = require('../config/logger');
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/apiResponse');
+const ExcelJS = require('exceljs');
 
 // Helper: normalize incoming date/datetime string to ISO format
 const normalizeDateTimeParam = (rawDateTime) => {
@@ -312,5 +313,133 @@ exports.getRegisteredCustomersWithOrders = async (req, res, next) => {
         }, 'Registered customers with order status retrieved successfully'));
     } catch (error) {
         next(error);
+    }
+};
+
+// Export customer registry to Excel
+exports.exportCustomerRegistryExcel = async (req, res, next) => {
+    try {
+        const { mobile, date, date_from, date_to, search } = req.query;
+
+        // Same filter logic as getAllCustomerRegistry but without pagination
+        const filters = {};
+
+        if (mobile) {
+            filters.mobile = mobile.trim();
+        }
+
+        const normalizeDateForFilter = (rawDate) => {
+            if (!rawDate) return null;
+            if (/^\d{4}-\d{2}-\d{2}T/.test(rawDate)) {
+                return rawDate.slice(0, 10);
+            }
+            if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+                return rawDate;
+            }
+            const m = rawDate.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})/);
+            if (m) {
+                const [, dd, mm, yyyy] = m;
+                return `${yyyy}-${mm}-${dd}`;
+            }
+            return rawDate;
+        };
+
+        const dateFrom = normalizeDateForFilter(date_from);
+        const dateTo = normalizeDateForFilter(date_to);
+        const singleDate = normalizeDateForFilter(date);
+
+        if (dateFrom && dateTo) {
+            filters.date_from = dateFrom;
+            filters.date_to = dateTo;
+        } else if (singleDate) {
+            filters.date = singleDate;
+        }
+
+        if (search) {
+            filters.search = search.trim();
+        }
+
+        // Get all entries matching filters
+        const entries = await CustomerRegistry.findAll(filters);
+
+        // Generate Excel
+        return await generateCustomerRegistryExcel(res, entries, filters);
+    } catch (error) {
+        logger.error('Error exporting customer registry to Excel', {
+            error: error.message,
+            stack: error.stack,
+            query: req.query
+        });
+        next(error);
+    }
+};
+
+// Helper: Generate Excel for Customer Registry
+const generateCustomerRegistryExcel = async (res, entries, filters) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Customer Registry');
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'ID', key: 'id', width: 10 },
+            { header: 'Mobile', key: 'mobile', width: 15 },
+            { header: 'Name', key: 'name', width: 25 },
+            { header: 'Registry Date & Time', key: 'registry_date', width: 25 },
+            { header: 'Created At', key: 'created_at', width: 25 },
+            { header: 'Store ID', key: 'store_id', width: 10 }
+        ];
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add rows
+        entries.forEach(entry => {
+            const formatDateTime = (dt) => {
+                if (!dt) return '';
+                return new Date(dt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            };
+
+            worksheet.addRow({
+                id: entry.id,
+                mobile: entry.mobile,
+                name: entry.name || '',
+                registry_date: formatDateTime(entry.registry_date),
+                created_at: formatDateTime(entry.created_at),
+                store_id: entry.store_id || ''
+            });
+        });
+
+        // Generate filename
+        const timestamp = new Date().getTime();
+        let datePart = 'all';
+        if (filters.date) {
+            datePart = filters.date.replace(/-/g, '');
+        } else if (filters.date_from && filters.date_to) {
+            datePart = `${filters.date_from.replace(/-/g, '')}_to_${filters.date_to.replace(/-/g, '')}`;
+        }
+        const filename = `customer_registry_${datePart}_${timestamp}.xlsx`;
+
+        // Write to buffer
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        // Send response
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.end(buffer);
+
+        logger.info('Customer registry exported to Excel', {
+            count: entries.length,
+            filename
+        });
+    } catch (error) {
+        throw error;
     }
 };

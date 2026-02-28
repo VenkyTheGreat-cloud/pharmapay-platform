@@ -27,6 +27,14 @@ router.get(
     customerRegistryController.getAllCustomerRegistry
 );
 
+// Export customer registry to Excel
+router.get(
+    '/export/excel',
+    checkStoreAccess,
+    authorizeRoles('admin', 'store_manager'),
+    customerRegistryController.exportCustomerRegistryExcel
+);
+
 // Get registered customers with order status for a specific date
 router.get(
     '/with-orders',

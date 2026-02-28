@@ -46,7 +46,7 @@ export default {
   // Payment Modes (matching backend API)
   PAYMENT_MODES: {
     CASH: 'CASH',
-    BANK: 'BANK_TRANSFER',
-    SPLIT: 'SPLIT',
+    BANK: 'BANK',
+    CREDIT: 'CREDIT',
   },
 };

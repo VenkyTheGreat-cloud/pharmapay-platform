@@ -14,6 +14,9 @@ router.get('/', checkStoreAccess, orderController.getAllOrders);
 // Get pending orders created till yesterday (status != DELIVERED)
 router.get('/pending-till-yesterday', checkStoreAccess, orderController.getPendingOrdersTillYesterday);
 
+// Export pending orders created till yesterday to Excel
+router.get('/pending-till-yesterday/export/excel', checkStoreAccess, authorizeRoles('admin', 'store_manager'), orderController.exportPendingOrdersExcel);
+
 // Get today's orders
 router.get('/today', checkStoreAccess, orderController.getTodayOrders);
 
