@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const customerController = require('../controllers/customerController');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
@@ -8,11 +8,12 @@ const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 router.use(authenticateToken);
 
 // Validation middleware (commented out - validation handled in controller)
-// const customerValidation = [
-//     body('full_name').trim().notEmpty(),
-//     body('mobile_number').trim().notEmpty(),
-//     body('address').trim().notEmpty(),
-// ];
+const validateRequest = require('../middleware/validateRequest');
+
+const validateId = [
+    param('id').isInt().withMessage('Invalid customer ID format'),
+    validateRequest
+];
 
 // Get all customers
 router.get('/', customerController.getAllCustomers);
@@ -32,13 +33,13 @@ router.post(
 );
 
 // Get customer orders (must be before /:id to avoid route conflict)
-router.get('/:id/orders', customerController.getCustomerOrders);
+router.get('/:id/orders', validateId, customerController.getCustomerOrders);
 
 // Get customer by ID
-router.get('/:id', customerController.getCustomerById);
+router.get('/:id', validateId, customerController.getCustomerById);
 
-// Get customer orders
-router.get('/:id/orders', customerController.getCustomerOrders);
+// Get customer orders (redundant - already defined above)
+// router.get('/:id/orders', customerController.getCustomerOrders);
 
 // Create customer (simplified - only name, mobile, and date)
 router.post(
@@ -56,9 +57,9 @@ router.post(
 router.post('/', authorizeRoles('admin', 'store_manager'), customerController.createCustomer);
 
 // Update customer (admin and store managers can update)
-router.put('/:id', authorizeRoles('admin', 'store_manager'), customerController.updateCustomer);
+router.put('/:id', validateId, authorizeRoles('admin', 'store_manager'), customerController.updateCustomer);
 
 // Delete customer (admin and store managers can delete)
-router.delete('/:id', authorizeRoles('admin', 'store_manager'), customerController.deleteCustomer);
+router.delete('/:id', validateId, authorizeRoles('admin', 'store_manager'), customerController.deleteCustomer);
 
 module.exports = router;

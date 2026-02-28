@@ -1,11 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const customerRegistryController = require('../controllers/customerRegistryController');
+const validateRequest = require('../middleware/validateRequest');
 const { authenticateToken, authorizeRoles, checkStoreAccess } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(authenticateToken);
+
+const validateId = [
+    param('id').isInt().withMessage('Invalid ID format'),
+    validateRequest
+];
 
 // Create customer registry entry
 router.post(
@@ -45,6 +51,7 @@ router.get(
 // Get customer registry entry by ID
 router.get(
     '/:id',
+    validateId,
     checkStoreAccess,
     customerRegistryController.getCustomerRegistryById
 );
@@ -52,6 +59,7 @@ router.get(
 // Update customer registry entry
 router.put(
     '/:id',
+    validateId,
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
     [
@@ -65,6 +73,7 @@ router.put(
 // Delete customer registry entry
 router.delete(
     '/:id',
+    validateId,
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
     customerRegistryController.deleteCustomerRegistry

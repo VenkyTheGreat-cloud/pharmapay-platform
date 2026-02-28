@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const { param } = require('express-validator');
 const deliveryBoyController = require('../controllers/deliveryBoyController');
+const validateRequest = require('../middleware/validateRequest');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
 // All routes require authentication
 router.use(authenticateToken);
+
+const validateId = [
+    param('id').isInt().withMessage('Invalid delivery boy ID format'),
+    validateRequest
+];
 
 // Get all delivery boys (admin, store_manager can view)
 router.get(
@@ -31,6 +38,7 @@ router.put(
 // Get delivery boy by ID
 router.get(
     '/:id',
+    validateId,
     authorizeRoles('admin', 'store_manager'),
     deliveryBoyController.getDeliveryBoyById
 );
@@ -45,6 +53,7 @@ router.post(
 // Update delivery boy (admin, store_manager can update)
 router.put(
     '/:id',
+    validateId,
     authorizeRoles('admin', 'store_manager'),
     deliveryBoyController.updateDeliveryBoy
 );
@@ -52,6 +61,7 @@ router.put(
 // Delete delivery boy (admin only)
 router.delete(
     '/:id',
+    validateId,
     authorizeRoles('admin'),
     deliveryBoyController.deleteDeliveryBoy
 );
@@ -59,6 +69,7 @@ router.delete(
 // Approve delivery boy (admin only)
 router.patch(
     '/:id/approve',
+    validateId,
     authorizeRoles('admin'),
     deliveryBoyController.approveDeliveryBoy
 );
@@ -66,6 +77,7 @@ router.patch(
 // Toggle active status (admin only)
 router.patch(
     '/:id/toggle-active',
+    validateId,
     authorizeRoles('admin'),
     deliveryBoyController.toggleActiveStatus
 );

@@ -1,12 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
 const orderController = require('../controllers/orderController');
+const validateRequest = require('../middleware/validateRequest');
 const { authenticateToken, authorizeRoles, checkStoreAccess } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // All routes require authentication
 router.use(authenticateToken);
+
+const validateId = [
+    param('id').isInt().withMessage('Invalid order ID format'),
+    validateRequest
+];
 
 // Get all orders
 router.get('/', checkStoreAccess, orderController.getAllOrders);
@@ -30,11 +36,12 @@ router.get('/dashboard', checkStoreAccess, orderController.getDashboardStats);
 router.get('/export/excel', checkStoreAccess, authorizeRoles('admin', 'store_manager'), orderController.exportOrdersToExcel);
 
 // Get order by ID
-router.get('/:id', checkStoreAccess, orderController.getOrderById);
+router.get('/:id', validateId, checkStoreAccess, orderController.getOrderById);
 
 // Update order (store manager can edit order details)
 router.put(
     '/:id',
+    validateId,
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
     upload.single('returnItemsPhoto'), // Allow file upload for return items photo
@@ -81,6 +88,7 @@ router.post(
 // Assign order to delivery boy or mark as received at store
 router.post(
     '/:id/assign',
+    validateId,
     checkStoreAccess,
     authorizeRoles('admin', 'store_manager'),
     [
@@ -100,18 +108,21 @@ router.post(
 // Accept order (delivery boy only)
 router.post(
     '/:id/accept',
+    validateId,
     orderController.acceptOrder
 );
 
 // Reject order (delivery boy only)
 router.post(
     '/:id/reject',
+    validateId,
     orderController.rejectOrder
 );
 
 // Update order status
 router.put(
     '/:id/status',
+    validateId,
     upload.single('returnItemsPhoto'), // Allow file upload for return items photo
     [
         body('status').isIn(['ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'])
@@ -124,6 +135,7 @@ router.put(
 // Update order location
 router.post(
     '/:id/location',
+    validateId,
     [
         body('latitude').isFloat().withMessage('Valid latitude is required'),
         body('longitude').isFloat().withMessage('Valid longitude is required'),
@@ -138,6 +150,7 @@ router.get('/customer/:mobile', checkStoreAccess, orderController.getOrdersByCus
 // Upload delivery/payment proof photo
 router.post(
     '/:id/delivery-photo',
+    validateId,
     upload.single('photo'),
     orderController.uploadDeliveryPhoto
 );
