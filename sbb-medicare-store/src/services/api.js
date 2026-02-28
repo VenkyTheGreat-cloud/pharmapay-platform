@@ -71,6 +71,32 @@ api.interceptors.response.use(
 // Simple helpers for mock responses
 const mockResolve = (data) => Promise.resolve({ data });
 
+/**
+ * Validates if an ID is a valid positive integer.
+ * Prevents "undefined" or non-numeric values from being sent to strict backend endpoints.
+ */
+const isValidId = (id) => {
+    if (id === null || id === undefined) return false;
+    const num = Number(id);
+    return Number.isInteger(num) && num > 0;
+};
+
+const invalidIdReject = (id) => {
+    console.error(`Invalid ID blocked locally: ${id}`);
+    return Promise.reject({
+        response: {
+            status: 400,
+            data: {
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: `Invalid ID format: ${id}. Please check if the source data is loaded correctly.`
+                }
+            }
+        }
+    });
+};
+
 // Auth API (Play backend spec)
 export const authAPI = {
     // credentials: { mobileEmail, password }
@@ -190,6 +216,7 @@ export const deliveryBoysAPI = {
         return api.get('/delivery-boys/approved');
     },
     getById: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -212,24 +239,28 @@ export const deliveryBoysAPI = {
         return api.post('/delivery-boys', data);
     },
     update: (id, data) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, data: { id, ...data } });
         }
         return api.put(`/delivery-boys/${id}`, data);
     },
     delete: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Deleted (mock)' });
         }
         return api.delete(`/delivery-boys/${id}`);
     },
     approve: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Approved (mock)' });
         }
         return api.patch(`/delivery-boys/${id}/approve`);
     },
     toggleActive: (id, isActive) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Status updated (mock)', data: { id, isActive } });
         }
@@ -269,6 +300,7 @@ export const customersAPI = {
         return api.get('/customers', { params: { search } });
     },
     getById: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -291,12 +323,14 @@ export const customersAPI = {
         return api.post('/customers', data);
     },
     update: (id, data) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, data: { id, ...data } });
         }
         return api.put(`/customers/${id}`, data);
     },
     delete: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Customer deleted (mock)' });
         }
@@ -365,6 +399,7 @@ export const ordersAPI = {
         return api.get('/orders/pending-till-yesterday', { params });
     },
     getById: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -411,6 +446,7 @@ export const ordersAPI = {
     // Assign order to delivery boy or mark as received at store
     // If options.customerReceivedAtStore is true, backend should treat as "customer received at store"
     assign: (id, deliveryBoyId, options = {}) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -425,6 +461,7 @@ export const ordersAPI = {
         return api.post(`/orders/${id}/assign`, payload);
     },
     accept: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -435,6 +472,7 @@ export const ordersAPI = {
         return api.post(`/orders/${id}/accept`);
     },
     reject: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({
                 success: true,
@@ -445,6 +483,7 @@ export const ordersAPI = {
         return api.post(`/orders/${id}/reject`);
     },
     update: (id, data) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Order updated (mock)', data: { id, ...data } });
         }
@@ -465,12 +504,14 @@ export const ordersAPI = {
         return api.put(`/orders/${id}`, data);
     },
     updateStatus: (id, data) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Status updated (mock)', data: { id, ...data } });
         }
         return api.put(`/orders/${id}/status`, data);
     },
     delete: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Order deleted (mock)' });
         }
@@ -585,6 +626,7 @@ export const contactsAPI = {
     },
     // DELETE /contacts/:id
     delete: (id) => {
+        if (!isValidId(id)) return invalidIdReject(id);
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Contact deleted (mock)' });
         }
