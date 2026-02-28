@@ -709,20 +709,26 @@ exports.updateOrder = async (req, res, next) => {
                     );
                 }
 
-                const validModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
-                const normalizedMode = paymentMode.toUpperCase();
+                // Normalize and validate payment mode
+                let normalizedMode = paymentMode.toUpperCase();
+                if (['BANK', 'BANK TRANSFER', 'BANK_TRANSFER', 'UPI', 'CARD'].includes(normalizedMode)) {
+                    normalizedMode = 'BANK';
+                }
+
+                const validModes = ['CASH', 'BANK', 'CREDIT'];
                 if (!validModes.includes(normalizedMode)) {
                     return res.status(400).json(
                         errorResponse(
                             'VALIDATION_ERROR',
-                            'Payment mode must be CASH, CARD, UPI, or CREDIT'
+                            'Payment mode must be Cash, Bank Transfer, or Credit'
                         )
                     );
                 }
+                const finalPaymentMode = normalizedMode;
 
                 let cashAmount = 0;
                 let bankAmount = 0;
-                if (normalizedMode === 'CASH') {
+                if (finalPaymentMode === 'CASH') {
                     cashAmount = additionalAmount;
                 } else {
                     bankAmount = additionalAmount;
@@ -949,11 +955,17 @@ exports.createOrder = async (req, res, next) => {
             if (!paymentModeVal) {
                 return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode is required when paid amount is provided'));
             }
-            const validPaymentModes = ['CASH', 'CARD', 'UPI', 'CREDIT'];
-            const normalizedMode = paymentModeVal.toUpperCase();
-            if (!validPaymentModes.includes(normalizedMode)) {
-                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be CASH, CARD, UPI, or CREDIT'));
+            // Normalize and validate payment mode
+            let normalizedMode = paymentModeVal.toUpperCase();
+            if (['BANK', 'BANK TRANSFER', 'BANK_TRANSFER', 'UPI', 'CARD'].includes(normalizedMode)) {
+                normalizedMode = 'BANK';
             }
+
+            const validPaymentModes = ['CASH', 'BANK', 'CREDIT'];
+            if (!validPaymentModes.includes(normalizedMode)) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Payment mode must be Cash, Bank Transfer, or Credit'));
+            }
+            paymentModeVal = normalizedMode; // Update with normalized value
         }
 
         // Get customer
@@ -1035,7 +1047,7 @@ exports.createOrder = async (req, res, next) => {
                 // Set amounts based on payment mode
                 if (normalizedPaymentMode === 'CASH') {
                     cashAmount = paidAmountNum;
-                } else if (['CARD', 'UPI', 'CREDIT'].includes(normalizedPaymentMode)) {
+                } else if (['BANK', 'CREDIT'].includes(normalizedPaymentMode)) {
                     bankAmount = paidAmountNum;
                 }
 

@@ -74,7 +74,7 @@ router.post(
         body('customerId').notEmpty().withMessage('Customer ID is required'),
         body('totalAmount').isFloat({ min: 0.01 }).withMessage('Total amount is required and must be greater than 0'),
         body('paidAmount').optional().isFloat({ min: 0 }).withMessage('Paid amount must be a positive number'),
-        body('paymentMode').optional().isIn(['CASH', 'CARD', 'UPI', 'CREDIT']).withMessage('Payment mode must be CASH, CARD, UPI, or CREDIT'),
+        body('paymentMode').optional().isIn(['CASH', 'BANK', 'CREDIT', 'Cash', 'Bank Transfer', 'Credit', 'UPI', 'CARD', 'Bank Transfer']).withMessage('Payment mode must be Cash, Bank Transfer, or Credit'),
         body('transactionReference').optional().isString().withMessage('Transaction reference must be a string'),
         body('returnItems').optional().isBoolean().withMessage('Return items must be a boolean'),
         body('returnItemsList').optional().isArray().withMessage('Return items list must be an array'),
