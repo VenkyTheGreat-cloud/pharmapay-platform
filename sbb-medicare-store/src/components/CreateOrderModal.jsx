@@ -137,7 +137,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                     // Registry entry ID is the unique key for the dropdown list
                     id: registryItem.id || registryItem.registry_id,
                     // Prefer registry name, fallback to profile name
-                    name: registryItem.customer_name || registryItem.name || profile?.name || 'Unknown',
+                    name: registryItem.customer_name || registryItem.name || profile?.name || '-',
                     mobile: mobile,
                     // Set area_name for UI display consistency
                     area_name: profile?.area || profile?.areaName || registryItem.area_name || '',
@@ -373,6 +373,9 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             }
 
             alert('Customer details updated successfully!');
+
+            // Reload customers list to reflect changes in the registry dropdown
+            await loadCustomers();
         } catch (error) {
             console.error('Error updating customer:', error);
             alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating customer. Please try again.');
@@ -466,8 +469,6 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         if (paidAmount > 0) {
             if (!formData.paymentMode) {
                 newErrors.paymentMode = 'Payment Mode is required when Paid Amount is greater than 0';
-            } else if ((formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') && (!formData.transactionReference || !formData.transactionReference.trim())) {
-                newErrors.transactionReference = 'Transaction Reference is required for Bank Transfer and Credit';
             }
         }
 
@@ -800,7 +801,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {(parseFloat(formData.paidAmount) || 0) > 0 && (
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                                        Transaction Reference {(formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') ? <span className="text-red-500">* (Required)</span> : '(Optional)'}
+                                        Transaction Reference <span className="text-gray-400 text-xs">(Optional)</span>
                                     </label>
                                     <input
                                         type="text"
