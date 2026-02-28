@@ -16,6 +16,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [selectedCustomerName, setSelectedCustomerName] = useState('');
+    const [isLookupLoading, setIsLookupLoading] = useState(false);
+    const [lookupCustomerId, setLookupCustomerId] = useState(null);
     const customerSearchRef = useRef(null);
     const customerDropdownRef = useRef(null);
     const [formData, setFormData] = useState({
@@ -186,29 +188,55 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         }
     };
 
-    const handleCustomerSelect = (customer) => {
+    const handleCustomerSelect = async (customer) => {
         // Use customer_id if available (from registry), otherwise fallback to id
         const customerId = customer.customer_id || customer.id;
 
-        // Check if customer has area name
-        const area = customer.area_name || customer.area || customer.areaName || '';
-        const address = customer.address || '';
+        // Check if customer has area name from registry data first
+        let area = customer.area_name || customer.area || customer.areaName || '';
+        let address = customer.address || '';
+        let customerName = customer.customer_name || customer.name || customer.full_name || '';
+        let customerMobile = customer.customer_mobile || customer.mobile || customer.mobile_number || '';
+
+        // If area is missing in registry, try searching in main customer database
+        if (!area || !area.trim()) {
+            try {
+                setIsLookupLoading(true);
+                setLookupCustomerId(customerId);
+                const response = await customersAPI.getById(customerId);
+                const fullCustomer = response.data?.data || response.data;
+
+                if (fullCustomer) {
+                    area = fullCustomer.area_name || fullCustomer.area || fullCustomer.areaName || '';
+                    address = fullCustomer.address || address;
+                    // Keep most original name/mobile if possible
+                    customerName = fullCustomer.name || fullCustomer.full_name || customerName;
+                    customerMobile = fullCustomer.mobile || fullCustomer.mobile_number || customerMobile;
+                }
+            } catch (error) {
+                console.error('Error looking up customer details:', error);
+                // Fallback to registry data already in variables
+            } finally {
+                setIsLookupLoading(false);
+                setLookupCustomerId(null);
+            }
+        }
 
         if (!area || !area.trim()) {
-            // Show update modal if area is missing
+            // Show update modal if area is still missing after lookup
             setCustomerToUpdate({ ...customer, id: customerId });
             setCustomerUpdateData({
-                name: customer.customer_name || customer.name || customer.full_name || '',
-                mobile: customer.customer_mobile || customer.mobile || customer.mobile_number || '',
+                name: customerName,
+                mobile: customerMobile,
                 area: area,
                 address: address
             });
             setShowCustomerUpdateModal(true);
             setShowCustomerDropdown(false);
         } else {
-            // Customer has area, proceed with selection
+            // Customer has area (either from registry or lookup), proceed with selection
             setFormData(prev => ({ ...prev, customerId: customerId.toString() }));
-            setSelectedCustomerName(`${customer.customer_name || customer.name || customer.full_name} - ${customer.customer_mobile || customer.mobile || customer.mobile_number}`);
+            setSelectedCustomerName(`${customerName} - ${customerMobile}`);
             setCustomerSearchQuery('');
             setShowCustomerDropdown(false);
             if (errors.customerId) {
@@ -577,12 +605,17 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                         {filteredCustomers.map(customer => (
                                             <div
                                                 key={customer.id}
-                                                onClick={() => handleCustomerSelect(customer)}
-                                                className={`px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex justify-between items-center ${customer.has_order ? 'bg-green-50' : ''}`}
+                                                onClick={() => !isLookupLoading && handleCustomerSelect(customer)}
+                                                className={`px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex justify-between items-center ${customer.has_order ? 'bg-green-50' : ''} ${isLookupLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
-                                                <div>
-                                                    <div className="font-medium text-gray-900">
-                                                        {customer.customer_name || customer.name || customer.full_name}
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-gray-900">
+                                                            {customer.customer_name || customer.name || customer.full_name}
+                                                        </span>
+                                                        {isLookupLoading && (customer.customer_id || customer.id).toString() === lookupCustomerId?.toString() && (
+                                                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-primary-500 border-t-transparent"></div>
+                                                        )}
                                                     </div>
                                                     <div className="text-xs text-gray-500">
                                                         {customer.customer_mobile || customer.mobile || customer.mobile_number}
@@ -590,7 +623,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                                     </div>
                                                 </div>
                                                 {customer.has_order && (
-                                                    <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase tracking-wider bg-green-100 px-2 py-0.5 rounded-full">
+                                                    <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase tracking-wider bg-green-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                                                         <CheckCircle2 className="w-3 h-3" />
                                                         Has Order
                                                     </div>
