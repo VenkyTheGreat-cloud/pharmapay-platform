@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ordersAPI, customersAPI, customerRegistryAPI } from '../services/api';
+import { ordersAPI, customersAPI, customerRegistryAPI, contactsAPI } from '../services/api';
 import { X, Search, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
 // Helper function to get today's date in IST format (YYYY-MM-DD)
@@ -107,12 +107,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const loadCustomers = async () => {
         try {
-            const today = getTodayIST();
-            const response = await customerRegistryAPI.getWithOrders(today);
-            const list = response.data?.data?.customers || [];
+            // Fetch all registered contacts (registry history) instead of only today's
+            const response = await contactsAPI.getAll({ limit: 10000 });
+            const list = response.data?.data?.contacts || [];
             setCustomers(Array.isArray(list) ? list : []);
         } catch (error) {
-            console.error('Error loading customers from registry:', error);
+            console.error('Error loading customers from registry history:', error);
             setCustomers([]);
         }
     };
