@@ -882,7 +882,7 @@ exports.createOrder = async (req, res, next) => {
         const paidAmountVal = paidAmount !== undefined ? paidAmount : paid_amount;
         const paidAmountNum = paidAmountVal ? parseFloat(paidAmountVal) : 0;
 
-        const paymentModeVal = paymentMode || payment_mode;
+        let paymentModeVal = paymentMode || payment_mode;
         const transactionReferenceVal = transactionReference || transaction_reference;
         const customerCommentsVal = customerComments || customer_comments;
 
