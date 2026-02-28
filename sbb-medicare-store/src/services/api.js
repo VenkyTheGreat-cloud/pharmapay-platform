@@ -709,6 +709,31 @@ export const reportsAPI = {
             responseType: 'blob'
         });
     },
+
+    // Day Calls Report
+    // GET /api/customer-registry/export/excel?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+    exportDayCallsReport: (params) => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Day Calls Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/customer-registry/export/excel', {
+            params,
+            responseType: 'blob'
+        });
+    },
+
+    // Pending Orders Report
+    // GET /api/orders/pending-till-yesterday/export/excel
+    exportPendingOrdersReport: () => {
+        if (API_DISABLED) {
+            const mockBlob = new Blob(['Mock Pending Orders Report'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            return Promise.resolve({ data: mockBlob });
+        }
+        return api.get('/orders/pending-till-yesterday/export/excel', {
+            responseType: 'blob'
+        });
+    },
 };
 
 export default api;

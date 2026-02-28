@@ -131,6 +131,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
         if (paidAmount > 0) {
             if (!formData.paymentMode || formData.paymentMode.trim() === '') {
                 newErrors.paymentMode = 'Payment Mode is required when paid amount is greater than 0';
+            } else if ((formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') && (!formData.transactionReference || !formData.transactionReference.trim())) {
+                newErrors.transactionReference = 'Transaction Reference is required for Bank Transfer and Credit';
             }
         }
 
@@ -449,8 +451,8 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                                 >
                                     <option value="">Select payment mode</option>
                                     <option value="Cash">Cash</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="Card">Card</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                    <option value="Credit">Credit</option>
                                 </select>
                                 {errors.paymentMode && (
                                     <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
@@ -458,21 +460,25 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
                             </div>
                         )}
 
-                        {/* Transaction Reference (Optional, shown only if paidAmount > 0) */}
+                        {/* Transaction Reference (Shown only if paidAmount > 0) */}
                         {(parseFloat(formData.paidAmount) || 0) > 0 && (
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Transaction Reference (Optional)
+                                    Transaction Reference {(formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') ? <span className="text-red-500">* (Required)</span> : '(Optional)'}
                                 </label>
                                 <input
                                     type="text"
                                     name="transactionReference"
                                     value={formData.transactionReference}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                    placeholder="e.g., TXN123"
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.transactionReference ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder={formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit' ? "Enter transaction reference" : "e.g., TXN123"}
                                     disabled={isSubmitting}
                                 />
+                                {errors.transactionReference && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.transactionReference}</p>
+                                )}
                             </div>
                         )}
 

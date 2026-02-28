@@ -36,7 +36,7 @@ const PaymentScreen = ({ route, navigation }) => {
       label: 'Bank Transfer',
       icon: 'card-outline',
     },
-    { key: CONFIG.PAYMENT_MODES.SPLIT, label: 'Split', icon: 'repeat-outline' },
+    { key: CONFIG.PAYMENT_MODES.CREDIT, label: 'Credit', icon: 'wallet-outline' },
   ];
 
   const handlePaymentModeChange = (mode) => {
@@ -47,13 +47,9 @@ const PaymentScreen = ({ route, navigation }) => {
     if (mode === CONFIG.PAYMENT_MODES.CASH) {
       setCashAmount(order.amount.toString());
       setBankAmount('0');
-    } else if (mode === CONFIG.PAYMENT_MODES.BANK) {
+    } else if (mode === CONFIG.PAYMENT_MODES.BANK || mode === CONFIG.PAYMENT_MODES.CREDIT) {
       setCashAmount('0');
       setBankAmount(order.amount.toString());
-    } else {
-      // Split - user needs to enter both
-      setCashAmount('');
-      setBankAmount('');
     }
   };
 
@@ -68,17 +64,8 @@ const PaymentScreen = ({ route, navigation }) => {
       newErrors.amount = `Total payment must equal ${formatCurrency(order.amount)}`;
     }
 
-    if (paymentMode === CONFIG.PAYMENT_MODES.BANK && !transactionRef.trim()) {
-      newErrors.transactionRef = 'Transaction reference is required for bank transfer';
-    }
-
-    if (paymentMode === CONFIG.PAYMENT_MODES.SPLIT) {
-      if (cash <= 0 || bank <= 0) {
-        newErrors.split = 'Both cash and bank amounts must be greater than 0';
-      }
-      if (!transactionRef.trim()) {
-        newErrors.transactionRef = 'Transaction reference is required for bank transfer';
-      }
+    if ((paymentMode === CONFIG.PAYMENT_MODES.BANK || paymentMode === CONFIG.PAYMENT_MODES.CREDIT) && !transactionRef.trim()) {
+      newErrors.transactionRef = 'Transaction reference is required';
     }
 
     if (!receiptPhoto) {
@@ -253,36 +240,36 @@ const PaymentScreen = ({ route, navigation }) => {
 
         {(paymentMode === CONFIG.PAYMENT_MODES.CASH ||
           paymentMode === CONFIG.PAYMENT_MODES.SPLIT) && (
-          <Input
-            label="Cash Amount"
-            value={cashAmount}
-            onChangeText={setCashAmount}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            editable={paymentMode === CONFIG.PAYMENT_MODES.SPLIT}
-          />
-        )}
-
-        {(paymentMode === CONFIG.PAYMENT_MODES.BANK ||
-          paymentMode === CONFIG.PAYMENT_MODES.SPLIT) && (
-          <>
             <Input
-              label="Bank Transfer Amount"
-              value={bankAmount}
-              onChangeText={setBankAmount}
+              label="Cash Amount"
+              value={cashAmount}
+              onChangeText={setCashAmount}
               placeholder="0.00"
               keyboardType="decimal-pad"
               editable={paymentMode === CONFIG.PAYMENT_MODES.SPLIT}
             />
-            <Input
-              label="Transaction Reference"
-              value={transactionRef}
-              onChangeText={setTransactionRef}
-              placeholder="Enter transaction ID/reference"
-              error={errors.transactionRef}
-            />
-          </>
-        )}
+          )}
+
+        {(paymentMode === CONFIG.PAYMENT_MODES.BANK ||
+          paymentMode === CONFIG.PAYMENT_MODES.CREDIT) && (
+            <>
+              <Input
+                label={paymentMode === CONFIG.PAYMENT_MODES.BANK ? "Bank Transfer Amount" : "Credit Amount"}
+                value={bankAmount}
+                onChangeText={setBankAmount}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                editable={false}
+              />
+              <Input
+                label="Transaction Reference"
+                value={transactionRef}
+                onChangeText={setTransactionRef}
+                placeholder="Enter transaction ID/reference"
+                error={errors.transactionRef}
+              />
+            </>
+          )}
 
         {errors.amount && (
           <Text style={styles.errorText}>{errors.amount}</Text>

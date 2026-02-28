@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Calendar, Clock, FileSpreadsheet, User, Users, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { Download, Calendar, Clock, FileSpreadsheet, User, Users, Package, ShoppingCart, TrendingUp, Phone } from 'lucide-react';
 import { reportsAPI, deliveryBoysAPI, customersAPI } from '../services/api';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
@@ -28,6 +28,8 @@ const REPORT_TYPES = [
     { id: 'return-items', name: 'Return Item Report', icon: Package, description: 'Returned items with adjusted amounts' },
     { id: 'orders', name: 'Orders Report', icon: ShoppingCart, description: 'Detailed orders export' },
     { id: 'sales', name: 'Sale Report', icon: TrendingUp, description: 'Sales summary with payment mode breakdown' },
+    { id: 'day-calls', name: 'Day Calls Report', icon: Phone, description: 'Customer registry with call details' },
+    { id: 'pending-orders', name: 'Pending Orders Report', icon: Clock, description: 'List of all pending orders till yesterday' },
 ];
 
 export default function ReportsPage() {
@@ -36,17 +38,17 @@ export default function ReportsPage() {
     const [fromTime, setFromTime] = useState('00:00:00');
     const [toDate, setToDate] = useState(getTodayIST());
     const [toTime, setToTime] = useState('23:59:59');
-    
+
     // Filters
     const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState('all');
     const [selectedCustomer, setSelectedCustomer] = useState('all');
-    
+
     // Dropdown data
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [loadingDeliveryBoys, setLoadingDeliveryBoys] = useState(false);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
-    
+
     const [isDownloading, setIsDownloading] = useState(false);
 
     // Load delivery boys when Delivery Boy Report is selected
@@ -97,30 +99,32 @@ export default function ReportsPage() {
             return false;
         }
 
-        if (!fromDate || !toDate) {
+        if (reportType !== 'pending-orders' && (!fromDate || !toDate)) {
             alert('Please select both From Date and To Date');
             return false;
         }
 
-        if (!fromTime || !toTime) {
+        if (reportType !== 'pending-orders' && (!fromTime || !toTime)) {
             alert('Please enter both From Time and To Time');
             return false;
         }
 
         // Validate time format (supports HH:MM:SS)
         const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
-        if (!timeRegex.test(fromTime) || !timeRegex.test(toTime)) {
+        if (reportType !== 'pending-orders' && (!timeRegex.test(fromTime) || !timeRegex.test(toTime))) {
             alert('Please enter valid time in HH:MM:SS format');
             return false;
         }
 
         // Validate date range
-        const fromDateTime = new Date(formatDateTime(fromDate, fromTime));
-        const toDateTime = new Date(formatDateTime(toDate, toTime));
+        if (reportType !== 'pending-orders') {
+            const fromDateTime = new Date(formatDateTime(fromDate, fromTime));
+            const toDateTime = new Date(formatDateTime(toDate, toTime));
 
-        if (fromDateTime >= toDateTime) {
-            alert('From Date & Time must be before To Date & Time');
-            return false;
+            if (fromDateTime >= toDateTime) {
+                alert('From Date & Time must be before To Date & Time');
+                return false;
+            }
         }
 
         // Validate filters based on report type
@@ -155,7 +159,7 @@ export default function ReportsPage() {
             // Prepare common params
             const fromDateTime = formatDateTime(fromDate, fromTime);
             const toDateTime = formatDateTime(toDate, toTime);
-            
+
             const baseParams = {
                 from_date: fromDate,
                 from_time: fromTime,
@@ -211,6 +215,18 @@ export default function ReportsPage() {
                     response = await reportsAPI.exportSalesReport(baseParams);
                     break;
 
+                case 'day-calls':
+                    const dayCallsParams = {
+                        date_from: fromDate,
+                        date_to: toDate
+                    };
+                    response = await reportsAPI.exportDayCallsReport(dayCallsParams);
+                    break;
+
+                case 'pending-orders':
+                    response = await reportsAPI.exportPendingOrdersReport();
+                    break;
+
                 default:
                     alert('Invalid report type selected');
                     return;
@@ -218,12 +234,12 @@ export default function ReportsPage() {
 
             // Handle file download
             let blob = response.data;
-            
+
             // Check response headers for content type
-            const contentType = response.headers?.['content-type'] || 
-                              response.headers?.['Content-Type'] || 
-                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            
+            const contentType = response.headers?.['content-type'] ||
+                response.headers?.['Content-Type'] ||
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
             // Ensure we have a proper Blob with correct MIME type
             if (blob instanceof Blob) {
                 // If blob type is incorrect or missing, create a new blob with correct type
@@ -234,18 +250,18 @@ export default function ReportsPage() {
             } else {
                 // If response.data is not a Blob, try to create one
                 console.warn('Response data is not a Blob, attempting to create one:', typeof response.data);
-                blob = new Blob([response.data], { 
-                    type: contentType.includes('excel') || contentType.includes('spreadsheet') 
+                blob = new Blob([response.data], {
+                    type: contentType.includes('excel') || contentType.includes('spreadsheet')
                         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                         : contentType
                 });
             }
-            
+
             // Verify blob is valid before downloading
             if (!(blob instanceof Blob)) {
                 throw new Error('Invalid blob data received from server');
             }
-            
+
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -254,13 +270,13 @@ export default function ReportsPage() {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
+
             setTimeout(() => {
                 alert('Report downloaded successfully!');
             }, 100);
         } catch (error) {
             console.error('Error downloading report:', error);
-            
+
             if (error.response?.data instanceof Blob) {
                 const reader = new FileReader();
                 reader.onload = () => {
@@ -316,11 +332,10 @@ export default function ReportsPage() {
                                             key={type.id}
                                             type="button"
                                             onClick={() => setReportType(type.id)}
-                                            className={`p-4 rounded-lg border-2 transition-all text-left ${
-                                                reportType === type.id
-                                                    ? 'border-primary-500 bg-primary-50'
-                                                    : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
-                                            }`}
+                                            className={`p-4 rounded-lg border-2 transition-all text-left ${reportType === type.id
+                                                ? 'border-primary-500 bg-primary-50'
+                                                : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                                                }`}
                                         >
                                             <div className="flex items-center gap-2 mb-2">
                                                 <Icon className={`w-5 h-5 ${reportType === type.id ? 'text-primary-600' : 'text-gray-500'}`} />
@@ -335,79 +350,81 @@ export default function ReportsPage() {
                             </div>
                         </div>
 
-                        {/* Date-Time Range */}
-                        <div className="border-t border-gray-200 pt-4">
-                            <h3 className="text-xs font-semibold text-gray-700 mb-4">Date & Time Range</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* From Date & Time */}
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                                            <Calendar className="w-4 h-4 inline mr-2" />
-                                            From Date <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={fromDate}
-                                            onChange={(e) => setFromDate(e.target.value)}
-                                            max={getTodayIST()}
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                        />
+                        {/* Date-Time Range - Hide for Pending Orders Report */}
+                        {reportType !== 'pending-orders' && (
+                            <div className="border-t border-gray-200 pt-4">
+                                <h3 className="text-xs font-semibold text-gray-700 mb-4">Date & Time Range</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* From Date & Time */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                                                <Calendar className="w-4 h-4 inline mr-2" />
+                                                From Date <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={fromDate}
+                                                onChange={(e) => setFromDate(e.target.value)}
+                                                max={getTodayIST()}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                                                <Clock className="w-4 h-4 inline mr-2" />
+                                                From Time <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={fromTime}
+                                                onChange={(e) => setFromTime(e.target.value)}
+                                                placeholder="00:00:00"
+                                                pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                                            <Clock className="w-4 h-4 inline mr-2" />
-                                            From Time <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={fromTime}
-                                            onChange={(e) => setFromTime(e.target.value)}
-                                            placeholder="00:00:00"
-                                            pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                        />
-                                    </div>
-                                </div>
 
-                                {/* To Date & Time */}
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                                            <Calendar className="w-4 h-4 inline mr-2" />
-                                            To Date <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={toDate}
-                                            onChange={(e) => setToDate(e.target.value)}
-                                            max={getTodayIST()}
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-2">
-                                            <Clock className="w-4 h-4 inline mr-2" />
-                                            To Time <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={toTime}
-                                            onChange={(e) => setToTime(e.target.value)}
-                                            placeholder="23:59:59"
-                                            pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                        />
+                                    {/* To Date & Time */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                                                <Calendar className="w-4 h-4 inline mr-2" />
+                                                To Date <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={toDate}
+                                                onChange={(e) => setToDate(e.target.value)}
+                                                max={getTodayIST()}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-2">
+                                                <Clock className="w-4 h-4 inline mr-2" />
+                                                To Time <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={toTime}
+                                                onChange={(e) => setToTime(e.target.value)}
+                                                placeholder="23:59:59"
+                                                pattern="^([0-1][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Conditional Filters */}
                         {(reportType === 'delivery-boy' || reportType === 'customer') && (
                             <div className="border-t border-gray-200 pt-4">
                                 <h3 className="text-xs font-semibold text-gray-700 mb-4">Filters</h3>
-                                
+
                                 {reportType === 'delivery-boy' && (
                                     <div>
                                         <label className="block text-xs font-medium text-gray-600 mb-2">
@@ -463,7 +480,7 @@ export default function ReportsPage() {
                         {/* Info Box */}
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <p className="text-xs text-blue-800">
-                                <strong>Note:</strong> {selectedReport?.description || 'The report will be generated for the selected date-time range.'} 
+                                <strong>Note:</strong> {selectedReport?.description || 'The report will be generated for the selected date-time range.'}
                                 The file will be downloaded in Excel (.xlsx) format.
                             </p>
                         </div>
@@ -472,7 +489,7 @@ export default function ReportsPage() {
                         <div className="flex justify-end pt-2">
                             <button
                                 onClick={handleDownload}
-                                disabled={isDownloading || !reportType || !fromDate || !toDate || !fromTime || !toTime}
+                                disabled={isDownloading || !reportType || (reportType !== 'pending-orders' && (!fromDate || !toDate || !fromTime || !toTime))}
                                 className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-6 py-2.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-2 disabled:from-primary-300 disabled:to-primary-400 disabled:cursor-not-allowed"
                             >
                                 {isDownloading ? (

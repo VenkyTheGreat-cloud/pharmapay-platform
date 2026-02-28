@@ -1685,6 +1685,154 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
     }
 };
 
+// Export pending orders till yesterday to Excel
+exports.exportPendingOrdersExcel = async (req, res, next) => {
+    try {
+        const filters = {};
+
+        // Filter based on user role
+        if (req.user.role === 'admin') {
+            const User = require('../models/User');
+            const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
+            filters.store_ids = storeIds;
+        } else if (req.user.role === 'store_manager') {
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
+            filters.store_ids = storeIds;
+        }
+
+        const orders = await Order.getPendingOrdersTillYesterday(filters);
+
+        // Get payment summary, items, and return items for each order
+        const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+            try {
+                const items = await OrderItem.findByOrderId(order.id);
+                const returnItemsList = await ReturnItem.findByOrderId(order.id);
+                const paymentSummary = await Payment.getPaymentSummary(order.id);
+                return {
+                    ...order,
+                    items: items || [],
+                    return_items_list: returnItemsList.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity
+                    })),
+                    payment_summary: paymentSummary || {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            } catch (err) {
+                logger.error('Error getting order details', { orderId: order.id, error: err.message });
+                return {
+                    ...order,
+                    items: [],
+                    return_items_list: [],
+                    payment_summary: {
+                        total_amount: parseFloat(order.total_amount || 0),
+                        return_adjust_amount: parseFloat(order.return_adjust_amount || 0),
+                        total_paid: 0,
+                        remaining_amount: Math.max(0, parseFloat(order.total_amount || 0) - parseFloat(order.return_adjust_amount || 0)),
+                        payment_status: order.payment_status || 'PENDING',
+                        is_fully_paid: false
+                    }
+                };
+            }
+        }));
+
+        // Create Excel workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Pending Orders');
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Order ID', key: 'id', width: 10 },
+            { header: 'Order Number', key: 'order_number', width: 20 },
+            { header: 'Customer Name', key: 'customer_name', width: 25 },
+            { header: 'Customer Phone', key: 'customer_phone', width: 15 },
+            { header: 'Customer Area', key: 'customer_area', width: 25 },
+            { header: 'Store Name', key: 'store_name', width: 25 },
+            { header: 'Delivery Boy', key: 'delivery_boy_name', width: 25 },
+            { header: 'Total Amount', key: 'total_amount', width: 15 },
+            { header: 'Return Adjust Amount', key: 'return_adjust_amount', width: 18 },
+            { header: 'Total Paid', key: 'total_paid', width: 15 },
+            { header: 'Remaining Amount', key: 'remaining_amount', width: 18 },
+            { header: 'Payment Status', key: 'payment_status', width: 15 },
+            { header: 'Order Status', key: 'status', width: 15 },
+            { header: 'Items', key: 'items', width: 50 },
+            { header: 'Order Created At', key: 'created_at', width: 20 }
+        ];
+
+        // Style header row
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        // Add rows
+        ordersWithDetails.forEach(order => {
+            const formatDateTime = (dt) => {
+                if (!dt) return '';
+                return new Date(dt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            };
+
+            const itemsStr = order.items.map(i => `${i.name} (${i.quantity})`).join(', ');
+
+            worksheet.addRow({
+                id: order.id,
+                order_number: order.order_number,
+                customer_name: order.customer_name,
+                customer_phone: order.customer_phone,
+                customer_area: order.customer_area || '',
+                store_name: order.store_name,
+                delivery_boy_name: order.delivery_boy_name || 'Unassigned',
+                total_amount: parseFloat(order.total_amount || 0).toFixed(2),
+                return_adjust_amount: parseFloat(order.return_adjust_amount || 0).toFixed(2),
+                total_paid: parseFloat(order.payment_summary?.total_paid || 0).toFixed(2),
+                remaining_amount: parseFloat(order.payment_summary?.remaining_amount || 0).toFixed(2),
+                payment_status: order.payment_status,
+                status: order.status,
+                items: itemsStr,
+                created_at: formatDateTime(order.created_at)
+            });
+        });
+
+        // Format number columns
+        const numberColumns = ['total_amount', 'return_adjust_amount', 'total_paid', 'remaining_amount'];
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) { // Skip header
+                numberColumns.forEach(col => {
+                    const cell = row.getCell(col);
+                    if (cell.value) {
+                        cell.numFmt = '#,##0.00';
+                    }
+                });
+            }
+        });
+
+        const filename = `pending_orders_till_yesterday_${new Date().getTime()}.xlsx`;
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.end(buffer);
+
+        logger.info('Pending orders exported to Excel', { count: orders.length, user: req.user.userId });
+    } catch (error) {
+        logger.error('Error exporting pending orders to Excel', { error: error.message });
+        next(error);
+    }
+};
+
 // Get orders by customer mobile
 exports.getOrdersByCustomerMobile = async (req, res, next) => {
     try {

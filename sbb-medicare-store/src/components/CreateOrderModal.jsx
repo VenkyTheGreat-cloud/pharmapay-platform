@@ -1,6 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { ordersAPI, customersAPI } from '../services/api';
-import { X, Search, Plus, Trash2 } from 'lucide-react';
+import { ordersAPI, customersAPI, customerRegistryAPI } from '../services/api';
+import { X, Search, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+
+// Helper function to get today's date in IST format (YYYY-MM-DD)
+const getTodayIST = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset);
+    return istTime.toISOString().split('T')[0];
+};
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customers, setCustomers] = useState([]);
@@ -97,13 +104,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
     const loadCustomers = async () => {
         try {
-            // Fetch all customers with a high limit to ensure we get all customers
-            const response = await customersAPI.getAll({ page: 1, limit: 10000 });
-            // Backend format: { success, data: { customers: [...], count: ... } }
-            const list = response.data?.data?.customers || response.data?.data?.data || [];
+            const today = getTodayIST();
+            const response = await customerRegistryAPI.getWithOrders(today);
+            const list = response.data?.data?.customers || [];
             setCustomers(Array.isArray(list) ? list : []);
         } catch (error) {
-            console.error('Error loading customers:', error);
+            console.error('Error loading customers from registry:', error);
             setCustomers([]);
         }
     };
@@ -164,8 +170,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const filteredCustomers = customers.filter(customer => {
         if (!customerSearchQuery.trim()) return true;
         const query = customerSearchQuery.toLowerCase();
-        const name = (customer.name || customer.full_name || '').toLowerCase();
-        const mobile = (customer.mobile || customer.mobile_number || '').toLowerCase();
+        const name = (customer.customer_name || customer.name || customer.full_name || '').toLowerCase();
+        const mobile = (customer.customer_mobile || customer.mobile || customer.mobile_number || '').toLowerCase();
         return name.includes(query) || mobile.includes(query);
     });
 
@@ -180,16 +186,19 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     };
 
     const handleCustomerSelect = (customer) => {
+        // Use customer_id if available (from registry), otherwise fallback to id
+        const customerId = customer.customer_id || customer.id;
+
         // Check if customer has area name
-        const area = customer.area || customer.areaName || customer.area_name || '';
+        const area = customer.area_name || customer.area || customer.areaName || '';
         const address = customer.address || '';
 
         if (!area || !area.trim()) {
             // Show update modal if area is missing
-            setCustomerToUpdate(customer);
+            setCustomerToUpdate({ ...customer, id: customerId });
             setCustomerUpdateData({
-                name: customer.name || customer.full_name || '',
-                mobile: customer.mobile || customer.mobile_number || '',
+                name: customer.customer_name || customer.name || customer.full_name || '',
+                mobile: customer.customer_mobile || customer.mobile || customer.mobile_number || '',
                 area: area,
                 address: address
             });
@@ -197,8 +206,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             setShowCustomerDropdown(false);
         } else {
             // Customer has area, proceed with selection
-            setFormData(prev => ({ ...prev, customerId: customer.id.toString() }));
-            setSelectedCustomerName(`${customer.name || customer.full_name} - ${customer.mobile || customer.mobile_number}`);
+            setFormData(prev => ({ ...prev, customerId: customerId.toString() }));
+            setSelectedCustomerName(`${customer.customer_name || customer.name || customer.full_name} - ${customer.customer_mobile || customer.mobile || customer.mobile_number}`);
             setCustomerSearchQuery('');
             setShowCustomerDropdown(false);
             if (errors.customerId) {
@@ -383,8 +392,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         }
 
         // Payment mode is required if paidAmount > 0
-        if (paidAmount > 0 && !formData.paymentMode) {
-            newErrors.paymentMode = 'Payment Mode is required when Paid Amount is greater than 0';
+        if (paidAmount > 0) {
+            if (!formData.paymentMode) {
+                newErrors.paymentMode = 'Payment Mode is required when Paid Amount is greater than 0';
+            } else if ((formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') && (!formData.transactionReference || !formData.transactionReference.trim())) {
+                newErrors.transactionReference = 'Transaction Reference is required for Bank Transfer and Credit';
+            }
         }
 
         return newErrors;
@@ -564,14 +577,23 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                             <div
                                                 key={customer.id}
                                                 onClick={() => handleCustomerSelect(customer)}
-                                                className="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                                className={`px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex justify-between items-center ${customer.has_order ? 'bg-green-50' : ''}`}
                                             >
-                                                <div className="font-medium text-gray-900">
-                                                    {customer.name || customer.full_name}
+                                                <div>
+                                                    <div className="font-medium text-gray-900">
+                                                        {customer.customer_name || customer.name || customer.full_name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {customer.customer_mobile || customer.mobile || customer.mobile_number}
+                                                        {customer.area_name ? ` • ${customer.area_name}` : ''}
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-gray-500">
-                                                    {customer.mobile || customer.mobile_number}
-                                                </div>
+                                                {customer.has_order && (
+                                                    <div className="flex items-center gap-1 text-green-600 text-[10px] font-bold uppercase tracking-wider bg-green-100 px-2 py-0.5 rounded-full">
+                                                        <CheckCircle2 className="w-3 h-3" />
+                                                        Has Order
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -689,8 +711,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     >
                                         <option value="">Select payment mode</option>
                                         <option value="Cash">Cash</option>
-                                        <option value="UPI">UPI</option>
-                                        <option value="Card">Card</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Credit">Credit</option>
                                     </select>
                                     {errors.paymentMode && (
                                         <p className="text-red-500 text-xs mt-1">{errors.paymentMode}</p>
@@ -698,21 +720,25 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                 </div>
                             )}
 
-                            {/* Transaction Reference (Optional, shown only if paidAmount > 0) */}
+                            {/* Transaction Reference (Shown only if paidAmount > 0) */}
                             {(parseFloat(formData.paidAmount) || 0) > 0 && (
                                 <div>
                                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                                        Transaction Reference (Optional)
+                                        Transaction Reference {(formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit') ? <span className="text-red-500">* (Required)</span> : '(Optional)'}
                                     </label>
                                     <input
                                         type="text"
                                         name="transactionReference"
                                         value={formData.transactionReference}
                                         onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                        placeholder="e.g., TXN123"
+                                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.transactionReference ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                        placeholder={formData.paymentMode === 'Bank Transfer' || formData.paymentMode === 'Credit' ? "Enter transaction reference" : "e.g., TXN123"}
                                         disabled={isSubmitting}
                                     />
+                                    {errors.transactionReference && (
+                                        <p className="text-red-500 text-xs mt-1">{errors.transactionReference}</p>
+                                    )}
                                 </div>
                             )}
 
