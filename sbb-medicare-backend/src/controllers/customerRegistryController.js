@@ -95,6 +95,16 @@ exports.getAllCustomerRegistry = async (req, res, next) => {
             offset: (parseInt(page) - 1) * Math.min(parseInt(limit), 100)
         };
 
+        // Determine store IDs based on user role
+        if (req.user.role === 'admin') {
+            const User = require('../models/User');
+            filters.store_ids = await User.getStoreIdsForAdmin(req.user.userId);
+        } else if (req.user.role === 'store_manager') {
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            filters.store_ids = await User.getStoreIdsForAdmin(anchorAdminId);
+        }
+
         if (mobile) {
             filters.mobile = mobile.trim();
         }
@@ -323,6 +333,16 @@ exports.exportCustomerRegistryExcel = async (req, res, next) => {
 
         // Same filter logic as getAllCustomerRegistry but without pagination
         const filters = {};
+
+        // Determine store IDs based on user role
+        if (req.user.role === 'admin') {
+            const User = require('../models/User');
+            filters.store_ids = await User.getStoreIdsForAdmin(req.user.userId);
+        } else if (req.user.role === 'store_manager') {
+            const User = require('../models/User');
+            const anchorAdminId = req.user.adminId || req.user.userId;
+            filters.store_ids = await User.getStoreIdsForAdmin(anchorAdminId);
+        }
 
         if (mobile) {
             filters.mobile = mobile.trim();

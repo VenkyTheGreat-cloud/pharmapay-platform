@@ -60,6 +60,13 @@ class CustomerRegistry {
             paramCount++;
         }
 
+        // Filter by store_ids
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
+            paramCount++;
+        }
+
         queryText += ' ORDER BY registry_date DESC, created_at DESC';
 
         // Pagination
@@ -107,6 +114,13 @@ class CustomerRegistry {
         if (filters.search) {
             queryText += ` AND LOWER(name) LIKE $${paramCount}`;
             params.push(`%${filters.search.toLowerCase()}%`);
+            paramCount++;
+        }
+
+        // Filter by store_ids
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
             paramCount++;
         }
 

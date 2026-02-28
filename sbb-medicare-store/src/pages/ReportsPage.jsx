@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Download, Calendar, Clock, FileSpreadsheet, User, Users, Package, ShoppingCart, TrendingUp, Phone } from 'lucide-react';
 import { reportsAPI, deliveryBoysAPI, customersAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -33,6 +34,7 @@ const REPORT_TYPES = [
 ];
 
 export default function ReportsPage() {
+    const { user } = useAuth();
     const [reportType, setReportType] = useState('');
     const [fromDate, setFromDate] = useState(getTodayIST());
     const [fromTime, setFromTime] = useState('00:00:00');
@@ -220,6 +222,13 @@ export default function ReportsPage() {
                         date_from: fromDate,
                         date_to: toDate
                     };
+
+                    // Add admin_id to filter by current admin if available
+                    const adminId = user?.uid || user?.id;
+                    if (adminId) {
+                        dayCallsParams.admin_id = adminId;
+                    }
+
                     response = await reportsAPI.exportDayCallsReport(dayCallsParams);
                     break;
 
