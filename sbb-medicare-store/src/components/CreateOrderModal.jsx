@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { ordersAPI, customersAPI, customerRegistryAPI } from '../services/api';
 import { X, Search, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 
