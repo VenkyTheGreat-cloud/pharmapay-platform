@@ -1763,6 +1763,7 @@ exports.exportPendingOrdersExcel = async (req, res, next) => {
 
         // Define columns
         worksheet.columns = [
+            { header: 'Sl.No', key: 'sl_no', width: 10 },
             { header: 'Order ID', key: 'id', width: 10 },
             { header: 'Order Number', key: 'order_number', width: 20 },
             { header: 'Customer Name', key: 'customer_name', width: 25 },
@@ -1789,7 +1790,7 @@ exports.exportPendingOrdersExcel = async (req, res, next) => {
         };
 
         // Add rows
-        ordersWithDetails.forEach(order => {
+        ordersWithDetails.forEach((order, index) => {
             const formatDateTime = (dt) => {
                 if (!dt) return '';
                 return new Date(dt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
@@ -1798,13 +1799,14 @@ exports.exportPendingOrdersExcel = async (req, res, next) => {
             const itemsStr = order.items.map(i => `${i.name} (${i.quantity})`).join(', ');
 
             worksheet.addRow({
+                sl_no: index + 1,
                 id: order.id,
                 order_number: order.order_number,
                 customer_name: order.customer_name,
                 customer_phone: order.customer_phone,
                 customer_area: order.customer_area || '',
                 store_name: order.store_name,
-                delivery_boy_name: order.delivery_boy_name || 'Unassigned',
+                delivery_boy_name: order.customer_received_at_store ? 'Customer' : (order.delivery_boy_name || 'Unassigned'),
                 total_amount: parseFloat(order.total_amount || 0).toFixed(2),
                 return_adjust_amount: parseFloat(order.return_adjust_amount || 0).toFixed(2),
                 total_paid: parseFloat(order.payment_summary?.total_paid || 0).toFixed(2),
@@ -2121,7 +2123,7 @@ exports.exportOrdersToExcel = async (req, res, next) => {
                 customer_phone: order.customer_phone || '',
                 customer_address: order.customer_address || '',
                 store_name: order.store_name || '',
-                delivery_boy_name: order.delivery_boy_name || 'Unassigned',
+                delivery_boy_name: order.customer_received_at_store ? 'Customer' : (order.delivery_boy_name || 'Unassigned'),
                 delivery_boy_mobile: order.delivery_boy_mobile || '',
                 total_amount: parseFloat(order.total_amount || 0).toFixed(2),
                 return_adjust_amount: parseFloat(order.return_adjust_amount || 0).toFixed(2),

@@ -31,7 +31,16 @@ class CustomerRegistry {
 
     // Find all with filters and pagination
     static async findAll(filters = {}) {
-        let queryText = 'SELECT * FROM customer_registry WHERE 1=1';
+        let queryText = `
+            SELECT cr.*, 
+                   CASE WHEN EXISTS (
+                       SELECT 1 FROM orders o 
+                       WHERE o.customer_phone = cr.mobile 
+                       AND DATE(o.created_at) = DATE(cr.registry_date)
+                   ) THEN true ELSE false END as has_order
+            FROM customer_registry cr 
+            WHERE 1=1
+        `;
         const params = [];
         let paramCount = 1;
 

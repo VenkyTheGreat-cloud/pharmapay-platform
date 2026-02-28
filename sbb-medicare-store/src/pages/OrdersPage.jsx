@@ -462,7 +462,7 @@ export default function OrdersPage() {
                                                     </td>
                                                     <td className="px-6 py-3 whitespace-nowrap">
                                                         <div className="text-xs font-medium text-gray-900">
-                                                            {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
+                                                            {order.customer_received_at_store ? 'Customer' : (order.deliveryBoyName || order.delivery_boy_name || 'Not assigned')}
                                                         </div>
                                                         {order.deliveryBoyMobile || order.delivery_boy_mobile ? (
                                                             <div className="text-xs text-gray-500">{order.deliveryBoyMobile || order.delivery_boy_mobile}</div>
