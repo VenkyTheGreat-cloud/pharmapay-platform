@@ -200,25 +200,31 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
 
         // If area is missing in registry, try searching in main customer database
         if (!area || !area.trim()) {
-            try {
-                setIsLookupLoading(true);
-                setLookupCustomerId(customerId);
-                const response = await customersAPI.getById(customerId);
-                const fullCustomer = response.data?.data || response.data;
+            // Guard: Only proceed if customerId is valid (positive integer)
+            const numericId = Number(customerId);
+            if (!customerId || isNaN(numericId) || numericId <= 0) {
+                console.warn('Skipping background lookup: invalid or missing customerId', customerId);
+            } else {
+                try {
+                    setIsLookupLoading(true);
+                    setLookupCustomerId(customerId);
+                    const response = await customersAPI.getById(customerId);
+                    const fullCustomer = response.data?.data || response.data;
 
-                if (fullCustomer) {
-                    area = fullCustomer.area_name || fullCustomer.area || fullCustomer.areaName || '';
-                    address = fullCustomer.address || address;
-                    // Keep most original name/mobile if possible
-                    customerName = fullCustomer.name || fullCustomer.full_name || customerName;
-                    customerMobile = fullCustomer.mobile || fullCustomer.mobile_number || customerMobile;
+                    if (fullCustomer) {
+                        area = fullCustomer.area_name || fullCustomer.area || fullCustomer.areaName || '';
+                        address = fullCustomer.address || address;
+                        // Keep most original name/mobile if possible
+                        customerName = fullCustomer.name || fullCustomer.full_name || customerName;
+                        customerMobile = fullCustomer.mobile || fullCustomer.mobile_number || customerMobile;
+                    }
+                } catch (error) {
+                    console.error('Error looking up customer details:', error);
+                    // Fallback to registry data already in variables
+                } finally {
+                    setIsLookupLoading(false);
+                    setLookupCustomerId(null);
                 }
-            } catch (error) {
-                console.error('Error looking up customer details:', error);
-                // Fallback to registry data already in variables
-            } finally {
-                setIsLookupLoading(false);
-                setLookupCustomerId(null);
             }
         }
 
