@@ -61,9 +61,10 @@ export default function Layout({ children }) {
                     {/* Logo */}
                     <div className="flex items-center justify-between p-6 border-b">
                         <div className="flex items-center gap-3">
-                            <img src={logo} alt="SBB Medicare Logo" className="w-10 h-10 rounded-full object-cover" />
+                            <img src={logo} alt="SBB Medicare Logo" className="w-12 h-auto max-h-12 rounded-md object-contain" />
                             <h1 className="text-xl font-bold text-gray-900">SBB Medicare</h1>
                         </div>
+
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="lg:hidden text-gray-500 hover:text-gray-700"
