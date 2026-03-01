@@ -2215,3 +2215,24 @@ exports.exportOrdersToExcel = async (req, res, next) => {
         next(error);
     }
 };
+
+// Delete order
+exports.deleteOrder = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Order not found'));
+        }
+
+        await Order.delete(id);
+
+        logger.info('Order deleted', { id, orderNumber: order.order_number });
+
+        res.json(successResponse(null, 'Order deleted successfully'));
+    } catch (error) {
+        next(error);
+    }
+};
+
