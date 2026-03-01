@@ -33,7 +33,7 @@ api.interceptors.response.use(
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+                window.location.href = '/login';
             }
         }
         return Promise.reject(error);
@@ -111,11 +111,69 @@ const realAccessControlAPI = {
         api.patch(`/access-control/${id}/toggle-active`, { isActive }),
 };
 
-const realContactsAPI = {
+// Customer Registry API (renamed from Contacts for consistency)
+const realCustomerRegistryAPI = {
     // POST /customer-registry
     create: (data) => api.post('/customer-registry', data),
     // GET /customer-registry/with-orders?date=YYYY-MM-DD
     getWithOrders: (date) => api.get('/customer-registry/with-orders', { params: { date } }),
+};
+
+const realReportsAPI = {
+    // Delivery Boy Report
+    exportDeliveryBoyReport: (params) => {
+        return api.get('/reports/delivery-boy', {
+            params: { ...params, format: 'excel' },
+            responseType: 'blob'
+        });
+    },
+
+    // Customer Report
+    exportCustomerReport: (params) => {
+        return api.get('/reports/customer', {
+            params: { ...params, format: 'excel' },
+            responseType: 'blob'
+        });
+    },
+
+    // Return Item Report
+    exportReturnItemsReport: (params) => {
+        return api.get('/reports/return-items', {
+            params: { ...params, format: 'excel' },
+            responseType: 'blob'
+        });
+    },
+
+    // Orders Report (using existing endpoint)
+    exportOrdersReport: (params) => {
+        return api.get('/orders/export/excel', {
+            params,
+            responseType: 'blob'
+        });
+    },
+
+    // Sale Report
+    exportSalesReport: (params) => {
+        return api.get('/reports/sales', {
+            params: { ...params, format: 'excel' },
+            responseType: 'blob'
+        });
+    },
+
+    // Day Calls Report
+    exportDayCallsReport: (params) => {
+        return api.get('/customer-registry/export/excel', {
+            params,
+            responseType: 'blob'
+        });
+    },
+
+    // Pending Orders Report
+    exportPendingOrdersReport: () => {
+        return api.get('/orders/pending-till-yesterday/export/excel', {
+            responseType: 'blob'
+        });
+    },
 };
 
 const realConfigAPI = {
@@ -573,7 +631,7 @@ const mockAccessControlAPI = {
 
 let mockCustomerRegistry = [];
 
-const mockContactsAPI = {
+const mockCustomerRegistryAPI = {
     create: async (data) => {
         await delay();
         const newRegistry = {
@@ -632,6 +690,16 @@ const mockContactsAPI = {
     },
 };
 
+const mockReportsAPI = {
+    exportDeliveryBoyReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportCustomerReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportReturnItemsReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportOrdersReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportSalesReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportDayCallsReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+    exportPendingOrdersReport: () => Promise.resolve({ data: new Blob(['mock']) }),
+};
+
 const mockConfigAPI = {
     get: async () => {
         await delay();
@@ -661,11 +729,12 @@ const mockConfigAPI = {
 
 export const authAPI = USE_MOCK_API ? mockAuthAPI : realAuthAPI;
 export const customersAPI = USE_MOCK_API ? mockCustomersAPI : realCustomersAPI;
-export const contactsAPI = USE_MOCK_API ? mockContactsAPI : realContactsAPI;
+export const customerRegistryAPI = USE_MOCK_API ? mockCustomerRegistryAPI : realCustomerRegistryAPI;
 export const ordersAPI = USE_MOCK_API ? mockOrdersAPI : realOrdersAPI;
 export const paymentsAPI = USE_MOCK_API ? mockPaymentsAPI : realPaymentsAPI;
 export const deliveryBoysAPI = USE_MOCK_API ? mockDeliveryBoysAPI : realDeliveryBoysAPI;
 export const accessControlAPI = USE_MOCK_API ? mockAccessControlAPI : realAccessControlAPI;
 export const configAPI = USE_MOCK_API ? mockConfigAPI : realConfigAPI;
+export const reportsAPI = USE_MOCK_API ? mockReportsAPI : realReportsAPI;
 
 export default api;

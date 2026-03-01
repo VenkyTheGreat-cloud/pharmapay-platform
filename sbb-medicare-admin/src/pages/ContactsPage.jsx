@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { contactsAPI } from '../services/api';
+import { customerRegistryAPI } from '../services/api';
 import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,7 +13,7 @@ const getTodayIST = () => {
         month: '2-digit',
         day: '2-digit'
     }).format(now);
-    
+
     // Return in YYYY-MM-DD format (en-CA locale already returns this format)
     return istDateString;
 };
@@ -29,13 +29,13 @@ export default function ContactsPage() {
 
     // Check if user is admin (based on dashboardType or role)
     const isAdmin = user?.dashboardType === 'admin' || user?.role === 'admin' || user?.user_type === 'admin';
-    
+
     // Check if user is super admin
-    const isSuperAdmin = user?.role === 'super_admin' || 
-                        user?.role === 'superadmin' || 
-                        user?.user_type === 'super_admin' || 
-                        user?.user_type === 'superadmin' ||
-                        user?.dashboardType === 'super_admin';
+    const isSuperAdmin = user?.role === 'super_admin' ||
+        user?.role === 'superadmin' ||
+        user?.user_type === 'super_admin' ||
+        user?.user_type === 'superadmin' ||
+        user?.dashboardType === 'super_admin';
 
     useEffect(() => {
         loadContacts();
@@ -44,15 +44,15 @@ export default function ContactsPage() {
     const loadContacts = async () => {
         try {
             setLoading(true);
-            const response = await contactsAPI.getWithOrders(selectedDate);
+            const response = await customerRegistryAPI.getWithOrders(selectedDate);
             const res = response.data;
             const list = res?.data?.customers || [];
             setContacts(list);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Error loading contacts. Please try again.';
+            const errorMsg = error.response?.data?.error?.message ||
+                error.response?.data?.message ||
+                'Error loading contacts. Please try again.';
             alert(errorMsg);
         } finally {
             setLoading(false);
@@ -73,19 +73,19 @@ export default function ContactsPage() {
             second: '2-digit',
             hour12: false
         });
-        
+
         // Parse the IST string (format: MM/DD/YYYY, HH:mm:ss)
         const [datePart, timePart] = istString.split(', ');
         const [month, day, year] = datePart.split('/');
         const [hour, minute, second] = timePart.split(':');
-        
+
         // Format as ISO string: YYYY-MM-DDTHH:mm:ssZ
         return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
     };
 
     const handleAddContact = async (e) => {
         e.preventDefault();
-        
+
         if (!customerName.trim()) {
             alert('Please enter a customer name');
             return;
@@ -105,29 +105,29 @@ export default function ContactsPage() {
 
         try {
             setIsSubmitting(true);
-            
+
             // Get current date and time in IST
             const registryDate = getCurrentISTDateTime();
-            
-            await contactsAPI.create({
+
+            await customerRegistryAPI.create({
                 mobile: mobileNumber.trim(),
                 name: customerName.trim(),
                 registry_date: registryDate
             });
-            
+
             // Clear the inputs
             setCustomerName('');
             setMobileNumber('');
-            
+
             // Reload contacts
             await loadContacts();
-            
+
             alert('Contact added successfully');
         } catch (error) {
             console.error('Error adding contact:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Error adding contact. Please try again.';
+            const errorMsg = error.response?.data?.error?.message ||
+                error.response?.data?.message ||
+                'Error adding contact. Please try again.';
             alert(errorMsg);
         } finally {
             setIsSubmitting(false);
@@ -144,7 +144,7 @@ export default function ContactsPage() {
             <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-lg font-bold text-gray-800">Contacts</h1>
+                        <h1 className="text-lg font-bold text-gray-800">Day Calls</h1>
                         <p className="text-xs text-gray-600 mt-0.5">Manage contact numbers</p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -236,9 +236,9 @@ export default function ContactsPage() {
             <div className="px-4 pb-4 mt-4 flex flex-col flex-1 min-h-0">
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 flex flex-col flex-1 min-h-0">
                     <div className="px-4 py-2 border-b bg-gradient-to-r from-gray-50 to-primary-50 flex-shrink-0">
-                        <h3 className="text-xs font-medium text-gray-800">Contacts List</h3>
+                        <h3 className="text-xs font-medium text-gray-800">Day Calls List</h3>
                     </div>
-                    
+
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500"></div>
@@ -275,7 +275,7 @@ export default function ContactsPage() {
                                         const order = customer.order || null;
                                         const orderCreatedDate = order?.order_created_at || order?.order_created_date_time || null;
                                         const orderDateObj = orderCreatedDate ? new Date(orderCreatedDate) : null;
-                                        
+
                                         return (
                                             <tr key={customer.registry_id || index} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 text-center">

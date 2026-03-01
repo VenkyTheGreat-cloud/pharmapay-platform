@@ -8,6 +8,7 @@ import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import StoreStaffPage from './pages/StoreStaffPage';
 import CustomersPage from './pages/CustomersPage';
 import ContactsPage from './pages/ContactsPage';
+import ReportsPage from './pages/ReportsPage';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
@@ -82,6 +83,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ContactsPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/reports"
+                element={
+                    <ProtectedRoute>
+                        <ReportsPage />
                     </ProtectedRoute>
                 }
             />
