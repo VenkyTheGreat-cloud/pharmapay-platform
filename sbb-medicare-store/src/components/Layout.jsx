@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
+import logo from '../assets/logo.jpg';
+
 
 export default function Layout({ children }) {
     const { user, logout } = useAuth();
@@ -53,14 +55,16 @@ export default function Layout({ children }) {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 z-30 w-64 h-screen bg-white shadow-lg transform transition-transform duration-300 lg:translate-x-0 ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+                className={`fixed top-0 left-0 z-30 w-64 h-screen bg-white shadow-lg transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
                     <div className="flex items-center justify-between p-6 border-b">
-                        <h1 className="text-xl font-bold text-gray-900">SBB Medicare</h1>
+                        <div className="flex items-center gap-3">
+                            <img src={logo} alt="SBB Medicare Logo" className="w-10 h-10 rounded-full object-cover" />
+                            <h1 className="text-xl font-bold text-gray-900">SBB Medicare</h1>
+                        </div>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="lg:hidden text-gray-500 hover:text-gray-700"
@@ -76,11 +80,10 @@ export default function Layout({ children }) {
                                 key={item.name}
                                 to={item.href}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                                    isActive(item.href)
-                                        ? 'bg-primary-50 text-primary-600'
-                                        : 'text-gray-700 hover:bg-gray-100'
-                                }`}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.href)
+                                    ? 'bg-primary-50 text-primary-600'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                    }`}
                             >
                                 <item.icon className="w-5 h-5" />
                                 <span className="font-medium">{item.name}</span>
