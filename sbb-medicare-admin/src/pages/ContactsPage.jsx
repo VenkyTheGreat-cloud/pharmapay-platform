@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { customerRegistryAPI } from '../services/api';
-import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
@@ -138,6 +138,27 @@ export default function ContactsPage() {
         loadContacts();
     };
 
+    const handleDeleteContact = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this contact record?')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await customerRegistryAPI.delete(id);
+            alert('Contact record deleted successfully');
+            await loadContacts();
+        } catch (error) {
+            console.error('Error deleting contact:', error);
+            const errorMsg = error.response?.data?.error?.message ||
+                error.response?.data?.message ||
+                'Error deleting contact. Please try again.';
+            alert(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
             {/* Header */}
@@ -267,6 +288,11 @@ export default function ContactsPage() {
                                         <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                             Order Created Date Time
                                         </th>
+                                        {(isAdmin || isSuperAdmin) && (
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -318,6 +344,17 @@ export default function ContactsPage() {
                                                         })
                                                     ) : '-'}
                                                 </td>
+                                                {(isAdmin || isSuperAdmin) && (
+                                                    <td className="px-4 py-3 whitespace-nowrap text-xs">
+                                                        <button
+                                                            onClick={() => handleDeleteContact(customer.registry_id || customer.id)}
+                                                            className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm"
+                                                            title="Delete Record"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })}

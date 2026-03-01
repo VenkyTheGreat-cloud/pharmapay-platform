@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
-import { Clock, Eye, Package, Search } from 'lucide-react';
+import { Clock, Eye, Package, Search, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function PendingOrdersPage() {
+    const { user } = useAuth();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -24,7 +26,7 @@ export default function PendingOrdersPage() {
             };
             const response = await ordersAPI.getPendingTillYesterday(params);
             console.log('Pending Orders API Response:', response.data);
-            
+
             // Handle different possible response structures
             let allList = [];
             if (response.data?.data?.orders) {
@@ -36,7 +38,7 @@ export default function PendingOrdersPage() {
             } else if (Array.isArray(response.data)) {
                 allList = response.data;
             }
-            
+
             // Normalize order data
             const normalizedOrders = allList.map(order => ({
                 id: order.id,
@@ -58,13 +60,13 @@ export default function PendingOrdersPage() {
                 returnItems: order.return_items || order.returnItems || false,
                 returnAdjustAmount: parseFloat(order.return_adjust_amount || order.returnAdjustAmount || 0),
             }));
-            
+
             setOrders(normalizedOrders);
         } catch (error) {
             console.error('Error loading pending orders:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
-                           'Failed to load pending orders';
+            const errorMsg = error.response?.data?.error?.message ||
+                error.response?.data?.message ||
+                'Failed to load pending orders';
             alert(`Error: ${errorMsg}`);
         } finally {
             setLoading(false);
@@ -76,7 +78,7 @@ export default function PendingOrdersPage() {
         if (statusFilter !== 'ALL' && order.status !== statusFilter) {
             return false;
         }
-        
+
         // Filter by search query (order ID)
         if (searchQuery.trim()) {
             const orderIdStr = (order.orderNumber || order.id || '').toString().toLowerCase();
@@ -85,13 +87,34 @@ export default function PendingOrdersPage() {
                 return false;
             }
         }
-        
+
         return true;
     });
 
     const handleViewOrderDetails = (orderId) => {
         setSelectedOrderId(orderId);
         setShowOrderDetails(true);
+    };
+
+    const handleDeleteOrder = async (orderId) => {
+        if (!window.confirm('Are you sure you want to delete this order?')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await ordersAPI.delete(orderId);
+            alert('Order deleted successfully');
+            await loadPendingOrders();
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            const errorMsg = error.response?.data?.error?.message ||
+                error.response?.data?.message ||
+                'Failed to delete order';
+            alert(`Error: ${errorMsg}`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Utility function to trim order ID in the middle
@@ -258,9 +281,8 @@ export default function PendingOrdersPage() {
                                                     {order.paymentMode || 'N/A'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
-                                                    <span className={`px-2 py-0.5 inline-flex text-xs font-medium rounded ${
-                                                        order.returnItems ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                    }`}>
+                                                    <span className={`px-2 py-0.5 inline-flex text-xs font-medium rounded ${order.returnItems ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                        }`}>
                                                         {order.returnItems ? 'Yes' : 'No'}
                                                     </span>
                                                 </td>
@@ -268,26 +290,36 @@ export default function PendingOrdersPage() {
                                                     {order.returnAdjustAmount > 0 ? `₹${order.returnAdjustAmount.toFixed(2)}` : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
-                                                    <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${
-                                                        order.status === 'DELIVERED' ? 'bg-gradient-to-r from-green-400 to-green-600 text-white' :
-                                                        order.status === 'ASSIGNED' ? 'bg-gradient-to-r from-primary-400 to-primary-600 text-white' :
-                                                        order.status === 'PICKED_UP' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
-                                                        order.status === 'IN_TRANSIT' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
-                                                        order.status === 'CANCELLED' ? 'bg-gradient-to-r from-red-400 to-red-600 text-white' :
-                                                        'bg-gradient-to-r from-gray-400 to-gray-600 text-white'
-                                                    }`}>
+                                                    <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${order.status === 'DELIVERED' ? 'bg-gradient-to-r from-green-400 to-green-600 text-white' :
+                                                            order.status === 'ASSIGNED' ? 'bg-gradient-to-r from-primary-400 to-primary-600 text-white' :
+                                                                order.status === 'PICKED_UP' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
+                                                                    order.status === 'IN_TRANSIT' ? 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white' :
+                                                                        order.status === 'CANCELLED' ? 'bg-gradient-to-r from-red-400 to-red-600 text-white' :
+                                                                            'bg-gradient-to-r from-gray-400 to-gray-600 text-white'
+                                                        }`}>
                                                         {order.status || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs">
-                                                    <button
-                                                        onClick={() => handleViewOrderDetails(order.id)}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-sm"
-                                                        title="View Order Details"
-                                                    >
-                                                        <Eye className="w-3.5 h-3.5" />
-                                                        <span className="hidden sm:inline">Details</span>
-                                                    </button>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => handleViewOrderDetails(order.id)}
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-sm"
+                                                            title="View Order Details"
+                                                        >
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                            <span className="hidden sm:inline">Details</span>
+                                                        </button>
+                                                        {(user?.role === 'admin' || user?.role === 'super_admin' || user?.user_type === 'admin') && (
+                                                            <button
+                                                                onClick={() => handleDeleteOrder(order.id)}
+                                                                className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors shadow-sm"
+                                                                title="Delete Order"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
