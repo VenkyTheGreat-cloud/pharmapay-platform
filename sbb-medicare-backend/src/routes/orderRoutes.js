@@ -155,4 +155,14 @@ router.post(
     orderController.uploadDeliveryPhoto
 );
 
+// Delete order
+router.delete(
+    '/:id',
+    validateId,
+    checkStoreAccess,
+    authorizeRoles('admin', 'store_manager'),
+    orderController.deleteOrder
+);
+
 module.exports = router;
+

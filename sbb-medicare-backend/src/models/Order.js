@@ -900,8 +900,18 @@ class Order {
         return result.rows[0];
     }
 
+    // Delete order
+    static async delete(id) {
+        const result = await query(
+            'DELETE FROM orders WHERE id = $1 RETURNING *',
+            [id]
+        );
+        return result.rows[0];
+    }
+
     // Get order status history
     static async getStatusHistory(orderId) {
+
         const result = await query(
             `SELECT osh.*, u.name as changed_by_name
              FROM order_status_history osh
