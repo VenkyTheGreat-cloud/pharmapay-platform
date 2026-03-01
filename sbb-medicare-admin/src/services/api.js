@@ -79,6 +79,7 @@ const realOrdersAPI = {
     updateLocation: (id, data) => api.post(`/orders/${id}/location`, data),
     getByCustomerMobile: (mobile) =>
         api.get(`/orders/customer/${mobile}`),
+    delete: (id) => api.delete(`/orders/${id}`),
 };
 
 const realPaymentsAPI = {
@@ -117,6 +118,8 @@ const realCustomerRegistryAPI = {
     create: (data) => api.post('/customer-registry', data),
     // GET /customer-registry/with-orders?date=YYYY-MM-DD
     getWithOrders: (date) => api.get('/customer-registry/with-orders', { params: { date } }),
+    // DELETE /customer-registry/:id
+    delete: (id) => api.delete(`/customer-registry/${id}`),
 };
 
 const realReportsAPI = {
@@ -496,6 +499,11 @@ const mockOrdersAPI = {
             },
         };
     },
+    delete: async (id) => {
+        await delay();
+        mockOrders = mockOrders.filter((o) => o.id !== id);
+        return { data: { success: true, message: 'Order deleted successfully' } };
+    },
 };
 
 const mockPaymentsAPI = {
@@ -687,6 +695,11 @@ const mockCustomerRegistryAPI = {
                 message: 'Registered customers with order status retrieved successfully',
             },
         };
+    },
+    delete: async (id) => {
+        await delay();
+        mockCustomerRegistry = mockCustomerRegistry.filter((r) => r.id !== id);
+        return { data: { success: true, message: 'Contact deleted successfully' } };
     },
 };
 
