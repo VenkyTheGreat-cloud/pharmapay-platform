@@ -10,7 +10,8 @@ import {
     X,
     UserCircle,
     Clock,
-    Phone
+    Phone,
+    FileSpreadsheet
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -33,7 +34,8 @@ export default function Layout({ children }) {
         { name: 'Customers', href: '/customers', icon: Users },
         { name: 'Store Staff', href: '/store-staff', icon: UserCog },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
-        { name: 'Contacts', href: '/contacts', icon: Phone },
+        { name: 'Day Calls', href: '/contacts', icon: Phone },
+        { name: 'Reports', href: '/reports', icon: FileSpreadsheet },
     ];
 
     const isActive = (href) => location.pathname === href;
@@ -50,9 +52,8 @@ export default function Layout({ children }) {
 
             {/* Sidebar */}
             <aside
-                className={`fixed top-0 left-0 z-30 w-64 h-screen bg-white shadow-lg transform transition-transform duration-300 lg:translate-x-0 ${
-                    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+                className={`fixed top-0 left-0 z-30 w-64 h-screen bg-white shadow-lg transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
@@ -73,11 +74,10 @@ export default function Layout({ children }) {
                                 key={item.name}
                                 to={item.href}
                                 onClick={() => setSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                                    isActive(item.href)
+                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.href)
                                         ? 'bg-primary-50 text-primary-600 font-semibold'
                                         : 'text-gray-700 hover:bg-gray-100'
-                                }`}
+                                    }`}
                             >
                                 <item.icon className="w-5 h-5" />
                                 <span className="font-medium">{item.name}</span>
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
                 </div>
             </aside>
 
-                {/* Main content */}
+            {/* Main content */}
             <div className="lg:ml-64">
                 {/* Top bar */}
                 <header className="bg-white shadow-sm sticky top-0 z-10">

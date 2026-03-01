@@ -32,14 +32,24 @@ exports.createPayment = async (req, res, next) => {
             return res.status(409).json({ error: 'Payment already exists for this order' });
         }
 
+        // Normalize payment_mode
+        let normalizedMode = (payment_mode || 'CASH').toUpperCase();
+        if (normalizedMode === 'CASH' || normalizedMode === 'Cash') {
+            normalizedMode = 'CASH';
+        } else if (['BANK', 'BANK_TRANSFER', 'BANK TRANSFER', 'UPI', 'CARD', 'CARD PAYMENT'].includes(normalizedMode) || normalizedMode === 'Bank Transfer') {
+            normalizedMode = 'BANK';
+        } else if (normalizedMode === 'CREDIT' || normalizedMode === 'Credit') {
+            normalizedMode = 'CREDIT';
+        }
+
         // Validate payment amounts
-        if (payment_mode === 'cash' && (!cash_amount || bank_amount)) {
+        if (normalizedMode === 'CASH' && (!cash_amount || bank_amount)) {
             return res.status(400).json({ error: 'Invalid amounts for cash payment' });
         }
-        if (payment_mode === 'bank' && (!bank_amount || cash_amount)) {
+        if (normalizedMode === 'BANK' && (!bank_amount || cash_amount)) {
             return res.status(400).json({ error: 'Invalid amounts for bank payment' });
         }
-        if (payment_mode === 'credit' && (!bank_amount || cash_amount)) {
+        if (normalizedMode === 'CREDIT' && (!bank_amount || cash_amount)) {
             return res.status(400).json({ error: 'Invalid amounts for credit payment' });
         }
 
@@ -148,11 +158,11 @@ exports.collectPayment = async (req, res, next) => {
         const transaction_reference = req.body.transaction_reference;
 
         // Normalize payment_mode to match database enum (CASH, BANK, CREDIT)
-        if (payment_mode === 'CASH') {
+        if (payment_mode === 'CASH' || payment_mode === 'Cash') {
             payment_mode = 'CASH';
-        } else if (payment_mode === 'BANK' || payment_mode === 'BANK_TRANSFER' || payment_mode === 'BANK TRANSFER') {
+        } else if (['BANK', 'BANK_TRANSFER', 'BANK TRANSFER', 'UPI', 'CARD', 'CARD PAYMENT'].includes(payment_mode.toUpperCase()) || payment_mode === 'Bank Transfer') {
             payment_mode = 'BANK';
-        } else if (payment_mode === 'CREDIT') {
+        } else if (payment_mode === 'CREDIT' || payment_mode === 'Credit') {
             payment_mode = 'CREDIT';
         }
 
