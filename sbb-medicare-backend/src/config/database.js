@@ -4,10 +4,10 @@ const logger = require('./logger');
 // Database connection pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 20,
+    max: 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
-    ssl: process.env.NODE_ENV === 'production' ? {
+    ssl: (process.env.NODE_ENV === 'production' && process.env.DATABASE_SSL !== 'false') ? {
         rejectUnauthorized: false
     } : false
 });
