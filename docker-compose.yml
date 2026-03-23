@@ -47,6 +47,7 @@ services:
       - ./sbb-medicare-admin/dist:/usr/share/nginx/admin:ro
       - ./sbb-medicare-store/dist:/usr/share/nginx/store:ro
       - uploads:/usr/share/nginx/uploads:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
 volumes:
   pgdata:
