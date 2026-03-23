@@ -5,7 +5,10 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
 import OrdersPage from './pages/OrdersPage';
+import PendingOrdersPage from './pages/PendingOrdersPage';
 import CustomersPage from './pages/CustomersPage';
+import ContactsPage from './pages/ContactsPage';
+import ReportsPage from './pages/ReportsPage';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
@@ -14,7 +17,7 @@ function ProtectedRoute({ children }) {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
         );
     }
@@ -60,10 +63,34 @@ function AppRoutes() {
                 }
             />
             <Route
+                path="/pending-orders"
+                element={
+                    <ProtectedRoute>
+                        <PendingOrdersPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
                 path="/customers"
                 element={
                     <ProtectedRoute>
                         <CustomersPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/contacts"
+                element={
+                    <ProtectedRoute>
+                        <ContactsPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/reports"
+                element={
+                    <ProtectedRoute>
+                        <ReportsPage />
                     </ProtectedRoute>
                 }
             />

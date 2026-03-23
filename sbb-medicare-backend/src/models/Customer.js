@@ -3,12 +3,36 @@ const { query } = require('../config/database');
 class Customer {
     // Create a new customer
     static async create(customerData) {
-        const { name, mobile, address, area, landmark, customer_lat, customer_lng, store_id } = customerData;
+        const { name, mobile, address, area, landmark, customer_lat, customer_lng, store_id, customer_date } = customerData;
+        
+        // Build dynamic INSERT statement - only include customer_date if it's provided
+        const hasCustomerDate = customer_date !== undefined && customer_date !== null;
+        const columns = ['name', 'mobile', 'address', 'area', 'landmark', 'customer_lat', 'customer_lng', 'store_id'];
+        // Handle optional fields - allow null for name, address, and area
+        const values = [
+            name ? name.trim() : null, 
+            mobile.trim(), 
+            address ? address.trim() : null, 
+            area ? area.trim() : null, 
+            landmark ? landmark.trim() : null, 
+            customer_lat || null, 
+            customer_lng || null, 
+            store_id
+        ];
+        
+        if (hasCustomerDate) {
+            columns.push('customer_date');
+            values.push(customer_date);
+        }
+        
+        const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
+        const columnList = columns.join(', ');
+        
         const result = await query(
-            `INSERT INTO customers (name, mobile, address, area, landmark, customer_lat, customer_lng, store_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO customers (${columnList})
+             VALUES (${placeholders})
              RETURNING *`,
-            [name, mobile, address || null, area, landmark, customer_lat, customer_lng, store_id]
+            values
         );
         return result.rows[0];
     }
@@ -221,6 +245,42 @@ class Customer {
              ORDER BY o.created_at DESC`,
             [customerId]
         );
+        return result.rows;
+    }
+
+    // Get customers with order registration status for a specific date
+    // Returns all customers with their mobile, name, and whether they have orders on the given date
+    static async getCustomersWithOrderStatusByDate(date, storeIds = null) {
+        let queryText = `
+            SELECT 
+                c.id,
+                c.name,
+                c.mobile,
+                CASE 
+                    WHEN o.id IS NOT NULL THEN true 
+                    ELSE false 
+                END as registered,
+                o.created_at as order_created_at,
+                o.order_number,
+                o.id as order_id
+            FROM customers c
+            LEFT JOIN orders o ON c.id = o.customer_id 
+                AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $1::date
+            WHERE 1=1
+        `;
+        const params = [date];
+        let paramCount = 2;
+
+        // Filter by store IDs if provided
+        if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
+            queryText += ` AND c.store_id = ANY($${paramCount})`;
+            params.push(storeIds);
+            paramCount++;
+        }
+
+        queryText += ' ORDER BY c.name ASC, o.created_at DESC';
+
+        const result = await query(queryText, params);
         return result.rows;
     }
 }

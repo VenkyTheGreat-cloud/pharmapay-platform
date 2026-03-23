@@ -13,7 +13,9 @@ class Order {
             customer_lat,
             customer_lng,
             total_amount,
-            customer_comments
+            customer_comments,
+            return_items = false,
+            return_adjust_amount = 0
         } = orderData;
 
         return transaction(async (client) => {
@@ -28,12 +30,12 @@ class Order {
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, customer_comments, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, CURRENT_TIMESTAMP)
+                                    total_amount, status, customer_comments, return_items, return_adjust_amount, assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
                  RETURNING *`,
                 [orderNumber, customer_id, assigned_delivery_boy_id, store_id,
-                 customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                 total_amount, customer_comments]
+                    customer_name, customer_phone, customer_address, customer_lat, customer_lng,
+                    total_amount, customer_comments, return_items, return_adjust_amount]
             );
 
             const order = orderResult.rows[0];
@@ -55,7 +57,8 @@ class Order {
             `SELECT o.*, 
                     db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                     u.name as store_name, u.store_name as store_store_name,
-                    c.area as customer_area
+                    c.area as customer_area,
+                    (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
              FROM orders o
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
@@ -81,7 +84,8 @@ class Order {
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                    u.name as store_name,
-                   c.area as customer_area
+                   c.area as customer_area,
+                   (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN users u ON o.store_id = u.id
@@ -112,20 +116,34 @@ class Order {
         }
 
         // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        // EXCLUDE orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
         if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
             queryText += ` AND (
                 (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
                 OR o.assigned_delivery_boy_id = $${paramCount + 1}
             )`;
+            // Exclude orders delivered at store (DELIVERED with no delivery boy assigned)
+            queryText += ` AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)`;
             params.push(filters.store_ids, filters.delivery_boy_id);
             paramCount += 2;
         }
 
         // Date range filter (uses created_at - for orders created in date range)
-        // Convert to IST timezone for accurate date comparison
+        // Supports both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DD HH:MM:SS) formats
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
-                          AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            // Check if date_from and date_to contain time components
+            const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
+            const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
+
+            if (hasTimeFrom || hasTimeTo) {
+                // Use timestamp comparison for datetime ranges
+                queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
+                              AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') <= $${paramCount + 1}::timestamp`;
+            } else {
+                // Use date comparison for date-only ranges
+                queryText += ` AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                              AND (o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            }
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
@@ -191,20 +209,34 @@ class Order {
         }
 
         // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        // EXCLUDE orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
         if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
             queryText += ` AND (
                 (assigned_delivery_boy_id IS NULL AND store_id = ANY($${paramCount}::uuid[]))
                 OR assigned_delivery_boy_id = $${paramCount + 1}
             )`;
+            // Exclude orders delivered at store (DELIVERED with no delivery boy assigned)
+            queryText += ` AND NOT (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)`;
             params.push(filters.store_ids, filters.delivery_boy_id);
             paramCount += 2;
         }
 
         // Date range filter (uses created_at - for orders created in date range)
-        // Convert to IST timezone for accurate date comparison
+        // Supports both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DD HH:MM:SS) formats
         if (filters.date_from && filters.date_to) {
-            queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
-                          AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            // Check if date_from and date_to contain time components
+            const hasTimeFrom = filters.date_from.includes(' ') || filters.date_from.includes('T');
+            const hasTimeTo = filters.date_to.includes(' ') || filters.date_to.includes('T');
+
+            if (hasTimeFrom || hasTimeTo) {
+                // Use timestamp comparison for datetime ranges
+                queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') >= $${paramCount}::timestamp 
+                              AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') <= $${paramCount + 1}::timestamp`;
+            } else {
+                // Use date comparison for date-only ranges
+                queryText += ` AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date >= $${paramCount}::date 
+                              AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date <= $${paramCount + 1}::date`;
+            }
             params.push(filters.date_from, filters.date_to);
             paramCount += 2;
         }
@@ -239,7 +271,7 @@ class Order {
             status: ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
         };
         if (storeId) filters.store_id = storeId;
-        
+
         let queryText = `
             SELECT o.*, 
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
@@ -266,6 +298,7 @@ class Order {
     // Shows:
     // 1. Unassigned orders (assigned_delivery_boy_id IS NULL) for the delivery boy's admin group
     // 2. Orders assigned to this delivery boy (assigned_delivery_boy_id = deliveryBoyId)
+    // EXCLUDES: Orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
     static async getOngoingOrdersForDeliveryBoy(deliveryBoyId, storeIds = null) {
         let queryText = `
             SELECT o.*, 
@@ -277,6 +310,7 @@ class Order {
              LEFT JOIN users u ON o.store_id = u.id
              LEFT JOIN customers c ON o.customer_id = c.id
              WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+               AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)
         `;
         const params = [];
         let paramCount = 1;
@@ -290,7 +324,7 @@ class Order {
                 OR o.assigned_delivery_boy_id = $${paramCount + 1}
             )`;
             params.push(storeIds, deliveryBoyId);
-            
+
             // Log for debugging
             const logger = require('../config/logger');
             logger.info('Delivery boy order query - with storeIds', {
@@ -306,7 +340,7 @@ class Order {
             const { query: dbQuery } = require('../config/database');
             const dbResult = await dbQuery('SELECT store_id FROM delivery_boys WHERE id = $1', [deliveryBoyId]);
             const deliveryBoyStoreId = dbResult.rows[0]?.store_id;
-            
+
             if (deliveryBoyStoreId) {
                 // Show unassigned orders for this store OR orders assigned to this delivery boy
                 queryText += ` AND (
@@ -395,7 +429,108 @@ class Order {
         return result.rows;
     }
 
+    // Get pending orders created till yesterday (status != DELIVERED)
+    static async getPendingOrdersTillYesterday(filters = {}) {
+        let queryText = `
+            SELECT o.*, 
+                   db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
+                   u.name as store_name,
+                   c.area as customer_area,
+                   (CASE WHEN o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL THEN true ELSE false END) as customer_received_at_store
+            FROM orders o
+            LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
+            LEFT JOIN users u ON o.store_id = u.id
+            LEFT JOIN customers c ON o.customer_id = c.id
+            WHERE o.status != 'DELIVERED'
+              AND DATE(o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        // Single store_id (legacy)
+        if (filters.store_id) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
+            paramCount++;
+        }
+
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
+        }
+
+        queryText += ' ORDER BY o.created_at DESC';
+
+        if (filters.limit) {
+            queryText += ` LIMIT $${paramCount}`;
+            params.push(filters.limit);
+            paramCount++;
+        }
+
+        if (filters.offset) {
+            queryText += ` OFFSET $${paramCount}`;
+            params.push(filters.offset);
+            paramCount++;
+        }
+
+        const result = await query(queryText, params);
+        return result.rows;
+    }
+
+    // Get count of pending orders created till yesterday
+    static async countPendingOrdersTillYesterday(filters = {}) {
+        let queryText = `
+            SELECT COUNT(*) as total 
+            FROM orders o
+            WHERE o.status != 'DELIVERED'
+              AND DATE(o.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')
+        `;
+        const params = [];
+        let paramCount = 1;
+
+        // Single store_id (legacy)
+        if (filters.store_id) {
+            queryText += ` AND o.store_id = $${paramCount}`;
+            params.push(filters.store_id);
+            paramCount++;
+        }
+
+        // Multiple store IDs (admin group)
+        if (filters.store_ids && Array.isArray(filters.store_ids) && filters.store_ids.length > 0) {
+            queryText += ` AND o.store_id = ANY($${paramCount})`;
+            params.push(filters.store_ids);
+            paramCount++;
+        }
+
+        // Delivery boy view: include unassigned orders in their admin group OR orders assigned to them
+        if (filters.include_unassigned_for_delivery_boy && filters.delivery_boy_id && filters.store_ids && filters.store_ids.length > 0) {
+            queryText += ` AND (
+                (o.assigned_delivery_boy_id IS NULL AND o.store_id = ANY($${paramCount}::uuid[]))
+                OR o.assigned_delivery_boy_id = $${paramCount + 1}
+            )`;
+            params.push(filters.store_ids, filters.delivery_boy_id);
+            paramCount += 2;
+        }
+
+        const result = await query(queryText, params);
+        return parseInt(result.rows[0].total);
+    }
+
     // Get orders by customer mobile
+    // Note: Excludes orders delivered at store (status = 'DELIVERED' AND assigned_delivery_boy_id IS NULL)
+    // These orders should not be visible to delivery boys
     static async getByCustomerMobile(mobile, storeId = null) {
         let queryText = `
             SELECT o.*, 
@@ -405,6 +540,7 @@ class Order {
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.customer_phone = $1
+              AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)
         `;
         const params = [mobile];
         let paramCount = 2;
@@ -448,10 +584,10 @@ class Order {
             }
 
             // Create status history
-            const notes = currentStatus === 'REJECTED' 
+            const notes = currentStatus === 'REJECTED'
                 ? 'Order reassigned to delivery boy (previously rejected)'
                 : 'Order assigned to delivery boy';
-            
+
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
@@ -494,7 +630,7 @@ class Order {
             // Create status history
             let changedByValue = null;
             let historyNotes = notes || 'Order accepted by delivery boy';
-            
+
             // Get delivery boy name for notes
             try {
                 const deliveryBoyResult = await client.query(
@@ -553,7 +689,7 @@ class Order {
             // Create status history
             let changedByValue = null;
             let historyNotes = reason || 'Order rejected by delivery boy';
-            
+
             // Get delivery boy name for notes
             try {
                 const deliveryBoyResult = await client.query(
@@ -562,8 +698,8 @@ class Order {
                 );
                 if (deliveryBoyResult.rows.length > 0) {
                     const dbName = deliveryBoyResult.rows[0].name;
-                    historyNotes = reason 
-                        ? `Rejected by ${dbName}: ${reason}` 
+                    historyNotes = reason
+                        ? `Rejected by ${dbName}: ${reason}`
                         : `Rejected by delivery boy: ${dbName}`;
                 }
             } catch (err) {
@@ -652,7 +788,7 @@ class Order {
             // Check if changedBy is a delivery boy ID (numeric) or UUID (has dashes)
             let changedByValue = null;
             let historyNotes = notes || '';
-            
+
             // If status changed to ASSIGNED and order was unassigned, add note
             if (status === 'ASSIGNED' && order.assigned_delivery_boy_id !== null) {
                 try {
@@ -662,7 +798,7 @@ class Order {
                     );
                     if (deliveryBoyResult.rows.length > 0) {
                         const dbName = deliveryBoyResult.rows[0].name;
-                        historyNotes = notes 
+                        historyNotes = notes
                             ? `${notes} (Order unassigned from ${dbName} - now available to all delivery boys)`
                             : `Order status changed to ASSIGNED. Unassigned from ${dbName} - now available to all delivery boys.`;
                     }
@@ -673,11 +809,11 @@ class Order {
                     }
                 }
             }
-            
+
             // UUIDs contain dashes, delivery boy IDs are just numbers
             const changedByStr = String(changedBy || '');
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changedByStr);
-            
+
             if (isUUID) {
                 // This is a UUID (admin/store manager)
                 changedByValue = changedBy;
@@ -713,6 +849,31 @@ class Order {
         });
     }
 
+    // Mark order as delivered when customer receives at store (no delivery boy)
+    static async markDeliveredAtStore(orderId) {
+        const updateQuery = `
+            UPDATE orders
+            SET status = 'DELIVERED',
+                delivered_at = CURRENT_TIMESTAMP,
+                assigned_delivery_boy_id = NULL,
+                assigned_at = NULL,
+                notes = 
+                    CASE 
+                        WHEN notes IS NULL OR notes = '' 
+                            THEN 'Received by customer at store'
+                        ELSE notes || ' | Received by customer at store'
+                    END
+            WHERE id = $1
+            RETURNING *;
+        `;
+
+        const result = await query(updateQuery, [orderId]);
+        if (result.rowCount === 0) {
+            throw new Error('NOT_FOUND');
+        }
+        return result.rows[0];
+    }
+
     // Update order
     static async update(id, updates) {
         const fields = [];
@@ -739,8 +900,18 @@ class Order {
         return result.rows[0];
     }
 
+    // Delete order
+    static async delete(id) {
+        const result = await query(
+            'DELETE FROM orders WHERE id = $1 RETURNING *',
+            [id]
+        );
+        return result.rows[0];
+    }
+
     // Get order status history
     static async getStatusHistory(orderId) {
+
         const result = await query(
             `SELECT osh.*, u.name as changed_by_name
              FROM order_status_history osh

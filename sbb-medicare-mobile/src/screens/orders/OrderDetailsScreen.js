@@ -4,10 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Image,
   TouchableOpacity,
   Linking,
   Alert as RNAlert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import apiService from '../../services/api';
@@ -31,6 +33,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [returnItemsPhoto, setReturnItemsPhoto] = useState(null);
 
   useEffect(() => {
     fetchOrderDetails();
@@ -55,9 +58,10 @@ const OrderDetailsScreen = ({ route, navigation }) => {
       setError('');
       setSuccess('');
 
-      await apiService.updateOrderStatus(orderId, newStatus);
+      await apiService.updateOrderStatus(orderId, newStatus, '', returnItemsPhoto?.uri);
 
       setSuccess(`Order status updated to ${getOrderStatusLabel(newStatus)}`);
+      setReturnItemsPhoto(null);
       await fetchOrderDetails();
 
       // Auto-hide success message
@@ -71,6 +75,19 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   };
 
   const handleStatusUpdate = (newStatus) => {
+    if (
+      newStatus === CONFIG.ORDER_STATUS.DELIVERED &&
+      order.return_items === true &&
+      !returnItemsPhoto &&
+      !order.return_items_photo_url
+    ) {
+      RNAlert.alert(
+        'Photo Required',
+        'Please take a photo of the return items before marking as delivered.'
+      );
+      return;
+    }
+
     RNAlert.alert(
       'Update Status',
       `Are you sure you want to update status to "${getOrderStatusLabel(newStatus)}"?`,
@@ -79,6 +96,67 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         { text: 'Update', onPress: () => updateStatus(newStatus) },
       ]
     );
+  };
+
+  const pickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        RNAlert.alert(
+          'Permission Required',
+          'Please allow access to your photos to upload return items photo.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setReturnItemsPhoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      RNAlert.alert('Error', 'Failed to pick image');
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!permissionResult.granted) {
+        RNAlert.alert(
+          'Permission Required',
+          'Please allow access to your camera to take return items photo.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        setReturnItemsPhoto(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      RNAlert.alert('Error', 'Failed to take photo');
+    }
+  };
+
+  const showPhotoOptions = () => {
+    RNAlert.alert('Return Items Photo', 'Choose an option', [
+      { text: 'Take Photo', onPress: takePhoto },
+      { text: 'Choose from Library', onPress: pickImage },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const navigateToCustomer = async () => {
@@ -235,6 +313,53 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         )}
       </View>
 
+      {/* Return Items Verification */}
+      {(order.return_items === true || order.return_items_photo_url) && (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Return Items Verification</Text>
+
+          {order.return_items_photo_url ? (
+            <View style={styles.receiptContainer}>
+              <Text style={[styles.infoText, { marginLeft: 0, marginBottom: 12 }]}>
+                Return items photo verified:
+              </Text>
+              <Image
+                source={{
+                  uri: order.return_items_photo_url.startsWith('http') || order.return_items_photo_url.startsWith('data:')
+                    ? order.return_items_photo_url
+                    : `${CONFIG.API_URL}${order.return_items_photo_url}`
+                }}
+                style={styles.receiptImage}
+              />
+            </View>
+          ) : returnItemsPhoto ? (
+            <View style={styles.receiptContainer}>
+              <Image
+                source={{ uri: returnItemsPhoto.uri }}
+                style={styles.receiptImage}
+              />
+              <Button
+                title="Change Photo"
+                onPress={showPhotoOptions}
+                variant="secondary"
+                style={styles.changeButton}
+              />
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={showPhotoOptions}
+            >
+              <Ionicons name="camera-outline" size={48} color="#9CA3AF" />
+              <Text style={styles.uploadText}>Capture Return Items Photo</Text>
+              <Text style={styles.uploadSubtext}>
+                Required before marking as delivered
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Action Buttons */}
       <View style={styles.actionsCard}>
         {canUpdateStatus() && nextStatus && (
@@ -370,6 +495,38 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginBottom: 12,
+  },
+  uploadButton: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    backgroundColor: '#F9FAFB',
+  },
+  uploadText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  uploadSubtext: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  receiptContainer: {
+    alignItems: 'center',
+  },
+  receiptImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  changeButton: {
+    width: '100%',
   },
 });
 

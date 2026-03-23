@@ -19,10 +19,29 @@ export default function CustomersPage() {
         loadCustomers();
     }, []);
 
+    // Handle Escape key to close Customer Details Modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showViewModal) {
+                setShowViewModal(false);
+                setCustomerOrders([]);
+            }
+        };
+
+        if (showViewModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showViewModal]);
+
     const loadCustomers = async () => {
         try {
             setLoading(true);
-            const response = await customersAPI.getAll();
+            // Fetch all customers with a high limit to ensure we get all customers
+            const response = await customersAPI.getAll({ page: 1, limit: 10000 });
             // Backend format: { success, data: { customers: [...], count: ... } }
             const list = response.data?.data?.customers || response.data?.data?.data || [];
             setCustomers(Array.isArray(list) ? list : []);
@@ -101,17 +120,17 @@ export default function CustomersPage() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-4">
             <div className="mb-6 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-                    <p className="text-gray-600 mt-1">Manage customer information</p>
+                    <h1 className="text-lg font-bold text-gray-800">Customers</h1>
+                    <p className="text-xs text-gray-600 mt-0.5">Manage customer information</p>
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5"
                 >
-                    <Plus className="w-5 h-5" />
+                    <Plus className="w-3.5 h-3.5" />
                     Add New Customer
                 </button>
             </div>
@@ -120,19 +139,19 @@ export default function CustomersPage() {
             <div className="mb-6 bg-white rounded-lg shadow p-4">
                 <div className="flex gap-4">
                     <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                        <Search className="absolute left-3 top-3 w-3.5 h-3.5 text-gray-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                             placeholder="Search by name, mobile, or address..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
                     </div>
                     <button
                         onClick={handleSearch}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                        className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md"
                     >
                         Search
                     </button>
@@ -141,31 +160,34 @@ export default function CustomersPage() {
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading customers...</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1000px' }}>
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[80px]">
+                                    Sl.No
+                                </th>
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Name
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Mobile
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Area
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Address
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                     Registered
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">
+                                <th className="px-6 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
                                     Actions
                                 </th>
                             </tr>
@@ -173,54 +195,57 @@ export default function CustomersPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {customers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="7" className="px-6 py-8 text-center text-xs text-gray-500">
                                         No customers found
                                     </td>
                                 </tr>
                             ) : (
-                                customers.map((customer) => (
-                                    <tr key={customer.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
+                                customers.map((customer, index) => (
+                                    <tr key={customer.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                        <td className="px-4 py-3 text-xs font-medium text-gray-900 text-center">
+                                            {index + 1}
+                                        </td>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <div className="text-xs font-medium text-gray-900">
                                                 {customer.name}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{customer.mobile}</div>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <div className="text-xs font-medium text-gray-900">{customer.mobile}</div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{customer.area || customer.areaName || '-'}</div>
+                                        <td className="px-6 py-3 whitespace-nowrap">
+                                            <div className="text-xs font-medium text-gray-900">{customer.area || customer.areaName || '-'}</div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                                        <td className="px-6 py-3">
+                                            <div className="text-xs font-medium text-gray-900 max-w-xs truncate">
                                                 {customer.address}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                             {customer.created_at || customer.createdAt ? new Date(customer.created_at || customer.createdAt).toLocaleDateString() : '-'}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ minWidth: '120px' }}>
+                                        <td className="px-6 py-3 whitespace-nowrap" style={{ minWidth: '120px' }}>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => viewCustomerDetails(customer.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50 transition-colors"
                                                     title="View Details"
                                                 >
-                                                    <Eye className="w-5 h-5" />
+                                                    <Eye className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(customer.id)}
-                                                    className="text-green-600 hover:text-green-900"
+                                                    className="text-green-600 hover:text-green-700 p-1 rounded hover:bg-green-50 transition-colors"
                                                     title="Edit"
                                                 >
-                                                    <Edit className="w-5 h-5" />
+                                                    <Edit className="w-4 h-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(customer.id, customer.name)}
-                                                    className="text-red-600 hover:text-red-900"
+                                                    className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
                                                     title="Delete"
                                                 >
-                                                    <Trash2 className="w-5 h-5" />
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </td>
@@ -277,28 +302,28 @@ export default function CustomersPage() {
                                 {/* Customer Information */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <h3 className="font-semibold text-gray-700 text-sm">Full Name</h3>
+                                        <h3 className="font-medium text-gray-600 text-xs">Full Name</h3>
                                         <p className="text-gray-900 mt-1">{selectedCustomer.name || selectedCustomer.full_name || 'N/A'}</p>
                                     </div>
 
                                     <div>
-                                        <h3 className="font-semibold text-gray-700 text-sm">Mobile Number</h3>
+                                        <h3 className="font-medium text-gray-600 text-xs">Mobile Number</h3>
                                         <p className="text-gray-900 mt-1">{selectedCustomer.mobile || selectedCustomer.mobile_number || 'N/A'}</p>
                                     </div>
 
                                     <div>
-                                        <h3 className="font-semibold text-gray-700 text-sm">Area</h3>
+                                        <h3 className="font-medium text-gray-600 text-xs">Area</h3>
                                         <p className="text-gray-900 mt-1">{selectedCustomer.area || 'N/A'}</p>
                                     </div>
 
                                     <div className="col-span-2">
-                                        <h3 className="font-semibold text-gray-700 text-sm">Address</h3>
+                                        <h3 className="font-medium text-gray-600 text-xs">Address</h3>
                                         <p className="text-gray-900 mt-1">{selectedCustomer.address || 'N/A'}</p>
                                     </div>
 
                                     {selectedCustomer.landmark && (
                                         <div className="col-span-2">
-                                            <h3 className="font-semibold text-gray-700 text-sm">Landmark</h3>
+                                            <h3 className="font-medium text-gray-600 text-xs">Landmark</h3>
                                             <p className="text-gray-900 mt-1">{selectedCustomer.landmark}</p>
                                         </div>
                                     )}
@@ -306,7 +331,7 @@ export default function CustomersPage() {
                                     {(selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude) && 
                                      (selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude) && (
                                         <div className="col-span-2">
-                                            <h3 className="font-semibold text-gray-700 text-sm">Location</h3>
+                                            <h3 className="font-medium text-gray-600 text-xs">Location</h3>
                                             <p className="text-gray-900 mt-1">
                                                 <MapPin className="inline w-4 h-4 mr-1" />
                                                 {selectedCustomer.customer_lat || selectedCustomer.customerLat || selectedCustomer.latitude}, {selectedCustomer.customer_lng || selectedCustomer.customerLng || selectedCustomer.longitude}
@@ -315,7 +340,7 @@ export default function CustomersPage() {
                                     )}
 
                                     <div>
-                                        <h3 className="font-semibold text-gray-700 text-sm">Registered On</h3>
+                                        <h3 className="font-medium text-gray-600 text-xs">Registered On</h3>
                                         <p className="text-gray-900 mt-1">
                                             {(selectedCustomer.created_at || selectedCustomer.createdAt) ? new Date(selectedCustomer.created_at || selectedCustomer.createdAt).toLocaleString() : 'N/A'}
                                         </p>
@@ -323,7 +348,7 @@ export default function CustomersPage() {
 
                                     {(selectedCustomer.order_count !== undefined || selectedCustomer.order_count !== null) && (
                                         <div>
-                                            <h3 className="font-semibold text-gray-700 text-sm">Total Orders</h3>
+                                            <h3 className="font-medium text-gray-600 text-xs">Total Orders</h3>
                                             <p className="text-gray-900 mt-1">{selectedCustomer.order_count || 0}</p>
                                         </div>
                                     )}
@@ -333,12 +358,12 @@ export default function CustomersPage() {
                                 <div className="border-t pt-6">
                                     <div className="flex items-center gap-2 mb-4">
                                         <Package className="w-5 h-5 text-gray-700" />
-                                        <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
+                                            <h3 className="text-xs font-medium text-gray-800">Order History</h3>
                                     </div>
                                     
                                     {loadingOrders ? (
                                         <div className="text-center py-8">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
                                             <p className="text-gray-600 mt-2 text-sm">Loading orders...</p>
                                         </div>
                                     ) : customerOrders.length === 0 ? (
@@ -400,7 +425,7 @@ export default function CustomersPage() {
                                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                                     order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
                                                                     order.status === 'ASSIGNED' ? 'bg-purple-100 text-purple-800' :
-                                                                    order.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'ACCEPTED' ? 'bg-gradient-to-r from-primary-400 to-primary-600 text-white' :
                                                                     order.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
                                                                     order.status === 'PICKED_UP' ? 'bg-yellow-100 text-yellow-800' :
                                                                     order.status === 'IN_TRANSIT' ? 'bg-orange-100 text-orange-800' :

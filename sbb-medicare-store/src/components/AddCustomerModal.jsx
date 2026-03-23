@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
 import { X } from 'lucide-react';
 
@@ -97,6 +97,23 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
         }
     };
 
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen && !isSubmitting) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [isOpen, isSubmitting, onClose]);
+
     if (!isOpen) return null;
 
     return (
@@ -104,7 +121,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-start mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900">Add New Customer</h2>
+                        <h2 className="text-lg font-bold text-gray-800">Add New Customer</h2>
                         <button
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-600"
@@ -116,7 +133,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Full Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -124,19 +141,19 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.name ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter customer full name"
                                 disabled={isSubmitting}
                             />
                             {errors.name && (
-                                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Mobile Number <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -144,7 +161,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 name="mobile"
                                 value={formData.mobile}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.mobile ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="10-digit mobile number"
@@ -152,12 +169,12 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 disabled={isSubmitting}
                             />
                             {errors.mobile && (
-                                <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Area Name <span className="text-red-500">*</span>
                             </label>
                             <input
@@ -165,19 +182,19 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 name="areaName"
                                 value={formData.areaName}
                                 onChange={handleChange}
-                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.areaName ? 'border-red-500' : 'border-gray-300'
                                 }`}
                                 placeholder="Enter area name"
                                 disabled={isSubmitting}
                             />
                             {errors.areaName && (
-                                <p className="text-red-500 text-sm mt-1">{errors.areaName}</p>
+                                <p className="text-red-500 text-xs mt-1">{errors.areaName}</p>
                             )}
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Address (Optional)
                             </label>
                             <textarea
@@ -185,14 +202,14 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 value={formData.address}
                                 onChange={handleChange}
                                 rows="3"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="Enter complete delivery address (optional)"
                                 disabled={isSubmitting}
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
                                 Landmark (Optional)
                             </label>
                             <input
@@ -200,7 +217,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 name="landmark"
                                 value={formData.landmark}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="e.g., Near City Mall"
                                 disabled={isSubmitting}
                             />
@@ -208,7 +225,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Latitude (Optional)
                                 </label>
                                 <input
@@ -217,13 +234,13 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                     name="customerLat"
                                     value={formData.customerLat}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="e.g., 12.9716"
                                     disabled={isSubmitting}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Longitude (Optional)
                                 </label>
                                 <input
@@ -232,7 +249,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                     name="customerLng"
                                     value={formData.customerLng}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                     placeholder="e.g., 77.5946"
                                     disabled={isSubmitting}
                                 />
@@ -243,7 +260,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="flex-1 bg-gradient-to-r from-primary-500 to-primary-600 text-white py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Adding...' : 'Add Customer'}
                             </button>

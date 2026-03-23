@@ -6,12 +6,13 @@ const OtpVerification = require('../models/OtpVerification');
 const RefreshToken = require('../models/RefreshToken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-production-use-strong-secret-key-minimum-256-bits';
-const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '2h';
+const ACCESS_TOKEN_EXPIRY = process.env.JWT_ACCESS_TOKEN_EXPIRY || '24h';
 const REFRESH_TOKEN_EXPIRY = process.env.JWT_REFRESH_TOKEN_EXPIRY || '30d';
 
 class AuthService {
     // Generate JWT tokens
-    static generateTokens(user) {
+    // For mobile apps (isMobile = true), refresh token never expires
+    static generateTokens(user, isMobile = false) {
         const payload = {
             iss: 'sbb-medicare',
             sub: user.id.toString(),
@@ -26,12 +27,19 @@ class AuthService {
             expiresIn: ACCESS_TOKEN_EXPIRY
         });
 
-        const refreshToken = jwt.sign({
+        // For mobile apps, refresh token never expires (no expiresIn)
+        // For web apps, use standard expiry
+        const refreshTokenPayload = {
             ...payload,
-            type: 'refresh'
-        }, JWT_SECRET, {
-            expiresIn: REFRESH_TOKEN_EXPIRY
-        });
+            type: 'refresh',
+            isMobile: isMobile // Flag to identify mobile refresh tokens
+        };
+
+        const refreshTokenOptions = isMobile 
+            ? {} // No expiry for mobile - token never expires
+            : { expiresIn: REFRESH_TOKEN_EXPIRY }; // Standard expiry for web
+
+        const refreshToken = jwt.sign(refreshTokenPayload, JWT_SECRET, refreshTokenOptions);
 
         return { accessToken, refreshToken };
     }
@@ -186,16 +194,18 @@ class AuthService {
             ...user,
             role: isDeliveryBoy ? 'delivery_boy' : user.role
         };
-        const { accessToken, refreshToken } = this.generateTokens(tokenUser);
-
-        // Store refresh token
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
         
-        // Only store refresh token for users (UUID), not delivery boys (BIGINT)
-        // refresh_tokens.user_id expects UUID, delivery_boys.id is BIGINT
-        if (!isDeliveryBoy) {
+        // Check if this is a mobile app login
+        const isMobile = dashboardType && dashboardType.toLowerCase() === 'mobile';
+        const { accessToken, refreshToken } = this.generateTokens(tokenUser, isMobile);
+
+        // Store refresh token (only for web apps - mobile tokens don't expire)
+        // For mobile apps, we don't store refresh tokens in DB since they never expire
+        // For web apps, store with expiry
+        if (!isMobile && !isDeliveryBoy) {
             try {
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + 7); // 7 days for web
                 await RefreshToken.create(user.id, refreshToken, expiresAt);
             } catch (error) {
                 logger.error('Failed to store refresh token', { 
@@ -304,13 +314,16 @@ class AuthService {
             }
         }
 
-        // Generate tokens
-        const { accessToken, refreshToken } = this.generateTokens(user);
+        // Generate tokens (check if mobile app)
+        const isMobile = dashboardType && dashboardType.toLowerCase() === 'mobile';
+        const { accessToken, refreshToken } = this.generateTokens(user, isMobile);
 
-        // Store refresh token
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
-        await RefreshToken.create(user.id, refreshToken, expiresAt);
+        // Store refresh token (only for web apps - mobile tokens don't expire)
+        if (!isMobile) {
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7);
+            await RefreshToken.create(user.id, refreshToken, expiresAt);
+        }
 
         // Return user data
         const userData = {
@@ -331,24 +344,46 @@ class AuthService {
     }
 
     // Refresh access token
+    // Supports both web (stored in DB) and mobile (non-expiring) refresh tokens
     static async refreshToken(refreshTokenString) {
         try {
-            // Verify refresh token
-            const decoded = jwt.verify(refreshTokenString, JWT_SECRET);
+            // Verify refresh token (for mobile tokens, this won't fail due to expiry)
+            let decoded;
+            try {
+                decoded = jwt.verify(refreshTokenString, JWT_SECRET);
+            } catch (verifyError) {
+                // If verification fails, token is invalid or expired
+                throw new Error('INVALID_TOKEN');
+            }
+
             if (decoded.type !== 'refresh') {
                 throw new Error('INVALID_TOKEN');
             }
 
-            // Check if token exists in database
-            const tokenRecord = await RefreshToken.findByToken(refreshTokenString);
-            if (!tokenRecord || tokenRecord.is_revoked) {
-                throw new Error('INVALID_TOKEN');
+            // Check if this is a mobile refresh token (non-expiring)
+            const isMobile = decoded.isMobile === true;
+
+            // For web tokens, check database
+            if (!isMobile) {
+                const tokenRecord = await RefreshToken.findByToken(refreshTokenString);
+                if (!tokenRecord || tokenRecord.is_revoked) {
+                    throw new Error('INVALID_TOKEN');
+                }
             }
+            // For mobile tokens, skip DB check (they never expire unless revoked manually)
 
             // Get user
             const user = await User.findById(decoded.userId);
             if (!user || !user.is_active) {
                 throw new Error('INACTIVE_USER');
+            }
+
+            // For delivery boys, check if they're still approved
+            if (decoded.role === 'delivery_boy') {
+                const deliveryBoy = await DeliveryBoy.findById(decoded.userId);
+                if (!deliveryBoy || deliveryBoy.status !== 'approved' || !deliveryBoy.is_active) {
+                    throw new Error('INACTIVE_USER');
+                }
             }
 
             // Generate new access token
@@ -357,15 +392,23 @@ class AuthService {
                 sub: user.id.toString(),
                 userId: user.id,
                 email: user.email,
-                role: user.role
+                role: decoded.role, // Use role from token (preserves delivery_boy role)
+                adminId: decoded.adminId || null
             };
 
             const accessToken = jwt.sign(payload, JWT_SECRET, {
                 expiresIn: ACCESS_TOKEN_EXPIRY
             });
 
-            return { token: accessToken };
+            // Return new access token and same refresh token (for mobile, it never expires)
+            return { 
+                token: accessToken,
+                refreshToken: refreshTokenString // Return same refresh token (mobile tokens don't expire)
+            };
         } catch (error) {
+            if (error.message === 'INACTIVE_USER' || error.message === 'INVALID_TOKEN') {
+                throw error;
+            }
             throw new Error('INVALID_TOKEN');
         }
     }

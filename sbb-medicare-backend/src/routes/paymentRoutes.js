@@ -11,7 +11,7 @@ router.use(authenticateToken);
 // Validation middleware
 const paymentValidation = [
     body('order_id').isUUID(),
-    body('payment_mode').isIn(['cash', 'bank', 'split']),
+    body('payment_mode').isIn(['cash', 'bank', 'credit']),
     body('total_amount').isNumeric(),
 ];
 

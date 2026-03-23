@@ -59,16 +59,43 @@ export default function DashboardPage() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
+    const [statusFilter, setStatusFilter] = useState('');
+    const [orderIdFilter, setOrderIdFilter] = useState('');
 
     useEffect(() => {
         loadOrders();
-    }, []);
+    }, [selectedDate]);
+
+    // Handle Escape key to close Order Details Modal
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && showViewModal) {
+                setShowViewModal(false);
+            }
+        };
+
+        if (showViewModal) {
+            document.addEventListener('keydown', handleEscape);
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [showViewModal]);
 
     const loadOrders = async () => {
         try {
             setLoading(true);
-            // Fetch orders (we'll filter by date and status on the client)
-            const res = await ordersAPI.getAll({ page: 1, limit: 1000 });
+            // Format date as YYYY-MM-DD for API
+            const dateStr = selectedDate || getTodayIST();
+            // Use the same date for both date_from and date_to
+            const params = {
+                page: 1,
+                limit: 1000,
+                date_from: dateStr,
+                date_to: dateStr
+            };
+            const res = await ordersAPI.getAll(params);
             const list = res.data?.data?.orders || res.data?.data || [];
             setOrders(list);
         } catch (error) {
@@ -91,19 +118,19 @@ export default function DashboardPage() {
     };
 
     const getStatusColor = (status) => {
-        if (!status) return 'bg-gray-100 text-gray-800';
+        if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
         const normalized = status.toUpperCase();
         const colors = {
-            ASSIGNED: 'bg-purple-100 text-purple-800',
-            ACCEPTED: 'bg-blue-100 text-blue-800',
-            REJECTED: 'bg-red-100 text-red-800',
-            PICKED_UP: 'bg-yellow-100 text-yellow-800',
-            IN_TRANSIT: 'bg-orange-100 text-orange-800',
-            PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
-            DELIVERED: 'bg-green-100 text-green-800',
-            CANCELLED: 'bg-red-100 text-red-800',
+            ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+            REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
+            PICKED_UP: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            IN_TRANSIT: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+            PAYMENT_COLLECTION: 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white',
+            DELIVERED: 'bg-gradient-to-r from-green-400 to-green-600 text-white',
+            CANCELLED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
         };
-        return colors[normalized] || 'bg-gray-100 text-gray-800';
+        return colors[normalized] || 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
     };
 
     const {
@@ -125,44 +152,44 @@ export default function DashboardPage() {
             };
         }
 
-        // Filter orders for the selected date (00:00:00 to 23:59:59)
-        const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
-        if (!selectedDateObj) {
-            return {
-                filteredByDate: [],
-                summary: {
-                    totalCreated: 0,
-                    totalDelivered: 0,
-                    totalAssigned: 0,
-                    totalPickedUp: 0,
-                    totalCollectedAmount: 0,
-                },
-                filteredForList: [],
-            };
+        // API already filters by date, so we start with all orders from the API response
+        let inRange = [...orders];
+
+        // Filter by status if provided
+        if (statusFilter && statusFilter.trim()) {
+            inRange = inRange.filter((order) => {
+                const orderStatus = (order.status || '').toUpperCase();
+                return orderStatus === statusFilter.toUpperCase();
+            });
         }
 
-        // Set start of day (00:00:00) and end of day (23:59:59) in IST
-        const startOfDay = new Date(selectedDateObj);
-        startOfDay.setHours(0, 0, 0, 0);
-        
-        const endOfDay = new Date(selectedDateObj);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const inRange = orders.filter((order) => {
-            const created = (order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at) : null;
-            if (!created) return false;
-            // Check if order was created on the selected date (between start and end of day)
-            return created >= startOfDay && created <= endOfDay;
-        });
+        // Filter by order ID if provided
+        if (orderIdFilter && orderIdFilter.trim()) {
+            const searchId = orderIdFilter.trim();
+            inRange = inRange.filter((order) => {
+                const orderNumber = (order.orderNumber || order.order_number || '').toString();
+                return orderNumber.includes(searchId);
+            });
+        }
 
         const totalCreated = inRange.length;
         const totalDelivered = inRange.filter((o) => o.status === 'DELIVERED').length;
         const totalAssigned = inRange.filter((o) => o.status === 'ASSIGNED').length;
         const totalPickedUp = inRange.filter((o) => o.status === 'PICKED_UP').length;
 
+        // Only consider DELIVERED orders for collected amount
         const totalCollectedAmount = inRange
-            .filter((o) => o.status === 'DELIVERED' || o.status === 'PAYMENT_COLLECTION')
-            .reduce((sum, o) => sum + (Number(o.amount || o.total_amount) || 0), 0);
+            .filter((o) => {
+                const status = (o.status || '').toUpperCase();
+                return status === 'DELIVERED';
+            })
+            .reduce((sum, o) => {
+                // Use payment_summary.total_paid if available, otherwise use total_amount
+                const amount = o.payment_summary?.total_paid 
+                    ? Number(o.payment_summary.total_paid)
+                    : Number(o.amount || o.total_amount) || 0;
+                return sum + amount;
+            }, 0);
 
         // For list: show ALL statuses (ASSIGNED, IN_TRANSIT, DELIVERED, etc.)
         const list = inRange;
@@ -178,72 +205,74 @@ export default function DashboardPage() {
             },
             filteredForList: list,
         };
-    }, [orders, selectedDate]);
+    }, [orders, selectedDate, statusFilter, orderIdFilter]);
 
     return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">Orders and collections for the selected date</p>
-            </div>
-
-            {/* Date Filter */}
-            <div className="mb-6 bg-white rounded-lg shadow p-4 flex gap-4 items-end">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        max={getTodayIST()}
-                        className="border border-gray-300 rounded px-3 py-2"
-                    />
+        <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 pb-2 px-4 pt-2 border-b-2 border-primary-200 shadow-sm flex-shrink-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
+                        <p className="text-xs text-gray-600 mt-0.5">Orders and collections for the selected date</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Date:</label>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                max={getTodayIST()}
+                                className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={loadOrders}
+                            className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md flex items-center gap-1.5"
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            Refresh
+                        </button>
+                    </div>
                 </div>
-                <button
-                    type="button"
-                    onClick={loadOrders}
-                    className="ml-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                >
-                    <Calendar className="w-4 h-4" />
-                    Refresh
-                </button>
             </div>
 
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500 mx-auto"></div>
                     <p className="text-gray-600 mt-4">Loading statistics...</p>
                 </div>
             ) : (
                 <>
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+                    <div className="px-4 mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-3 flex-shrink-0">
                         <StatCard
-                            icon={<Package className="w-6 h-6" />}
+                            icon={<Package className="w-5 h-5" />}
                             label="Total Created Orders"
                             value={summary.totalCreated}
                             color="blue"
                         />
                         <StatCard
-                            icon={<IndianRupee className="w-6 h-6" />}
+                            icon={<IndianRupee className="w-5 h-5" />}
                             label="Total Collected Amount"
                             value={`₹${summary.totalCollectedAmount.toFixed(2)}`}
-                            color="green"
-                        />
-                        <StatCard
-                            icon={<CheckCircle className="w-6 h-6" />}
-                            label="Total Delivered Orders"
-                            value={summary.totalDelivered}
-                            color="purple"
-                        />
-                        <StatCard
-                            icon={<Truck className="w-6 h-6" />}
-                            label="Assigned Orders"
-                            value={summary.totalAssigned}
                             color="orange"
                         />
                         <StatCard
-                            icon={<Truck className="w-6 h-6" />}
+                            icon={<CheckCircle className="w-5 h-5" />}
+                            label="Total Delivered Orders"
+                            value={summary.totalDelivered}
+                            color="green"
+                        />
+                        <StatCard
+                            icon={<Truck className="w-5 h-5" />}
+                            label="Assigned Orders"
+                            value={summary.totalAssigned}
+                            color="blue"
+                        />
+                        <StatCard
+                            icon={<Truck className="w-5 h-5" />}
                             label="PickedUp Orders"
                             value={summary.totalPickedUp}
                             color="orange"
@@ -251,40 +280,93 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Orders List for selected date */}
-                    <div className="bg-white rounded-lg shadow p-6 mt-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Orders for Selected Date</h3>
+                    <div className="px-4 pb-4 flex flex-col flex-1 min-h-0">
+                        <div className="bg-white rounded-lg shadow p-4 flex flex-col flex-1 min-h-0">
+                        <div className="flex justify-between items-center mb-2 flex-shrink-0">
+                            <h3 className="text-xs font-medium text-gray-800">Orders for Selected Date</h3>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                >
+                                    <option value="">All Status</option>
+                                    <option value="ASSIGNED">Assigned</option>
+                                    <option value="ACCEPTED">Accepted</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="PICKED_UP">Picked Up</option>
+                                    <option value="IN_TRANSIT">In Transit</option>
+                                    <option value="PAYMENT_COLLECTION">Payment Collection</option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    value={orderIdFilter}
+                                    onChange={(e) => setOrderIdFilter(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    placeholder="Search by Order ID"
+                                    className="border border-gray-300 rounded px-2.5 py-1.5 text-xs w-44 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                />
+                                {(statusFilter || orderIdFilter) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setStatusFilter('');
+                                            setOrderIdFilter('');
+                                        }}
+                                        className="bg-gray-200 text-gray-800 px-2.5 py-1.5 rounded-lg hover:bg-gray-300 text-sm"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                         {filteredForList.length === 0 ? (
                             <p className="text-gray-600 text-sm">No orders found for the selected date.</p>
                         ) : (
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                    <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
                                         <tr>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-[80px]">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider w-[80px]">
                                                 Sl.No
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Order ID
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Customer
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Area
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Delivery Boy
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Status
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Date &amp; Time
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Amount
                                             </th>
-                                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Mode of Payment
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Return Items
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
+                                                Return Adjust Amount
+                                            </th>
+                                            <th className="px-4 py-2.5 text-left text-xs font-bold text-white uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
@@ -312,22 +394,22 @@ export default function DashboardPage() {
                                             };
 
                                             return (
-                                            <tr key={order.id}>
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-900 text-center">
+                                            <tr key={order.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 text-center">
                                                     {index + 1}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 max-w-[160px]">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900 max-w-[160px]">
                                                     {formatOrderNumber(orderNumber)}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">{order.customerName || order.customer_name}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">{order.customerName || order.customer_name}</div>
                                                     <div className="text-xs text-gray-500">{order.customerMobile || order.customer_phone || order.customer_mobile}</div>
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">{order.customer_area || order.customerArea || '-'}</div>
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    <div className="text-gray-900">
+                                                <td className="px-4 py-3 whitespace-nowrap">
+                                                    <div className="text-xs font-medium text-gray-900">
                                                         {order.deliveryBoyName || order.delivery_boy_name || 'Not assigned'}
                             </div>
                                                     {(order.deliveryBoyMobile || order.delivery_boy_mobile) && (
@@ -336,24 +418,37 @@ export default function DashboardPage() {
                             </div>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
+                                                <td className="px-4 py-3 whitespace-nowrap">
                                                     <StatusBadge status={order.status} />
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     {(order.createdTime || order.created_at)
                                                         ? new Date(order.createdTime || order.created_at).toLocaleString()
                                                         : '-'}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-gray-700">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
                                                     ₹{(Number(order.amount || order.total_amount) || 0).toFixed(2)}
                                                 </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-sm">
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.paymentMode || order.payment_mode 
+                                                        ? (order.paymentMode || order.payment_mode).replace(/_/g, ' ')
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.returnItems || order.return_items ? 'Yes' : 'No'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                                    {order.returnAdjustAmount || order.return_adjust_amount 
+                                                        ? `₹${(Number(order.returnAdjustAmount || order.return_adjust_amount)).toFixed(2)}`
+                                                        : '-'}
+                                                </td>
+                                                <td className="px-4 py-3 whitespace-nowrap">
                                                     <button
                                                         onClick={() => viewOrderDetails(order.id)}
-                                                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                                        className="text-primary-600 hover:text-primary-700 p-1 rounded hover:bg-primary-50 transition-colors"
                                                         title="View Details"
                                                     >
-                                                        <Eye className="w-5 h-5" />
+                                                        <Eye className="w-4 h-4" />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -361,8 +456,9 @@ export default function DashboardPage() {
                                         })}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
                         </div>
-                    )}
                     </div>
                 </>
             )}
@@ -434,7 +530,9 @@ export default function DashboardPage() {
                                     </div>
 
                                     {/* Delivery Boy Information */}
-                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) && (
+                                    {(selectedOrder.deliveryBoyName || selectedOrder.delivery_boy_name) &&
+                                     !selectedOrder.customer_received_at_store &&
+                                     !selectedOrder.customerReceivedAtStore && (
                                         <div>
                                             <h3 className="text-lg font-semibold text-gray-900 mb-3">Delivery Boy</h3>
                                             <div className="bg-gray-50 p-4 rounded-lg space-y-2">
@@ -529,6 +627,61 @@ export default function DashboardPage() {
                                                 </>
                                             )}
 
+                                            {/* Return Items Information */}
+                                            <div className="pt-3 border-t">
+                                                <div className="flex justify-between items-center pb-2">
+                                                    <span className="text-sm font-medium text-gray-700">Return Items</span>
+                                                    <span className={`text-sm font-semibold rounded-full px-2 py-1 ${
+                                                        selectedOrder.returnItems || selectedOrder.return_items
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                        {selectedOrder.returnItems || selectedOrder.return_items ? 'Yes' : 'No'}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Return Items List */}
+                                                {(selectedOrder.returnItems || selectedOrder.return_items) && 
+                                                 (selectedOrder.returnItemsList || selectedOrder.return_items_list) && 
+                                                 Array.isArray(selectedOrder.returnItemsList || selectedOrder.return_items_list) && 
+                                                 (selectedOrder.returnItemsList || selectedOrder.return_items_list).length > 0 && (
+                                                    <div className="pt-3 border-t">
+                                                        <h4 className="text-sm font-semibold text-gray-900 mb-2">Return Items List</h4>
+                                                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                            <table className="min-w-full divide-y divide-gray-200">
+                                                                <thead className="bg-gray-50">
+                                                                    <tr>
+                                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase">Medicine Name</th>
+                                                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase">Quantity</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                                    {(selectedOrder.returnItemsList || selectedOrder.return_items_list).map((item, index) => (
+                                                                        <tr key={index} className="hover:bg-gray-50">
+                                                                            <td className="px-3 py-2 text-sm text-gray-900">
+                                                                                {item.name || 'N/A'}
+                                                                            </td>
+                                                                            <td className="px-3 py-2 text-sm text-gray-900">
+                                                                                {item.quantity || 'N/A'}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
+                                                {(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) && (
+                                                    <div className="flex justify-between items-center pt-2 border-t">
+                                                        <span className="text-sm font-medium text-gray-700">Return Adjust Amount</span>
+                                                        <span className="text-lg font-semibold text-gray-900">
+                                                            ₹{(Number(selectedOrder.returnAdjustAmount || selectedOrder.return_adjust_amount) || 0).toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             {/* Individual Payment Methods */}
                                             {selectedOrder.payments && Array.isArray(selectedOrder.payments) && selectedOrder.payments.length > 0 && (
                                                 <div className="pt-3 border-t">
@@ -615,7 +768,7 @@ export default function DashboardPage() {
                                                 {/* Created */}
                                                 {selectedOrder.created_at || selectedOrder.createdTime ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Order Created</p>
                                                             <p className="text-xs text-gray-500">
@@ -641,7 +794,7 @@ export default function DashboardPage() {
                                                 {/* Accepted */}
                                                 {selectedOrder.accepted_at ? (
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                                                        <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 mt-2"></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium text-gray-900">Accepted by Delivery Boy</p>
                                                             <p className="text-xs text-gray-500">
@@ -823,21 +976,21 @@ export default function DashboardPage() {
 
 function StatCard({ icon, label, value, color }) {
     const colorClasses = {
-        blue: 'bg-blue-100 text-blue-600',
-        green: 'bg-green-100 text-green-600',
-        purple: 'bg-purple-100 text-purple-600',
-        orange: 'bg-orange-100 text-orange-600',
+        blue: 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-md',
+        green: 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-md',
+        purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md',
+        orange: 'bg-gradient-to-br from-secondary-500 to-secondary-600 text-white shadow-md',
     };
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-                    {icon}
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-2 border border-gray-100">
+            <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-lg ${colorClasses[color]}`}>
+                    <div className="w-5 h-5">{icon}</div>
                 </div>
-                <div>
-                    <p className="text-sm text-gray-600">{label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-primary-600 mb-0.5 truncate">{label}</p>
+                    <p className="text-base font-bold text-gray-900">{value}</p>
                 </div>
             </div>
         </div>
@@ -857,22 +1010,22 @@ function StatusBadge({ status }) {
         CANCELLED: 'Cancelled',
     };
     const colorMap = {
-        ASSIGNED: 'bg-purple-100 text-purple-800',
-        ACCEPTED: 'bg-blue-100 text-blue-800',
-        REJECTED: 'bg-red-100 text-red-800',
-        PICKED_UP: 'bg-yellow-100 text-yellow-800',
-        IN_TRANSIT: 'bg-orange-100 text-orange-800',
-        PAYMENT_COLLECTION: 'bg-indigo-100 text-indigo-800',
-        DELIVERED: 'bg-green-100 text-green-800',
-        CANCELLED: 'bg-red-100 text-red-800',
+        ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+        ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
+        REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
+        PICKED_UP: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+        IN_TRANSIT: 'bg-gradient-to-r from-secondary-400 to-secondary-600 text-white',
+        PAYMENT_COLLECTION: 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white',
+        DELIVERED: 'bg-gradient-to-r from-green-400 to-green-600 text-white',
+        CANCELLED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
     };
 
     const key = status.toUpperCase();
     const label = labelMap[key] || status;
-    const colors = colorMap[key] || 'bg-gray-100 text-gray-800';
+    const colors = colorMap[key] || 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
 
     return (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colors}`}>
+        <span className={`px-2.5 py-1 inline-flex text-xs leading-4 font-bold rounded-full shadow-sm ${colors}`}>
             {label}
         </span>
     );

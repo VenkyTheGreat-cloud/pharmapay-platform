@@ -14,15 +14,17 @@ class Payment {
         } = paymentData;
 
         return transaction(async (client) => {
-            // Get order total amount
+            // Get order total amount and return adjust amount
             const orderResult = await client.query(
-                'SELECT total_amount FROM orders WHERE id = $1',
+                'SELECT total_amount, COALESCE(return_adjust_amount, 0) as return_adjust_amount FROM orders WHERE id = $1',
                 [order_id]
             );
             if (orderResult.rowCount === 0) {
                 throw new Error('ORDER_NOT_FOUND');
             }
             const orderTotal = parseFloat(orderResult.rows[0].total_amount);
+            const returnAdjustAmount = parseFloat(orderResult.rows[0].return_adjust_amount || 0);
+            const adjustedTotal = orderTotal - returnAdjustAmount;
 
             // Create payment
             const result = await client.query(
@@ -43,9 +45,10 @@ class Payment {
             );
             const totalPaid = parseFloat(totalPaidResult.rows[0].total_paid);
 
-            // Update order payment status based on total paid
+            // Update order payment status based on total paid vs adjusted total
+            // adjusted_total = total_amount - return_adjust_amount
             let paymentStatus = 'PENDING';
-            if (totalPaid >= orderTotal) {
+            if (totalPaid >= adjustedTotal) {
                 paymentStatus = 'PAID';
             } else if (totalPaid > 0) {
                 paymentStatus = 'PARTIAL';
@@ -95,17 +98,19 @@ class Payment {
     }
 
     // Get payment summary for an order (paid amount, remaining amount)
+    // Note: remaining_amount = (total_amount - return_adjust_amount) - total_paid
     static async getPaymentSummary(orderId) {
         const result = await query(
             `SELECT 
                 o.total_amount,
+                COALESCE(o.return_adjust_amount, 0) as return_adjust_amount,
                 COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as total_paid,
-                o.total_amount - COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as remaining_amount,
+                (o.total_amount - COALESCE(o.return_adjust_amount, 0)) - COALESCE(SUM(p.cash_amount + p.bank_amount), 0) as remaining_amount,
                 o.payment_status
              FROM orders o
              LEFT JOIN payments p ON o.id = p.order_id AND p.status = 'CONFIRMED'
              WHERE o.id = $1
-             GROUP BY o.id, o.total_amount, o.payment_status`,
+             GROUP BY o.id, o.total_amount, o.return_adjust_amount, o.payment_status`,
             [orderId]
         );
         
@@ -114,12 +119,19 @@ class Payment {
         }
 
         const row = result.rows[0];
+        const totalAmount = parseFloat(row.total_amount || 0);
+        const returnAdjustAmount = parseFloat(row.return_adjust_amount || 0);
+        const totalPaid = parseFloat(row.total_paid || 0);
+        const adjustedTotal = totalAmount - returnAdjustAmount;
+        const remainingAmount = adjustedTotal - totalPaid;
+        
         return {
-            total_amount: parseFloat(row.total_amount || 0),
-            total_paid: parseFloat(row.total_paid || 0),
-            remaining_amount: parseFloat(row.remaining_amount || 0),
+            total_amount: totalAmount,
+            return_adjust_amount: returnAdjustAmount,
+            total_paid: totalPaid,
+            remaining_amount: Math.max(0, remainingAmount), // Ensure non-negative
             payment_status: row.payment_status,
-            is_fully_paid: parseFloat(row.total_paid || 0) >= parseFloat(row.total_amount || 0)
+            is_fully_paid: totalPaid >= adjustedTotal
         };
     }
 
