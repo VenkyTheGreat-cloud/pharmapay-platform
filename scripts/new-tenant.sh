@@ -6,6 +6,9 @@ set -euo pipefail
 # =============================================
 # Usage: ./scripts/new-tenant.sh <SLUG> <NAME> <PLAN>
 # Example: ./scripts/new-tenant.sh acme "Acme Pharmacy" growth
+#
+# No DNS or SSL changes needed — the wildcard cert and
+# *.pharmapay.swinkpay-fintech.com DNS record cover all tenants.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -100,19 +103,16 @@ git commit -m "Add tenant config for ${NAME} (${SLUG})"
 echo ""
 echo "=== Tenant provisioned ==="
 echo ""
-echo "DNS records to add (CNAME → your server IP):"
-echo "  api.${SLUG}.${DOMAIN}"
-echo "  admin.${SLUG}.${DOMAIN}"
-echo "  store.${SLUG}.${DOMAIN}"
+echo "No DNS or SSL changes needed (wildcard covers all tenants)."
 echo ""
-echo "URLs:"
-echo "  Admin login:  https://admin.${SLUG}.${DOMAIN}"
-echo "  Store URL:    https://store.${SLUG}.${DOMAIN}"
-echo "  API base:     https://api.${SLUG}.${DOMAIN}/api"
+echo "URLs (live immediately after deploy):"
+echo "  Store:  https://${SLUG}.${DOMAIN}"
+echo "  Admin:  https://${SLUG}.${DOMAIN}/admin"
+echo "  API:    https://${SLUG}.${DOMAIN}/api"
 echo ""
 echo "Client code for APK: ${SLUG_UPPER}-01"
 echo ""
 echo "Next steps:"
-echo "  1. Add DNS records above"
-echo "  2. Run: ./scripts/deploy-platform.sh"
+echo "  1. Push branch: git push origin tenant/${SLUG}"
+echo "  2. Merge to main and deploy: ./deploy.sh"
 echo "  3. Create admin user via API or database seed"
