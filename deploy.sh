@@ -19,44 +19,28 @@ if ! docker compose version &>/dev/null; then
   exit 1
 fi
 
-if [ ! -f .env.production ]; then
-  echo "ERROR: .env.production not found."
+if [ ! -f .env ]; then
+  echo "ERROR: .env not found (Postgres credentials)."
+  echo "Create it with POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB."
+  exit 1
+fi
+
+if [ ! -f platform/.env.production ]; then
+  echo "ERROR: platform/.env.production not found."
   echo "Copy the template and fill in your values:"
-  echo "  cp .env.production.template .env.production"
+  echo "  cp .env.production.template platform/.env.production"
   exit 1
 fi
 
-# Ensure frontend directories exist
-if [ ! -d store-dashboard ]; then
-  echo "ERROR: store-dashboard directory not found."
-  exit 1
-fi
-
-if [ ! -d admin-dashboard ]; then
-  echo "ERROR: admin-dashboard directory not found."
-  exit 1
-fi
-
-# Build store frontend
+# Pull latest code
 echo ""
-echo "Building store frontend..."
-cd store-dashboard
-npm install --production=false
-VITE_API_URL=/api npm run build
-cd "$SCRIPT_DIR"
+echo "Pulling latest code..."
+git pull origin "$(git branch --show-current)"
 
-# Build admin frontend
+# Build and start services
 echo ""
-echo "Building admin frontend..."
-cd admin-dashboard
-npm install --production=false
-VITE_API_URL=/api npm run build
-cd "$SCRIPT_DIR"
-
-# Start services
-echo ""
-echo "Starting Docker services..."
-docker compose --env-file .env.production up -d --build
+echo "Building and starting Docker services..."
+docker compose up -d --build
 
 # Wait for health check
 echo ""
@@ -76,12 +60,15 @@ done
 
 echo ""
 echo "=== Deploy complete ==="
-echo "Store:  http://localhost/"
-echo "Admin:  http://localhost/admin/"
-echo "Health: http://localhost/health"
+echo ""
+echo "Services:"
+echo "  API:   https://api.{slug}.pharmapay.swinkpay-fintech.com"
+echo "  Admin: https://admin.{slug}.pharmapay.swinkpay-fintech.com"
+echo "  Store: https://store.{slug}.pharmapay.swinkpay-fintech.com"
 echo ""
 echo "Useful commands:"
-echo "  docker compose logs -f        # Follow logs"
-echo "  docker compose ps             # Check service status"
-echo "  docker compose down            # Stop services"
-echo "  docker compose restart backend # Restart backend only"
+echo "  docker compose logs -f              # Follow all logs"
+echo "  docker compose logs -f platform-api # Follow API logs"
+echo "  docker compose ps                   # Check service status"
+echo "  docker compose down                 # Stop services"
+echo "  docker compose up -d --build <svc>  # Rebuild one service"
