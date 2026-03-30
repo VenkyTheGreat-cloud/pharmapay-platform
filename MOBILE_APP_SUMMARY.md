@@ -1,4 +1,4 @@
-# SBB Medicare - Mobile App Development Summary
+# PharmaPay - Mobile App Development Summary
 
 ## 🎉 Project Completion Status
 
@@ -34,7 +34,7 @@ A complete React Native mobile application using Expo that enables delivery pers
 ## 🗂️ File Structure Created
 
 ```
-sbb-medicare-mobile/
+mobile-app/
 ├── App.js
 ├── app.json
 ├── app.config.js
@@ -197,7 +197,7 @@ npm install -g expo-cli
 
 1. **Install Dependencies**
    ```bash
-   cd sbb-medicare-mobile
+   cd mobile-app
    npm install
    ```
 
@@ -396,8 +396,8 @@ eas build --platform ios
 
 ## 📞 Support & Documentation
 
-- **Main README:** `/sbb-medicare-mobile/README.md`
-- **Assets Guide:** `/sbb-medicare-mobile/assets/README.md`
+- **Main README:** `/mobile-app/README.md`
+- **Assets Guide:** `/mobile-app/assets/README.md`
 - **Backend API:** See backend documentation
 - **Expo Docs:** https://docs.expo.dev/
 
@@ -405,7 +405,7 @@ eas build --platform ios
 
 ## ✅ Summary
 
-The SBB Medicare mobile app has been **fully developed** and includes:
+The PharmaPay mobile app has been **fully developed** and includes:
 
 - ✅ All core features implemented
 - ✅ Complete navigation flow

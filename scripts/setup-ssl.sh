@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ===========================================
-# SSL Setup for SBB Medicare Subdomains
+# SSL Setup for PharmaPay Subdomains
 # ===========================================
 #
 # Prerequisites:
@@ -15,7 +15,7 @@ set -euo pipefail
 # Usage:
 #   sudo ./scripts/setup-ssl.sh
 
-echo "=== SBB Medicare: SSL Setup ==="
+echo "=== PharmaPay: SSL Setup ==="
 
 # Install certbot
 echo "Step 1: Installing certbot..."
@@ -31,7 +31,7 @@ echo ""
 echo "Step 2: Obtaining SSL certificates..."
 echo "  Stopping nginx for certificate verification..."
 
-cd /home/ubuntu/sbb-medicare
+cd /home/ubuntu/pharmapay
 docker compose stop nginx
 
 # Get certificates

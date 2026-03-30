@@ -1,4 +1,4 @@
-# SBB Medicare Mobile App - Deployment Guide
+# PharmaPay Mobile App - Deployment Guide
 
 ## 📱 Mobile App Deployment Options
 
@@ -41,7 +41,7 @@ Your Render deployment includes:
 
 **Setup:**
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 
 # Update .env to point to Render
 # Change: API_URL=http://21.0.0.26:5000/api
@@ -83,13 +83,13 @@ eas login
 
 3. **Configure Project:**
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 eas build:configure
 ```
 
 4. **Update Production Environment:**
 
-Create `sbb-medicare-mobile/.env.production`:
+Create `mobile-app/.env.production`:
 ```env
 API_URL=https://your-api.onrender.com/api
 GOOGLE_MAPS_API_KEY=your-google-maps-key
@@ -180,22 +180,22 @@ For your project, I recommend this phased approach:
 ### Step 1: Get Your Render API URL
 
 From your Render dashboard:
-- Go to your `sbb-medicare-api` service
-- Copy the URL (e.g., `https://sbb-medicare-api.onrender.com`)
+- Go to your `pharmapay-api` service
+- Copy the URL (e.g., `https://pharmapay-api.onrender.com`)
 
 ### Step 2: Update Mobile App Configuration
 
 #### For Development (Expo Go):
 
 ```bash
-# Edit sbb-medicare-mobile/.env
+# Edit mobile-app/.env
 API_URL=https://your-api.onrender.com/api
 GOOGLE_MAPS_API_KEY=your-key-here
 ```
 
 #### For Production Builds:
 
-Create `sbb-medicare-mobile/.env.production`:
+Create `mobile-app/.env.production`:
 ```env
 API_URL=https://your-api.onrender.com/api
 GOOGLE_MAPS_API_KEY=your-production-key
@@ -217,7 +217,7 @@ export default {
 
 Make sure your Render backend allows mobile app requests:
 
-In `sbb-medicare-backend/.env` on Render:
+In `platform/.env` on Render:
 ```env
 ALLOWED_ORIGINS=*
 # Or specify your domains:
@@ -234,7 +234,7 @@ For mobile apps, `*` is usually fine as they're not web browsers.
 
 1. **Update mobile .env:**
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 echo "API_URL=https://your-api.onrender.com/api" > .env
 echo "GOOGLE_MAPS_API_KEY=" >> .env
 ```
@@ -259,7 +259,7 @@ eas login
 
 2. **Configure build:**
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 eas build:configure
 ```
 

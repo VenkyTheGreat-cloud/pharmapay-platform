@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== SBB Medicare Deploy ==="
+echo "=== PharmaPay Deploy ==="
 
 # Pre-flight checks
 echo "Running pre-flight checks..."
@@ -27,20 +27,20 @@ if [ ! -f .env.production ]; then
 fi
 
 # Ensure frontend directories exist
-if [ ! -d sbb-medicare-store ]; then
-  echo "ERROR: sbb-medicare-store directory not found."
+if [ ! -d store-dashboard ]; then
+  echo "ERROR: store-dashboard directory not found."
   exit 1
 fi
 
-if [ ! -d sbb-medicare-admin ]; then
-  echo "ERROR: sbb-medicare-admin directory not found."
+if [ ! -d admin-dashboard ]; then
+  echo "ERROR: admin-dashboard directory not found."
   exit 1
 fi
 
 # Build store frontend
 echo ""
 echo "Building store frontend..."
-cd sbb-medicare-store
+cd store-dashboard
 npm install --production=false
 VITE_API_URL=/api npm run build
 cd "$SCRIPT_DIR"
@@ -48,7 +48,7 @@ cd "$SCRIPT_DIR"
 # Build admin frontend
 echo ""
 echo "Building admin frontend..."
-cd sbb-medicare-admin
+cd admin-dashboard
 npm install --production=false
 VITE_API_URL=/api npm run build
 cd "$SCRIPT_DIR"

@@ -12,7 +12,7 @@
 
 ```bash
 # Update API URL to point to Render
-cd sbb-medicare-mobile
+cd mobile-app
 nano .env  # Change to: API_URL=https://your-api.onrender.com/api
 
 # Start
@@ -36,7 +36,7 @@ npm install -g eas-cli
 eas login
 
 # Build Android
-cd sbb-medicare-mobile
+cd mobile-app
 eas build --platform android --profile preview
 
 # Download APK and share
@@ -105,4 +105,4 @@ eas build --platform android
 
 See full guide: `MOBILE_APP_DEPLOYMENT.md`
 
-Quick start: `QUICKSTART.md` in `sbb-medicare-mobile/`
+Quick start: `QUICKSTART.md` in `mobile-app/`

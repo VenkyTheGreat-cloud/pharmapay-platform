@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ===========================================
-# Lightsail Instance Setup for SBB Medicare
+# Lightsail Instance Setup for PharmaPay
 # ===========================================
 #
 # Run this script on a fresh Ubuntu Lightsail instance.
@@ -17,7 +17,7 @@ set -euo pipefail
 #   OR
 #   scp scripts/lightsail-setup.sh ubuntu@<lightsail-ip>:~ && ssh ubuntu@<lightsail-ip> ./lightsail-setup.sh
 
-echo "=== SBB Medicare: Lightsail Setup ==="
+echo "=== PharmaPay: Lightsail Setup ==="
 echo ""
 
 # --- Step 1: System updates ---
@@ -73,7 +73,7 @@ fi
 echo ""
 echo "Step 6: Repository setup..."
 
-REPO_DIR="$HOME/sbb-medicare"
+REPO_DIR="$HOME/pharmapay"
 
 if [ -d "$REPO_DIR" ]; then
   echo "  Repository already exists at $REPO_DIR"

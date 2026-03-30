@@ -2,7 +2,7 @@
 
 ## ✅ What's Been Completed
 
-I've successfully set up the SBB Medicare mobile app and it's ready for you to test right now!
+I've successfully set up the PharmaPay mobile app and it's ready for you to test right now!
 
 ### Setup Completed ✅
 
@@ -46,7 +46,7 @@ I've successfully set up the SBB Medicare mobile app and it's ready for you to t
 Open a terminal and run:
 
 ```bash
-cd sbb-medicare-backend
+cd platform
 npm start
 ```
 
@@ -57,7 +57,7 @@ You should see: `Server running on port 5000`
 Open another terminal and run:
 
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 npm start
 ```
 
@@ -144,10 +144,10 @@ Detailed guides are available:
 
 ```bash
 # Terminal 1 - Backend
-cd sbb-medicare-backend && npm start
+cd platform && npm start
 
 # Terminal 2 - Mobile App
-cd sbb-medicare-mobile && npm start
+cd mobile-app && npm start
 
 # Phone - Expo Go
 # Scan QR code and test!
@@ -186,13 +186,13 @@ When ready for production:
 ### Current Environment
 
 **Mobile App:**
-- Location: `/sbb-medicare-mobile`
+- Location: `/mobile-app`
 - API URL: `http://21.0.0.26:5000/api`
 - Platform: React Native + Expo
 - Status: Ready to run
 
 **Backend API:**
-- Location: `/sbb-medicare-backend`
+- Location: `/platform`
 - Port: 5000
 - Status: Needs to be running
 
@@ -210,7 +210,7 @@ When ready for production:
 
 ```bash
 # Get to mobile directory (if needed)
-cd /home/user/sbb-medicare/sbb-medicare-mobile
+cd /home/user/pharmapay/mobile-app
 
 # Start mobile app
 npm start
@@ -231,10 +231,10 @@ hostname -I
 
 | Component | Status | Location |
 |-----------|--------|----------|
-| Backend API | ✅ Complete | `/sbb-medicare-backend` |
-| Admin Dashboard | ✅ Complete | `/sbb-medicare-admin` |
-| Store Dashboard | ✅ Complete | `/sbb-medicare-store` |
-| **Mobile App** | ✅ **Ready** | `/sbb-medicare-mobile` |
+| Backend API | ✅ Complete | `/platform` |
+| Admin Dashboard | ✅ Complete | `/admin-dashboard` |
+| Store Dashboard | ✅ Complete | `/store-dashboard` |
+| **Mobile App** | ✅ **Ready** | `/mobile-app` |
 
 ---
 
@@ -245,10 +245,10 @@ hostname -I
 **Solution:**
 ```bash
 # 1. Check backend is running
-cd sbb-medicare-backend && npm start
+cd platform && npm start
 
 # 2. Verify IP in .env
-cat sbb-medicare-mobile/.env
+cat mobile-app/.env
 
 # 3. Test from computer
 curl http://21.0.0.26:5000/api/auth/profile
@@ -264,7 +264,7 @@ curl http://21.0.0.26:5000/api/auth/profile
 
 **Solution:**
 ```bash
-cd sbb-medicare-mobile
+cd mobile-app
 npm start -- --clear
 ```
 
@@ -339,10 +339,10 @@ All changes have been committed and pushed:
 
 ```bash
 # Terminal 1
-cd sbb-medicare-backend && npm start
+cd platform && npm start
 
 # Terminal 2
-cd sbb-medicare-mobile && npm start
+cd mobile-app && npm start
 ```
 
 Then scan the QR code with Expo Go on your phone!

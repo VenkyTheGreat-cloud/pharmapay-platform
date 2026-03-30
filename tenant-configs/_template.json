@@ -1,0 +1,27 @@
+{
+  "client_code": "CLIENTCODE-01",
+  "app_name": "Pharmacy Name",
+  "brand": {
+    "primary_color": "#185FA5",
+    "logo_url": ""
+  },
+  "api_base_url": "https://api.clientcode.pharmapay.swinkpay-fintech.com",
+  "admin_url": "https://admin.clientcode.pharmapay.swinkpay-fintech.com",
+  "store_url": "https://store.clientcode.pharmapay.swinkpay-fintech.com",
+  "features": {
+    "gps_tracking": true,
+    "photo_proof": true,
+    "return_items": true,
+    "payment_cash": true,
+    "payment_bank": true,
+    "payment_split": true,
+    "payment_credit": false,
+    "payment_upi": false,
+    "excel_export": false,
+    "push_notifications": true,
+    "multi_store": false
+  },
+  "plan": "starter",
+  "max_delivery_boys": 10,
+  "max_outlets": 1
+}
