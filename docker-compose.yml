@@ -5,10 +5,8 @@ services:
     image: postgres:17-alpine
     container_name: pharmapay-postgres
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./platform/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -29,14 +27,24 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - .env.production
-    environment:
-      PORT: 5000
-      NODE_ENV: production
-      DATABASE_SSL: "false"
+      - platform/.env.production
     volumes:
       - uploads:/app/uploads
       - ./tenant-configs:/app/tenant-configs:ro
+
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    container_name: pharmapay-admin
+    restart: unless-stopped
+
+  store-dashboard:
+    build:
+      context: ./store-dashboard
+      dockerfile: Dockerfile
+    container_name: pharmapay-store
+    restart: unless-stopped
 
   platform-nginx:
     image: nginx:alpine
@@ -47,12 +55,15 @@ services:
       - "443:443"
     depends_on:
       - platform-api
+      - admin-dashboard
+      - store-dashboard
     volumes:
       - ./nginx/pharmapay.conf:/etc/nginx/nginx.conf:ro
       - ./admin-dashboard/dist:/usr/share/nginx/admin:ro
       - ./store-dashboard/dist:/usr/share/nginx/store:ro
       - uploads:/usr/share/nginx/uploads:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/letsencrypt/live/pharmapay.swinkpay-fintech.com:/etc/letsencrypt/live/pharmapay.swinkpay-fintech.com:ro
+      - /etc/letsencrypt/archive/pharmapay.swinkpay-fintech.com:/etc/letsencrypt/archive/pharmapay.swinkpay-fintech.com:ro
 
 volumes:
   pgdata:
