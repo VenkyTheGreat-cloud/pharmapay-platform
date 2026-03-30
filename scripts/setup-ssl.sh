@@ -40,7 +40,7 @@ fi
 # Step 2: Stop nginx temporarily
 echo ""
 echo "Step 2: Stopping nginx for certificate verification..."
-cd /home/ubuntu/pharmapay
+cd /opt/pharmapay
 docker compose stop platform-nginx 2>/dev/null || true
 
 # Step 3: Obtain wildcard certificate via DNS challenge
@@ -76,4 +76,4 @@ echo "Auto-renewal is handled by certbot systemd timer."
 echo "  Test with: sudo certbot renew --dry-run"
 echo ""
 echo "To reload nginx after renewal, add a deploy hook:"
-echo "  certbot renew --deploy-hook 'cd /home/ubuntu/pharmapay && docker compose exec platform-nginx nginx -s reload'"
+echo "  certbot renew --deploy-hook 'cd /opt/pharmapay && docker compose exec platform-nginx nginx -s reload'"

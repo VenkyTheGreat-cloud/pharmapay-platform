@@ -61,7 +61,7 @@ fi
 echo ""
 echo "Step 5: Repository setup..."
 
-REPO_DIR="$HOME/pharmapay"
+REPO_DIR="/opt/pharmapay"
 
 if [ -d "$REPO_DIR" ]; then
   echo "  Repository already exists at $REPO_DIR"
