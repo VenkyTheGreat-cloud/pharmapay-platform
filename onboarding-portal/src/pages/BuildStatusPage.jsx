@@ -113,9 +113,25 @@ export default function BuildStatusPage() {
                         <p className="text-gray-500 max-w-md mx-auto">
                             Our team is reviewing your pharmacy configuration. We'll notify you once it's approved.
                         </p>
-                        <div className="mt-8 inline-flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-4 py-2 rounded-lg">
+                        <div className="mt-6 inline-flex items-center gap-2 text-sm text-yellow-600 bg-yellow-50 px-4 py-2 rounded-lg">
                             <Clock className="w-4 h-4" />
                             Typically takes 1-2 business days
+                        </div>
+                        <div className="mt-8 flex items-center justify-center gap-4">
+                            <button
+                                onClick={() => navigate('/configure')}
+                                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Edit Configuration
+                            </button>
+                            <button
+                                onClick={() => navigate('/branding')}
+                                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Edit Branding
+                            </button>
                         </div>
                     </div>
                 )}
