@@ -88,14 +88,34 @@ async function initiatePayment(amount, pharmacyId, returnURL) {
 
     const apiUrl = `${config.baseUrl}api/v2/plugin/pay`;
 
-    logger.info('Initiating SwinkPay payment', { invoiceNumber, amount: amountStr, pharmacyId, apiUrl, terminalId: config.terminalId });
+    logger.info('Initiating SwinkPay payment', {
+        invoiceNumber, amount: amountStr, pharmacyId, apiUrl,
+        terminalId: config.terminalId,
+        authTokenLength: config.authToken?.length,
+        authTokenPreview: config.authToken?.substring(0, 8) + '...',
+        requestBody: JSON.stringify(requestBody),
+        headers: JSON.stringify({ ...headers, auth_token: headers.auth_token?.substring(0, 8) + '...' })
+    });
 
-    const axiosResponse = await axios.post(apiUrl, requestBody, { headers });
-    const data = axiosResponse.data;
+    let data;
+    try {
+        const axiosResponse = await axios.post(apiUrl, requestBody, { headers });
+        data = axiosResponse.data;
+    } catch (axiosError) {
+        if (axiosError.response) {
+            logger.error('SwinkPay API error response', {
+                status: axiosError.response.status,
+                data: JSON.stringify(axiosError.response.data)
+            });
+            data = axiosError.response.data;
+        } else {
+            throw axiosError;
+        }
+    }
 
     if (data.status !== 0) {
         logger.error('SwinkPay payment initiation failed', { response: data });
-        throw new Error(`SwinkPay error: ${data.message || 'Payment initiation failed'}`);
+        throw new Error(`SwinkPay error: ${data.error?.errorMessage || data.message || 'Payment initiation failed'}`);
     }
 
     logger.info('SwinkPay payment link generated', {
