@@ -231,8 +231,7 @@ exports.submitForApproval = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
         }
 
-        const updated = await Pharmacy.updateStatus(pharmacy.id, {
-            status: 'submitted',
+        const updated = await Pharmacy.updateStatus(pharmacy.id, 'submitted', {
             submitted_at: new Date()
         });
 
@@ -300,8 +299,7 @@ exports.approvePharmacy = async (req, res, next) => {
         }
 
         // Update status to approved
-        const updated = await Pharmacy.updateStatus(pharmacy.id, {
-            status: 'approved',
+        const updated = await Pharmacy.updateStatus(pharmacy.id, 'approved', {
             approved_at: new Date()
         });
 
@@ -359,8 +357,7 @@ exports.rejectPharmacy = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
         }
 
-        const updated = await Pharmacy.updateStatus(pharmacy.id, {
-            status: 'rejected',
+        const updated = await Pharmacy.updateStatus(pharmacy.id, 'rejected', {
             rejection_reason
         });
 
