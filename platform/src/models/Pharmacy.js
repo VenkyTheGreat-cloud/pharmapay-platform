@@ -102,10 +102,12 @@ class Pharmacy {
 
         const result = await query(
             `UPDATE pharmacies
-             SET primary_color = $1, logo_url = $2, updated_at = CURRENT_TIMESTAMP
+             SET primary_color = COALESCE($1, primary_color),
+                 logo_url = COALESCE($2, logo_url),
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = $3
              RETURNING *`,
-            [primary_color, logo_url, id]
+            [primary_color || null, logo_url || null, id]
         );
 
         return result.rows[0];
