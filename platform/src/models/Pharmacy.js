@@ -9,7 +9,7 @@ class Pharmacy {
             `INSERT INTO pharmacies (owner_id, slug, name, plan, status, primary_color, features, max_delivery_boys, max_outlets)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING *`,
-            [owner_id, slug, name, plan || 'starter', status || 'pending', primary_color || '#4F46E5', features || '{}', max_delivery_boys || 5, max_outlets || 1]
+            [owner_id, slug, name, plan || 'starter', status || 'pending_approval', primary_color || '#185FA5', features || null, max_delivery_boys || 10, max_outlets || 1]
         );
 
         return result.rows[0];
