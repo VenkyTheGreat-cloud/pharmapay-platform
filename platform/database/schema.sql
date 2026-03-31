@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     address TEXT,
     role VARCHAR(50) NOT NULL DEFAULT 'store_manager' CHECK (role IN ('admin', 'store_manager')),
     is_active BOOLEAN DEFAULT true,
+    admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
     status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
