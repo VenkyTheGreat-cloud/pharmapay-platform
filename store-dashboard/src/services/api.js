@@ -7,7 +7,7 @@ const API_DISABLED = import.meta.env.VITE_API_DISABLED === 'true';
 // Backend base URL (Play Framework API)
 // Default: https://pharmapay-api.onrender.com/api
 // For local development, set VITE_API_URL=http://localhost:9000/api in .env
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pharmapay-api.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,

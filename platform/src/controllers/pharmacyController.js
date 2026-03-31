@@ -7,6 +7,7 @@ const logger = require('../config/logger');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
 const SLUG_REGEX = /^[a-z][a-z0-9-]{1,58}[a-z0-9]$/;
+const RESERVED_SLUGS = ['pharmapay', 'portal', 'admin', 'api', 'www', 'mail', 'ftp', 'ns1', 'ns2'];
 
 // Signup - register pharmacy owner and pharmacy
 exports.signup = async (req, res, next) => {
@@ -16,6 +17,11 @@ exports.signup = async (req, res, next) => {
         // Validate slug format
         if (!SLUG_REGEX.test(slug)) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Slug must start with a letter, end with a letter or number, contain only lowercase letters, numbers, and hyphens, and be 3-60 characters'));
+        }
+
+        // Check reserved slugs
+        if (RESERVED_SLUGS.includes(slug)) {
+            return res.status(409).json(errorResponse('RESERVED_SLUG', 'This slug is reserved and cannot be used'));
         }
 
         // Check slug uniqueness
@@ -118,6 +124,10 @@ exports.login = async (req, res, next) => {
 exports.checkSlug = async (req, res, next) => {
     try {
         const { slug } = req.params;
+
+        if (RESERVED_SLUGS.includes(slug)) {
+            return res.json(successResponse({ available: false, reason: 'reserved' }));
+        }
 
         const exists = await Pharmacy.slugExists(slug);
 
