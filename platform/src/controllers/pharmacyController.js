@@ -162,27 +162,32 @@ exports.updateConfig = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Plan must be one of: starter, growth, enterprise'));
         }
 
+        const pharmacy = await Pharmacy.findByOwnerId(req.user.userId);
+        if (!pharmacy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
+        }
+
         const planLimits = {
             starter: { max_delivery_boys: 10, max_outlets: 1 },
             growth: { max_delivery_boys: 50, max_outlets: 5 },
             enterprise: { max_delivery_boys: 999, max_outlets: 999 }
         };
 
-        const configData = {};
-        if (plan) {
-            configData.plan = plan;
-            configData.max_delivery_boys = planLimits[plan].max_delivery_boys;
-            configData.max_outlets = planLimits[plan].max_outlets;
-        }
-        if (features) {
-            configData.features = features;
-        }
+        const selectedPlan = plan || pharmacy.plan || 'starter';
+        const limits = planLimits[selectedPlan];
 
-        const pharmacy = await Pharmacy.updateConfig(req.user.userId, configData);
+        const configData = {
+            plan: selectedPlan,
+            features: features || pharmacy.features || {},
+            max_delivery_boys: limits.max_delivery_boys,
+            max_outlets: limits.max_outlets,
+        };
 
-        logger.info('Pharmacy config updated', { userId: req.user.userId, plan });
+        const updated = await Pharmacy.updateConfig(pharmacy.id, configData);
 
-        res.json(successResponse(pharmacy, 'Configuration updated'));
+        logger.info('Pharmacy config updated', { userId: req.user.userId, plan: selectedPlan });
+
+        res.json(successResponse(updated, 'Configuration updated'));
     } catch (error) {
         next(error);
     }
@@ -198,16 +203,21 @@ exports.updateBranding = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'primary_color must be a valid hex color (e.g. #185FA5)'));
         }
 
+        const pharmacy = await Pharmacy.findByOwnerId(req.user.userId);
+        if (!pharmacy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
+        }
+
         const brandingData = {};
         if (primary_color) {
             brandingData.primary_color = primary_color;
         }
 
-        const pharmacy = await Pharmacy.updateBranding(req.user.userId, brandingData);
+        const updated = await Pharmacy.updateBranding(pharmacy.id, brandingData);
 
         logger.info('Pharmacy branding updated', { userId: req.user.userId });
 
-        res.json(successResponse(pharmacy, 'Branding updated'));
+        res.json(successResponse(updated, 'Branding updated'));
     } catch (error) {
         next(error);
     }
@@ -220,13 +230,18 @@ exports.uploadLogo = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Logo file is required'));
         }
 
+        const pharmacy = await Pharmacy.findByOwnerId(req.user.userId);
+        if (!pharmacy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
+        }
+
         const logo_url = '/uploads/' + req.file.filename;
 
-        const pharmacy = await Pharmacy.updateBranding(req.user.userId, { logo_url });
+        const updated = await Pharmacy.updateBranding(pharmacy.id, { logo_url });
 
         logger.info('Pharmacy logo uploaded', { userId: req.user.userId, logo_url });
 
-        res.json(successResponse(pharmacy, 'Logo uploaded'));
+        res.json(successResponse(updated, 'Logo uploaded'));
     } catch (error) {
         next(error);
     }

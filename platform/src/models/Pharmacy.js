@@ -75,10 +75,22 @@ class Pharmacy {
 
         const result = await query(
             `UPDATE pharmacies
-             SET plan = $1, features = $2, max_delivery_boys = $3, max_outlets = $4, config_json = $5, updated_at = CURRENT_TIMESTAMP
+             SET plan = COALESCE($1, plan),
+                 features = COALESCE($2, features),
+                 max_delivery_boys = COALESCE($3, max_delivery_boys),
+                 max_outlets = COALESCE($4, max_outlets),
+                 config_json = COALESCE($5, config_json),
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = $6
              RETURNING *`,
-            [plan, features, max_delivery_boys, max_outlets, config_json, id]
+            [
+                plan || null,
+                features ? JSON.stringify(features) : null,
+                max_delivery_boys || null,
+                max_outlets || null,
+                config_json ? JSON.stringify(config_json) : null,
+                id
+            ]
         );
 
         return result.rows[0];
