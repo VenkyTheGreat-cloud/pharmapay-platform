@@ -1,138 +1,150 @@
 const crypto = require('crypto');
+const axios = require('axios');
 const logger = require('../config/logger');
 
-// SwinkPay configuration with env var defaults (UAT sandbox)
-const config = {
+// SwinkPay configuration — reads env vars with UAT sandbox defaults
+const getConfig = () => ({
     baseUrl: process.env.SWINKPAY_BASE_URL || 'https://sandbox.swinkpay-fintech.com/',
     authToken: process.env.SWINKPAY_AUTH_TOKEN || 'FREFA45D$B2#18842765#992',
-    channel: process.env.SWINKPAY_CHANNEL || '14',
+    channel: parseInt(process.env.SWINKPAY_CHANNEL) || 14,
     terminalId: process.env.SWINKPAY_TERMINAL_ID || 'S2DKMQ',
-    secretKey: process.env.SWINKPAY_SECRET_KEY || 'hytidnowjidjw29282827373dbbdasakkaojhmsmsiqj'
+    secretKey: process.env.SWINKPAY_SECRET_KEY || 'hytidnowjidjw29282827373dbbdasakkaojhmsmsiqj',
+});
+
+/**
+ * Generate HMAC-SHA512 hash for SwinkPay
+ * Copied exactly from FarmerSuperApp/server/routes/swinkpay.js
+ * Format: invoiceNumber#amount#terminalID#dateAndTime#returnURL#hdnRefNumber#onlyCardBins#backURL#secretKey
+ */
+const generatePaymentHash = (invoiceNumber, amount, terminalID, dateAndTime, returnURL, hdnRefNumber, onlyCardBins, secretKey, backURL = '') => {
+    const onlyCardBinsValue = onlyCardBins ? '1' : '0';
+
+    let dataToHash;
+    if (backURL) {
+        dataToHash = `${invoiceNumber}#${amount}#${terminalID}#${dateAndTime}#${returnURL}#${hdnRefNumber}#${onlyCardBinsValue}#${backURL}#${secretKey}`;
+    } else {
+        dataToHash = `${invoiceNumber}#${amount}#${terminalID}#${dateAndTime}#${returnURL}#${hdnRefNumber}#${onlyCardBinsValue}#${secretKey}`;
+    }
+
+    logger.info('SwinkPay hash input', { dataToHash, backURL: backURL || 'NOT PROVIDED' });
+
+    const hash = crypto.createHash('sha512').update(dataToHash).digest('hex');
+    return hash;
 };
 
 /**
- * Generate SHA512 hash for SwinkPay payment request
- * Hash format: invoiceNumber#amount#terminalID#dateAndTime#returnURL#hdnRefNumber#onlyCardBins(0 or 1)#secretKey
+ * Format date for SwinkPay: YYYY-MM-DD HH:mm:ss
+ * Copied exactly from FarmerSuperApp
  */
-function generatePaymentHash(invoiceNumber, amount, terminalID, dateAndTime, returnURL, hdnRefNumber, onlyCardBins, secretKey) {
-    const cardBinsValue = onlyCardBins ? '1' : '0';
-    const hashString = `${invoiceNumber}#${amount}#${terminalID}#${dateAndTime}#${returnURL}#${hdnRefNumber}#${cardBinsValue}#${secretKey}`;
-    return crypto.createHash('sha512').update(hashString).digest('hex');
-}
-
-/**
- * Format current date/time as "YYYY-MM-DD HH:mm:ss"
- */
-function formatDateTime() {
+const formatDateTime = () => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
+    return now.toISOString().replace('T', ' ').substring(0, 19);
+};
 
 /**
- * Generate unique invoice number for a pharmacy payment
- * Format: PP{pharmacyId}{timestamp}
+ * Generate unique invoice number
+ * Prefix: PP for PharmaPay platform payments
  */
-function generateInvoiceNumber(pharmacyId) {
+const generateInvoiceNumber = (pharmacyId) => {
     const timestamp = Date.now();
-    return `PP${pharmacyId}${timestamp}`;
-}
+    // Use short ID to keep invoice number reasonable length
+    const shortId = String(pharmacyId).substring(0, 8);
+    return `PP${shortId}${timestamp}`;
+};
 
 /**
  * Initiate a payment via SwinkPay API
- * @param {number} amount - Payment amount in Rs
- * @param {number} pharmacyId - Pharmacy ID for invoice generation
- * @param {string} returnURL - URL SwinkPay redirects to after payment
- * @returns {Object} { referenceNo, paymentUrl, invoiceNumber }
+ * Follows exact same pattern as FarmerSuperApp/server/routes/swinkpay.js
  */
-async function initiatePayment(amount, pharmacyId, returnURL) {
-    const axios = require('axios');
+async function initiatePayment(amount, pharmacyId, callbackUrl) {
+    const config = getConfig();
+
+    if (!config.authToken || !config.terminalId) {
+        throw new Error('SwinkPay credentials not configured');
+    }
+
     const invoiceNumber = generateInvoiceNumber(pharmacyId);
     const dateAndTime = formatDateTime();
-    const hdnRefNumber = `PP${pharmacyId}${Date.now()}`;
-    const onlyCardBins = false;
+    const hdnRefNumber = `PP${String(pharmacyId).substring(0, 8)}${Date.now()}`;
     const amountStr = parseFloat(amount).toFixed(2);
+    const onlyCardBins = false;
+    const backURL = 'https://pharmapay.swinkpay-fintech.com/payment';
 
+    // Generate hash — matching exact FarmerSuperApp pattern including backURL
     const hash = generatePaymentHash(
         invoiceNumber,
         amountStr,
         config.terminalId,
         dateAndTime,
-        returnURL,
+        callbackUrl,
         hdnRefNumber,
         onlyCardBins,
-        config.secretKey
+        config.secretKey,
+        backURL
     );
 
-    const requestBody = {
+    // Build payload — exact same structure as FarmerSuperApp
+    const swinkPayPayload = {
         invoiceNumber,
         amount: amountStr,
         terminalID: config.terminalId,
         dateAndTime,
-        returnURL,
         hdnRefNumber,
         onlyCardBins,
-        hash
+        hash,
+        returnURL: callbackUrl,
+        backURL,
     };
 
-    const headers = {
-        'Content-Type': 'application/json',
-        'auth_token': config.authToken,
-        'channel': config.channel.toString()
-    };
-
+    // Headers — exact same as FarmerSuperApp
     const apiUrl = `${config.baseUrl}api/v2/plugin/pay`;
-
-    logger.info('Initiating SwinkPay payment', {
-        invoiceNumber, amount: amountStr, pharmacyId, apiUrl,
-        terminalId: config.terminalId,
-        authTokenLength: config.authToken?.length,
-        authTokenPreview: config.authToken?.substring(0, 8) + '...',
-        requestBody: JSON.stringify(requestBody),
-        headers: JSON.stringify({ ...headers, auth_token: headers.auth_token?.substring(0, 8) + '...' })
-    });
-
-    let data;
-    try {
-        const axiosResponse = await axios.post(apiUrl, requestBody, { headers });
-        data = axiosResponse.data;
-    } catch (axiosError) {
-        if (axiosError.response) {
-            logger.error('SwinkPay API error response', {
-                status: axiosError.response.status,
-                data: JSON.stringify(axiosError.response.data)
-            });
-            data = axiosError.response.data;
-        } else {
-            throw axiosError;
-        }
-    }
-
-    if (data.status !== 0) {
-        logger.error('SwinkPay payment initiation failed', { response: data });
-        throw new Error(`SwinkPay error: ${data.error?.errorMessage || data.message || 'Payment initiation failed'}`);
-    }
-
-    logger.info('SwinkPay payment link generated', {
-        invoiceNumber,
-        referenceNo: data.data.referenceNo
-    });
-
-    return {
-        referenceNo: data.data.referenceNo,
-        paymentUrl: data.data.url,
-        invoiceNumber
+    const headers = {
+        'channel': config.channel.toString(),
+        'auth_token': config.authToken,
+        'Content-Type': 'application/json',
     };
+
+    logger.info('SwinkPay API call', {
+        url: apiUrl,
+        terminalId: config.terminalId,
+        invoiceNumber,
+        amount: amountStr,
+        callbackUrl,
+        backURL,
+    });
+
+    try {
+        const axiosResponse = await axios.post(apiUrl, swinkPayPayload, { headers });
+        const swinkPayResponse = axiosResponse.data;
+
+        logger.info('SwinkPay response', { response: JSON.stringify(swinkPayResponse) });
+
+        if (swinkPayResponse.status === 0 && swinkPayResponse.data) {
+            return {
+                referenceNo: swinkPayResponse.data.referenceNo,
+                paymentUrl: swinkPayResponse.data.url,
+                invoiceNumber,
+            };
+        } else {
+            logger.error('SwinkPay error response', { response: swinkPayResponse });
+            throw new Error(`SwinkPay error: ${swinkPayResponse.error?.errorMessage || swinkPayResponse.message || 'Payment initiation failed'}`);
+        }
+    } catch (error) {
+        if (error.response) {
+            logger.error('SwinkPay axios error', {
+                status: error.response.status,
+                data: JSON.stringify(error.response.data),
+            });
+            const errData = error.response.data;
+            throw new Error(`SwinkPay error: ${errData?.error?.errorMessage || errData?.message || `HTTP ${error.response.status}`}`);
+        }
+        throw error;
+    }
 }
 
 module.exports = {
     generatePaymentHash,
     formatDateTime,
     generateInvoiceNumber,
-    initiatePayment
+    initiatePayment,
 };
