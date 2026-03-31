@@ -51,14 +51,16 @@ function generateInvoiceNumber(pharmacyId) {
  * @returns {Object} { referenceNo, paymentUrl, invoiceNumber }
  */
 async function initiatePayment(amount, pharmacyId, returnURL) {
+    const axios = require('axios');
     const invoiceNumber = generateInvoiceNumber(pharmacyId);
     const dateAndTime = formatDateTime();
-    const hdnRefNumber = '';
+    const hdnRefNumber = `PP${pharmacyId}${Date.now()}`;
     const onlyCardBins = false;
+    const amountStr = parseFloat(amount).toFixed(2);
 
     const hash = generatePaymentHash(
         invoiceNumber,
-        amount,
+        amountStr,
         config.terminalId,
         dateAndTime,
         returnURL,
@@ -69,7 +71,7 @@ async function initiatePayment(amount, pharmacyId, returnURL) {
 
     const requestBody = {
         invoiceNumber,
-        amount,
+        amount: amountStr,
         terminalID: config.terminalId,
         dateAndTime,
         returnURL,
@@ -78,19 +80,18 @@ async function initiatePayment(amount, pharmacyId, returnURL) {
         hash
     };
 
-    logger.info('Initiating SwinkPay payment', { invoiceNumber, amount, pharmacyId });
+    const headers = {
+        'Content-Type': 'application/json',
+        'auth_token': config.authToken,
+        'channel': config.channel.toString()
+    };
 
-    const response = await fetch(`${config.baseUrl}api/v2/plugin/pay`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'auth_token': config.authToken,
-            'channel': config.channel
-        },
-        body: JSON.stringify(requestBody)
-    });
+    const apiUrl = `${config.baseUrl}api/v2/plugin/pay`;
 
-    const data = await response.json();
+    logger.info('Initiating SwinkPay payment', { invoiceNumber, amount: amountStr, pharmacyId, apiUrl, terminalId: config.terminalId });
+
+    const axiosResponse = await axios.post(apiUrl, requestBody, { headers });
+    const data = axiosResponse.data;
 
     if (data.status !== 0) {
         logger.error('SwinkPay payment initiation failed', { response: data });
