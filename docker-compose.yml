@@ -26,6 +26,8 @@ services:
         condition: service_healthy
     env_file:
       - platform/.env.production
+    environment:
+      - "SWINKPAY_AUTH_TOKEN=FREFA45D$$B2#18842765#992"
     volumes:
       - uploads:/app/uploads
       - ./tenant-configs:/app/tenant-configs
