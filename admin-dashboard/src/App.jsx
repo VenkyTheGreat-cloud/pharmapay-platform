@@ -9,7 +9,7 @@ import StoreStaffPage from './pages/StoreStaffPage';
 import CustomersPage from './pages/CustomersPage';
 import ContactsPage from './pages/ContactsPage';
 import ReportsPage from './pages/ReportsPage';
-import PharmacyApprovalsPage from './pages/PharmacyApprovalsPage';
+
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
@@ -92,14 +92,6 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ReportsPage />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/pharmacy-approvals"
-                element={
-                    <ProtectedRoute>
-                        <PharmacyApprovalsPage />
                     </ProtectedRoute>
                 }
             />

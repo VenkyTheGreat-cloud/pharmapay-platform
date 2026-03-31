@@ -6,13 +6,16 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            const parsed = JSON.parse(savedUser);
+            setUser(parsed);
+            setIsPlatformAdmin(parsed._isPlatformAdmin || false);
         }
         setLoading(false);
     }, []);
@@ -37,10 +40,22 @@ export const AuthProvider = ({ children }) => {
             if (refreshToken) {
                 localStorage.setItem('refreshToken', refreshToken);
             }
-            localStorage.setItem('user', JSON.stringify(userData));
-            setUser(userData);
 
-            return { success: true, user: userData };
+            // Check if this admin has a pharmacy (owner) or is a platform admin
+            let platformAdmin = false;
+            try {
+                await pharmacyAPI.getMyPharmacy();
+            } catch {
+                // No pharmacy record → this is a platform super admin
+                platformAdmin = true;
+            }
+
+            const enrichedUser = { ...userData, _isPlatformAdmin: platformAdmin };
+            localStorage.setItem('user', JSON.stringify(enrichedUser));
+            setUser(enrichedUser);
+            setIsPlatformAdmin(platformAdmin);
+
+            return { success: true, user: enrichedUser, isPlatformAdmin: platformAdmin };
         } catch (error) {
             return {
                 success: false,
@@ -100,6 +115,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         updateUser,
         isAuthenticated: !!user,
+        isPlatformAdmin,
     };
 
     return (

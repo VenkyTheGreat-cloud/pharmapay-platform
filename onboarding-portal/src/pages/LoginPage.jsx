@@ -20,7 +20,7 @@ export default function LoginPage() {
         const result = await login(mobileEmail, password);
 
         if (result.success) {
-            navigate('/configure');
+            navigate(result.isPlatformAdmin ? '/admin-panel' : '/configure');
         } else {
             setError(result.error);
         }

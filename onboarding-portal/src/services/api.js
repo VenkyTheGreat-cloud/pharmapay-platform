@@ -59,4 +59,12 @@ export const pharmacyAPI = {
     getBuildStatus: () => api.get('/pharmacies/mine/build-status'),
 };
 
+// Platform admin API (SwinkPay super admins)
+export const adminAPI = {
+    listPharmacies: (params) => api.get('/pharmacies', { params }),
+    getPharmacy: (id) => api.get(`/pharmacies/${id}`),
+    approve: (id) => api.put(`/pharmacies/${id}/approve`),
+    reject: (id, reason) => api.put(`/pharmacies/${id}/reject`, { reason }),
+};
+
 export default api;

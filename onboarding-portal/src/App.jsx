@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import ConfiguratorPage from './pages/ConfiguratorPage';
 import BrandingPage from './pages/BrandingPage';
 import BuildStatusPage from './pages/BuildStatusPage';
+import AdminPanelPage from './pages/AdminPanelPage';
 
 function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
@@ -25,17 +26,17 @@ function ProtectedRoute({ children }) {
 }
 
 function AppRoutes() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isPlatformAdmin } = useAuth();
 
     return (
         <Routes>
             <Route
                 path="/signup"
-                element={isAuthenticated ? <Navigate to="/configure" replace /> : <SignupPage />}
+                element={isAuthenticated ? <Navigate to={isPlatformAdmin ? '/admin-panel' : '/configure'} replace /> : <SignupPage />}
             />
             <Route
                 path="/login"
-                element={isAuthenticated ? <Navigate to="/configure" replace /> : <LoginPage />}
+                element={isAuthenticated ? <Navigate to={isPlatformAdmin ? '/admin-panel' : '/configure'} replace /> : <LoginPage />}
             />
             <Route
                 path="/configure"
@@ -58,6 +59,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <BuildStatusPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/admin-panel"
+                element={
+                    <ProtectedRoute>
+                        <AdminPanelPage />
                     </ProtectedRoute>
                 }
             />
