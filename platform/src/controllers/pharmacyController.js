@@ -334,7 +334,7 @@ exports.initiatePayment = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid plan'));
         }
 
-        const returnURL = `${req.protocol}://${req.get('host')}/api/pharmacies/payment/callback`;
+        const returnURL = `https://pharmapay.swinkpay-fintech.com/api/pharmacies/payment/callback`;
 
         const { referenceNo, paymentUrl, invoiceNumber } = await swinkpayService.initiatePayment(amount, pharmacy.id, returnURL);
 
