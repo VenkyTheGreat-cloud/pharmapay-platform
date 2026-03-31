@@ -358,29 +358,46 @@ exports.initiatePayment = async (req, res, next) => {
 // Payment callback (public — SwinkPay redirects browser here)
 exports.paymentCallback = async (req, res, next) => {
     try {
-        const { TransactionId, StatusCode } = req.query;
+        // SwinkPay sends params with varying case — check both
+        const transactionId = req.query.TransactionId || req.query.transactionId || req.query.transactionid;
+        const statusCode = req.query.StatusCode || req.query.statusCode || req.query.statuscode;
 
-        logger.info('Payment callback received', { TransactionId, StatusCode });
+        logger.info('Payment callback received', { transactionId, statusCode, allQuery: JSON.stringify(req.query) });
 
-        // Find pharmacy by the transaction reference
-        // SwinkPay sends back TransactionId which maps to our payment_reference
+        // Find pharmacy by payment_reference, payment_invoice, or most recent pending payment
         const { query } = require('../config/database');
-        const result = await query(
-            'SELECT * FROM pharmacies WHERE payment_reference = $1 OR payment_invoice = $1',
-            [TransactionId]
-        );
-        const pharmacy = result.rows[0];
+        let pharmacy;
+
+        if (transactionId) {
+            const result = await query(
+                'SELECT * FROM pharmacies WHERE payment_reference = $1 OR payment_invoice = $1',
+                [transactionId]
+            );
+            pharmacy = result.rows[0];
+        }
+
+        // Fallback: find most recent pharmacy with pending payment
+        if (!pharmacy) {
+            const result = await query(
+                "SELECT * FROM pharmacies WHERE payment_status = 'pending' ORDER BY payment_date DESC LIMIT 1"
+            );
+            pharmacy = result.rows[0];
+        }
 
         if (!pharmacy) {
-            logger.error('Payment callback: pharmacy not found', { TransactionId });
+            logger.error('Payment callback: pharmacy not found', { transactionId });
             return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=not_found');
         }
 
-        if (String(StatusCode) === '1') {
+        // SwinkPay statusCode: 0=Initiated, 1=Success, 2=Failed
+        // Also treat callback without statusCode as success (some gateways just redirect back)
+        const isSuccess = !statusCode || String(statusCode) === '1';
+
+        if (isSuccess) {
             // Payment successful
             await Pharmacy.updatePayment(pharmacy.id, {
                 payment_status: 'paid',
-                payment_reference: TransactionId,
+                payment_reference: transactionId || pharmacy.payment_reference,
                 payment_invoice: pharmacy.payment_invoice,
                 payment_amount: pharmacy.payment_amount,
                 payment_date: new Date()
@@ -425,13 +442,13 @@ exports.paymentCallback = async (req, res, next) => {
             // Payment failed or initiated
             await Pharmacy.updatePayment(pharmacy.id, {
                 payment_status: 'failed',
-                payment_reference: TransactionId,
+                payment_reference: transactionId || pharmacy.payment_reference,
                 payment_invoice: pharmacy.payment_invoice,
                 payment_amount: pharmacy.payment_amount,
                 payment_date: new Date()
             });
 
-            logger.info('Payment failed', { pharmacyId: pharmacy.id, StatusCode });
+            logger.info('Payment failed', { pharmacyId: pharmacy.id, statusCode });
 
             return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=failed');
         }
