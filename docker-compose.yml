@@ -28,7 +28,7 @@ services:
       - platform/.env.production
     volumes:
       - uploads:/app/uploads
-      - ./tenant-configs:/app/tenant-configs:ro
+      - ./tenant-configs:/app/tenant-configs
 
   admin-dashboard:
     build:
@@ -44,6 +44,13 @@ services:
     container_name: pharmapay-store
     restart: unless-stopped
 
+  onboarding-portal:
+    build:
+      context: ./onboarding-portal
+      dockerfile: Dockerfile
+    container_name: pharmapay-onboarding
+    restart: unless-stopped
+
   platform-nginx:
     image: nginx:alpine
     container_name: pharmapay-nginx
@@ -55,6 +62,7 @@ services:
       - platform-api
       - admin-dashboard
       - store-dashboard
+      - onboarding-portal
     volumes:
       - ./nginx/pharmapay.conf:/etc/nginx/nginx.conf:ro
       - uploads:/usr/share/nginx/uploads:ro

@@ -22,6 +22,7 @@ const accessControlRoutes = require('./routes/accessControlRoutes');
 const customerRegistryRoutes = require('./routes/customerRegistryRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
+const pharmacyRoutes = require('./routes/pharmacyRoutes');
 
 // Initialize express app
 const app = express();
@@ -40,17 +41,25 @@ app.use(cors({
         if (!origin) {
             return callback(null, true);
         }
-        
-        // Check if origin is in allowed list
-        if (allowedOrigins.includes(origin)) {
+
+        // Check if origin is in allowed list (supports wildcard patterns like https://*.domain.com)
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (allowed.includes('*')) {
+                const pattern = allowed.replace(/\*/g, '[^.]+').replace(/\./g, '\\.');
+                return new RegExp(`^${pattern}$`).test(origin);
+            }
+            return allowed === origin;
+        });
+
+        if (isAllowed) {
             return callback(null, true);
         }
-        
+
         // In development, be more permissive
         if (process.env.NODE_ENV === 'development') {
             return callback(null, true);
         }
-        
+
         // Reject in production
         callback(new Error('Not allowed by CORS'));
     },
@@ -102,6 +111,7 @@ app.use('/api/customer-registry', customerRegistryRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/config', require('./routes/configRoutes'));
 app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/pharmacies', pharmacyRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

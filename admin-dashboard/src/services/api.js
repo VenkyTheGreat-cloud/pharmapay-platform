@@ -179,6 +179,14 @@ const realReportsAPI = {
     },
 };
 
+const realPharmacyAPI = {
+    getAll: (params) => api.get('/pharmacies', { params }),
+    getById: (id) => api.get(`/pharmacies/${id}`),
+    approve: (id) => api.put(`/pharmacies/${id}/approve`),
+    reject: (id, reason) => api.put(`/pharmacies/${id}/reject`, { reason }),
+    triggerBuild: (id) => api.post(`/pharmacies/${id}/build`),
+};
+
 const realConfigAPI = {
     get: () => api.get('/config'),
 };
@@ -713,6 +721,29 @@ const mockReportsAPI = {
     exportPendingOrdersReport: () => Promise.resolve({ data: new Blob(['mock']) }),
 };
 
+const mockPharmacyAPI = {
+    getAll: async () => {
+        await delay();
+        return { data: { success: true, data: [] } };
+    },
+    getById: async () => {
+        await delay();
+        return { data: { success: true, data: null } };
+    },
+    approve: async () => {
+        await delay();
+        return { data: { success: true, message: 'Pharmacy approved successfully' } };
+    },
+    reject: async () => {
+        await delay();
+        return { data: { success: true, message: 'Pharmacy rejected successfully' } };
+    },
+    triggerBuild: async () => {
+        await delay();
+        return { data: { success: true, message: 'Build triggered successfully' } };
+    },
+};
+
 const mockConfigAPI = {
     get: async () => {
         await delay();
@@ -749,5 +780,6 @@ export const deliveryBoysAPI = USE_MOCK_API ? mockDeliveryBoysAPI : realDelivery
 export const accessControlAPI = USE_MOCK_API ? mockAccessControlAPI : realAccessControlAPI;
 export const configAPI = USE_MOCK_API ? mockConfigAPI : realConfigAPI;
 export const reportsAPI = USE_MOCK_API ? mockReportsAPI : realReportsAPI;
+export const pharmacyAPI = USE_MOCK_API ? mockPharmacyAPI : realPharmacyAPI;
 
 export default api;

@@ -5,9 +5,9 @@
     "primary_color": "#185FA5",
     "logo_url": ""
   },
-  "api_base_url": "https://api.demo.pharmapay.swinkpay-fintech.com",
-  "admin_url": "https://admin.demo.pharmapay.swinkpay-fintech.com",
-  "store_url": "https://store.demo.pharmapay.swinkpay-fintech.com",
+  "api_base_url": "https://demo.pharmapay.swinkpay-fintech.com/api",
+  "admin_url": "https://demo.pharmapay.swinkpay-fintech.com/admin",
+  "store_url": "https://demo.pharmapay.swinkpay-fintech.com",
   "features": {
     "gps_tracking": true,
     "photo_proof": true,

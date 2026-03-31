@@ -7,23 +7,15 @@ class User {
         
         // Ensure role is valid (must be exactly 'admin' or 'store_manager' for database constraint)
         // Database constraint: CHECK (role IN ('admin', 'store_manager'))
-        // Use exact string literal - no modifications
         let validRole = 'store_manager'; // Default value
-        
+
         if (role) {
-            // Normalize for comparison only
             const normalizedRole = String(role).trim().toLowerCase();
             if (normalizedRole === 'admin') {
-                validRole = 'admin'; // Exact match
+                validRole = 'admin';
             } else if (normalizedRole === 'store_manager' || normalizedRole === 'store manager') {
-                validRole = 'store_manager'; // Exact match
+                validRole = 'store_manager';
             }
-        }
-        
-        // Final safety check - ensure it's exactly one of the allowed values
-        // Use strict comparison to ensure exact match
-        if (validRole !== 'admin' && validRole !== 'store_manager') {
-            validRole = 'store_manager';
         }
         
         // Default is_active to true if not provided

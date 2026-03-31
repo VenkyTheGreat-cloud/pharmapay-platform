@@ -11,7 +11,8 @@ import {
     UserCircle,
     Clock,
     Phone,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Building2
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -38,6 +39,7 @@ export default function Layout({ children }) {
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileSpreadsheet },
+        { name: 'Pharmacy Approvals', href: '/pharmacy-approvals', icon: Building2 },
     ];
 
     const isActive = (href) => location.pathname === href;

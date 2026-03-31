@@ -164,8 +164,8 @@ class AuthService {
 
             // Admin cannot login to store dashboard
             if (userRole === 'admin' && normalizedDashboardType === 'store') {
-                logger.warn('Login failed - admin trying to access store dashboard', { 
-                    userId: user.id, 
+                logger.warn('Login failed - admin trying to access store dashboard', {
+                    userId: user.id,
                     email: user.email,
                     role: userRole,
                     dashboardType: normalizedDashboardType
@@ -177,8 +177,8 @@ class AuthService {
 
             // Store manager cannot login to admin dashboard
             if (userRole === 'store_manager' && normalizedDashboardType === 'admin') {
-                logger.warn('Login failed - store manager trying to access admin dashboard', { 
-                    userId: user.id, 
+                logger.warn('Login failed - store manager trying to access admin dashboard', {
+                    userId: user.id,
                     email: user.email,
                     role: userRole,
                     dashboardType: normalizedDashboardType
@@ -187,6 +187,7 @@ class AuthService {
                 error.details = 'Store managers cannot access the admin dashboard. Please use the store dashboard.';
                 throw error;
             }
+
         }
 
         // Generate tokens (for delivery boys, use role 'delivery_boy')
