@@ -30,12 +30,15 @@ const loginValidation = [
 router.post('/signup', signupValidation, pharmacyController.signup);
 router.post('/login', loginValidation, pharmacyController.login);
 router.get('/check-slug/:slug', pharmacyController.checkSlug);
+router.get('/payment/callback', pharmacyController.paymentCallback);
 
 // Pharmacy owner routes
 router.get('/mine', authenticateToken, authorizeRoles('admin'), pharmacyController.getMyPharmacy);
 router.put('/mine/config', authenticateToken, authorizeRoles('admin'), pharmacyController.updateConfig);
 router.put('/mine/branding', authenticateToken, authorizeRoles('admin'), pharmacyController.updateBranding);
 router.post('/mine/branding/logo', authenticateToken, authorizeRoles('admin'), upload.single('logo'), pharmacyController.uploadLogo);
+router.put('/mine/app-name', authenticateToken, authorizeRoles('admin'), pharmacyController.updateAppName);
+router.post('/mine/pay', authenticateToken, authorizeRoles('admin'), pharmacyController.initiatePayment);
 router.put('/mine/submit', authenticateToken, authorizeRoles('admin'), pharmacyController.submitForApproval);
 router.get('/mine/build-status', authenticateToken, authorizeRoles('admin'), pharmacyController.getBuildStatus);
 

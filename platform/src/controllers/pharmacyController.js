@@ -286,6 +286,161 @@ exports.getBuildStatus = async (req, res, next) => {
     }
 };
 
+// Update app name
+exports.updateAppName = async (req, res, next) => {
+    try {
+        const { app_name } = req.body;
+
+        if (!app_name || !app_name.trim()) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'app_name is required'));
+        }
+
+        const pharmacy = await Pharmacy.findByOwnerId(req.user.userId);
+        if (!pharmacy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
+        }
+
+        const updated = await Pharmacy.updateAppName(pharmacy.id, app_name.trim());
+
+        logger.info('Pharmacy app name updated', { pharmacyId: pharmacy.id, app_name });
+
+        res.json(successResponse(updated, 'App name updated'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Initiate payment via SwinkPay
+exports.initiatePayment = async (req, res, next) => {
+    try {
+        const swinkpayService = require('../services/swinkpayService');
+
+        const pharmacy = await Pharmacy.findByOwnerId(req.user.userId);
+        if (!pharmacy) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
+        }
+
+        // Calculate setup fee based on plan
+        const setupFees = {
+            starter: 2000,
+            growth: 5000,
+            enterprise: 10000
+        };
+
+        const plan = pharmacy.plan || 'starter';
+        const amount = setupFees[plan];
+
+        if (!amount) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid plan'));
+        }
+
+        const returnURL = `${req.protocol}://${req.get('host')}/api/pharmacies/payment/callback`;
+
+        const { referenceNo, paymentUrl, invoiceNumber } = await swinkpayService.initiatePayment(amount, pharmacy.id, returnURL);
+
+        // Save payment info as pending
+        await Pharmacy.updatePayment(pharmacy.id, {
+            payment_status: 'pending',
+            payment_reference: referenceNo,
+            payment_invoice: invoiceNumber,
+            payment_amount: amount,
+            payment_date: new Date()
+        });
+
+        logger.info('Payment initiated', { pharmacyId: pharmacy.id, invoiceNumber, amount });
+
+        res.json(successResponse({ paymentUrl }, 'Payment initiated'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Payment callback (public — SwinkPay redirects browser here)
+exports.paymentCallback = async (req, res, next) => {
+    try {
+        const { TransactionId, StatusCode } = req.query;
+
+        logger.info('Payment callback received', { TransactionId, StatusCode });
+
+        // Find pharmacy by the transaction reference
+        // SwinkPay sends back TransactionId which maps to our payment_reference
+        const { query } = require('../config/database');
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE payment_reference = $1 OR payment_invoice = $1',
+            [TransactionId]
+        );
+        const pharmacy = result.rows[0];
+
+        if (!pharmacy) {
+            logger.error('Payment callback: pharmacy not found', { TransactionId });
+            return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=not_found');
+        }
+
+        if (String(StatusCode) === '1') {
+            // Payment successful
+            await Pharmacy.updatePayment(pharmacy.id, {
+                payment_status: 'paid',
+                payment_reference: TransactionId,
+                payment_invoice: pharmacy.payment_invoice,
+                payment_amount: pharmacy.payment_amount,
+                payment_date: new Date()
+            });
+
+            // Generate tenant config JSON (same as approvePharmacy)
+            const slug = pharmacy.slug;
+            const tenantConfig = {
+                client_code: `${slug.toUpperCase()}-01`,
+                app_name: pharmacy.app_name || pharmacy.name,
+                brand: {
+                    primary_color: pharmacy.primary_color || '#185FA5',
+                    logo_url: pharmacy.logo_url || ''
+                },
+                api_base_url: `https://${slug}.pharmapay.swinkpay-fintech.com/api`,
+                admin_url: `https://${slug}.pharmapay.swinkpay-fintech.com/admin`,
+                store_url: `https://${slug}.pharmapay.swinkpay-fintech.com`,
+                features: pharmacy.features || {},
+                plan: pharmacy.plan || 'starter',
+                max_delivery_boys: pharmacy.max_delivery_boys || 10,
+                max_outlets: pharmacy.max_outlets || 1
+            };
+
+            // Write tenant config file
+            const configDir = '/app/tenant-configs';
+            if (!fs.existsSync(configDir)) {
+                fs.mkdirSync(configDir, { recursive: true });
+            }
+            fs.writeFileSync(
+                path.join(configDir, `${slug}.json`),
+                JSON.stringify(tenantConfig, null, 2)
+            );
+
+            // Store config and set status to live
+            await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
+            await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
+
+            logger.info('Payment successful, pharmacy set to live', { pharmacyId: pharmacy.id, slug });
+
+            return res.redirect('https://pharmapay.swinkpay-fintech.com/build-status');
+        } else {
+            // Payment failed or initiated
+            await Pharmacy.updatePayment(pharmacy.id, {
+                payment_status: 'failed',
+                payment_reference: TransactionId,
+                payment_invoice: pharmacy.payment_invoice,
+                payment_amount: pharmacy.payment_amount,
+                payment_date: new Date()
+            });
+
+            logger.info('Payment failed', { pharmacyId: pharmacy.id, StatusCode });
+
+            return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=failed');
+        }
+    } catch (error) {
+        logger.error('Payment callback error', { error: error.message });
+        return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=server_error');
+    }
+};
+
 // List all pharmacies (admin)
 exports.listPharmacies = async (req, res, next) => {
     try {

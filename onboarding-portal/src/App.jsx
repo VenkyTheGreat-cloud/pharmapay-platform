@@ -4,6 +4,7 @@ import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
 import ConfiguratorPage from './pages/ConfiguratorPage';
 import BrandingPage from './pages/BrandingPage';
+import PaymentPage from './pages/PaymentPage';
 import BuildStatusPage from './pages/BuildStatusPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 
@@ -51,6 +52,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <BrandingPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/payment"
+                element={
+                    <ProtectedRoute>
+                        <PaymentPage />
                     </ProtectedRoute>
                 }
             />

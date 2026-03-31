@@ -148,6 +148,44 @@ class Pharmacy {
         return result.rows[0];
     }
 
+    // Update pharmacy app name
+    static async updateAppName(id, appName) {
+        const result = await query(
+            `UPDATE pharmacies SET app_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+            [appName, id]
+        );
+        return result.rows[0];
+    }
+
+    // Update pharmacy payment info
+    static async updatePayment(id, paymentData) {
+        const { payment_status, payment_reference, payment_invoice, payment_amount, payment_date } = paymentData;
+
+        const result = await query(
+            `UPDATE pharmacies
+             SET payment_status = $1,
+                 payment_reference = $2,
+                 payment_invoice = $3,
+                 payment_amount = $4,
+                 payment_date = $5,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $6
+             RETURNING *`,
+            [payment_status, payment_reference, payment_invoice, payment_amount, payment_date, id]
+        );
+
+        return result.rows[0];
+    }
+
+    // Find pharmacy by payment invoice
+    static async findByPaymentInvoice(invoice) {
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE payment_invoice = $1',
+            [invoice]
+        );
+        return result.rows[0];
+    }
+
     // Update pharmacy build info
     static async updateBuild(id, buildData) {
         const { build_id, build_status, build_url } = buildData;

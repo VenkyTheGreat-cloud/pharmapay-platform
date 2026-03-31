@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { pharmacyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StepIndicator from '../components/StepIndicator';
-import { Palette, Upload, Image, Eye, Send, ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
+import { Palette, Upload, Image, Eye, ArrowLeft, ArrowRight, Loader2, X } from 'lucide-react';
 
 const PRESET_COLORS = [
     { name: 'Teal', value: '#20b1aa' },
@@ -109,7 +109,7 @@ export default function BrandingPage() {
         }
     };
 
-    const handleSubmitForReview = async () => {
+    const handleNextPayment = async () => {
         setSubmitting(true);
         setError('');
         setSuccess('');
@@ -127,13 +127,9 @@ export default function BrandingPage() {
             // Save branding
             await pharmacyAPI.updateBranding({ primaryColor });
 
-            // Submit for approval
-            await pharmacyAPI.submitForApproval();
-
-            setSuccess('Submitted for review! Redirecting...');
-            setTimeout(() => navigate('/build-status'), 1500);
+            navigate('/payment');
         } catch (err) {
-            setError(err.response?.data?.error?.message || 'Failed to submit. Please try again.');
+            setError(err.response?.data?.error?.message || 'Failed to save branding. Please try again.');
             setSubmitting(false);
         }
     };
@@ -343,19 +339,18 @@ export default function BrandingPage() {
                         Back
                     </button>
                     <button
-                        onClick={handleSubmitForReview}
+                        onClick={handleNextPayment}
                         disabled={submitting || uploading}
                         className="px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {submitting ? (
                             <>
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Submitting...
+                                Saving...
                             </>
                         ) : (
                             <>
-                                <Send className="w-4 h-4" />
-                                Submit for Review
+                                Next: Payment
                                 <ArrowRight className="w-4 h-4" />
                             </>
                         )}

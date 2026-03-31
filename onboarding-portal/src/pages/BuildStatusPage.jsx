@@ -95,7 +95,7 @@ export default function BuildStatusPage() {
             </div>
 
             <div className="max-w-3xl mx-auto px-6 py-8">
-                <StepIndicator currentStep={4} />
+                <StepIndicator currentStep={5} />
 
                 {error && (
                     <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">

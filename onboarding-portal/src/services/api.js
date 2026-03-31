@@ -57,6 +57,10 @@ export const pharmacyAPI = {
     submitForApproval: () => api.put('/pharmacies/mine/submit'),
 
     getBuildStatus: () => api.get('/pharmacies/mine/build-status'),
+
+    updateAppName: (appName) => api.put('/pharmacies/mine/app-name', { app_name: appName }),
+
+    initiatePayment: () => api.post('/pharmacies/mine/pay'),
 };
 
 // Platform admin API (SwinkPay super admins)

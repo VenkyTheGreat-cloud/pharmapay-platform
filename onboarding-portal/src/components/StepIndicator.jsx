@@ -4,7 +4,8 @@ const steps = [
     { number: 1, label: 'Sign Up' },
     { number: 2, label: 'Configure' },
     { number: 3, label: 'Branding' },
-    { number: 4, label: 'Launch' },
+    { number: 4, label: 'Payment' },
+    { number: 5, label: 'Launch' },
 ];
 
 export default function StepIndicator({ currentStep }) {
