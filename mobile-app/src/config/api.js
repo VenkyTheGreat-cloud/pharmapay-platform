@@ -1,7 +1,12 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // API Configuration
-const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000/api';
+// On web (PWA): use relative /api so nginx proxies to backend
+// On native: use full URL from app.config.js or production default
+const API_URL = Platform.OS === 'web'
+  ? '/api'
+  : (Constants.expoConfig?.extra?.apiUrl || 'https://pharmapay.swinkpay-fintech.com/api');
 
 export default {
   API_URL,
