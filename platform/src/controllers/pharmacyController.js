@@ -431,19 +431,11 @@ exports.paymentCallback = async (req, res, next) => {
                 JSON.stringify(tenantConfig, null, 2)
             );
 
-            // Store config and set status to live
+            // Store config and set status to submitted (awaiting admin approval)
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
-            await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
+            await Pharmacy.updateStatus(pharmacy.id, 'submitted');
 
-            // Auto-create pharmacy listing for marketplace
-            await query(
-                `INSERT INTO pharmacy_listings (slug, display_name, city, area, is_accepting_riders, plan, created_at)
-                 VALUES ($1, $2, '', '', true, $3, NOW())
-                 ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
-                [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan]
-            );
-
-            logger.info('Payment successful, pharmacy set to live', { pharmacyId: pharmacy.id, slug });
+            logger.info('Payment successful, pharmacy submitted for approval', { pharmacyId: pharmacy.id, slug });
 
             return res.redirect('https://pharmapay.swinkpay-fintech.com/build-status');
         } else {
@@ -503,8 +495,8 @@ exports.approvePharmacy = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
         }
 
-        // Update status to approved
-        const updated = await Pharmacy.updateStatus(pharmacy.id, 'approved', {
+        // Update status to live (admin approval makes it live)
+        const updated = await Pharmacy.updateStatus(pharmacy.id, 'live', {
             approved_at: new Date()
         });
 
@@ -512,7 +504,7 @@ exports.approvePharmacy = async (req, res, next) => {
         const slug = pharmacy.slug;
         const tenantConfig = {
             client_code: `${slug.toUpperCase()}-01`,
-            app_name: pharmacy.name,
+            app_name: pharmacy.app_name || pharmacy.name,
             brand: {
                 primary_color: pharmacy.primary_color || '#185FA5',
                 logo_url: pharmacy.logo_url || ''
@@ -537,11 +529,20 @@ exports.approvePharmacy = async (req, res, next) => {
         );
 
         // Store config_json in database
-        await Pharmacy.updateConfig(pharmacy.owner_id, { config_json: tenantConfig });
+        await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
 
-        logger.info('Pharmacy approved', { pharmacyId: pharmacy.id, slug });
+        // Auto-create pharmacy listing for marketplace
+        const { query: dbQuery } = require('../config/database');
+        await dbQuery(
+            `INSERT INTO pharmacy_listings (slug, display_name, city, area, is_accepting_riders, plan, created_at)
+             VALUES ($1, $2, '', '', true, $3, NOW())
+             ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
+            [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan]
+        );
 
-        res.json(successResponse(updated, 'Pharmacy approved'));
+        logger.info('Pharmacy approved and set to live', { pharmacyId: pharmacy.id, slug });
+
+        res.json(successResponse(updated, 'Pharmacy approved and live'));
     } catch (error) {
         next(error);
     }
