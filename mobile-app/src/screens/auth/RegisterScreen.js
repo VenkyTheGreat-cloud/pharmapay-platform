@@ -151,10 +151,9 @@ const RegisterScreen = ({ navigation }) => {
     const registrationData = {
       name: formData.name.trim(),
       email: formData.email.trim().toLowerCase(),
-      phone: formData.phone.trim(),
+      mobile: formData.phone.trim(),
       password: formData.password,
       address: formData.address.trim(),
-      role: 'delivery_boy',
     };
 
     // Note: Photo upload would need to be handled separately

@@ -1,6 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+// Inject CSS to hide browser's native password reveal icons (Edge/Chrome)
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    input::-ms-reveal, input::-ms-clear, input::-webkit-credentials-auto-fill-button {
+      display: none !important;
+    }
+  `;
+  if (!document.querySelector('[data-hide-password-reveal]')) {
+    style.setAttribute('data-hide-password-reveal', 'true');
+    document.head.appendChild(style);
+  }
+}
 
 const Input = ({
   label,
@@ -34,6 +48,7 @@ const Input = ({
           placeholder={placeholder}
           placeholderTextColor="#9CA3AF"
           secureTextEntry={isPassword && !showPassword}
+          autoComplete={isPassword ? 'new-password' : undefined}
           keyboardType={keyboardType}
           multiline={multiline}
           numberOfLines={numberOfLines}

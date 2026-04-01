@@ -92,6 +92,11 @@ const PharmacyStatusScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Back to Home */}
+      <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={{ marginBottom: 16 }}>
+        <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
+      </TouchableOpacity>
+
       {/* Status Card */}
       <View style={[styles.statusCard, { backgroundColor: config.bgColor, borderColor: config.color }]}>
         <Text style={styles.statusIcon}>{config.icon}</Text>

@@ -27,10 +27,6 @@ exports.register = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, email, and password are required'));
         }
 
-        if (!store_id) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Store/Admin selection is required'));
-        }
-
         if (password.length < 6) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
         }
@@ -41,17 +37,19 @@ exports.register = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
         }
 
-        // Validate that store_id exists and is a super admin (not store_manager)
-        // Delivery boys are created by super admin only
-        const store = await User.findById(store_id);
-        if (!store) {
-            return res.status(404).json(errorResponse('NOT_FOUND', 'Selected admin not found'));
-        }
-        if (store.role !== 'admin') {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Only super admin can be selected for delivery boy registration'));
-        }
-        if (!store.is_active || store.status !== 'active') {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Selected admin is not active'));
+        // store_id is optional — delivery boys can register without a pharmacy
+        // and later apply via the marketplace
+        if (store_id) {
+            const store = await User.findById(store_id);
+            if (!store) {
+                return res.status(404).json(errorResponse('NOT_FOUND', 'Selected admin not found'));
+            }
+            if (store.role !== 'admin') {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Only super admin can be selected'));
+            }
+            if (!store.is_active || store.status !== 'active') {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Selected admin is not active'));
+            }
         }
 
         const result = await AuthService.registerDeliveryBoy({
