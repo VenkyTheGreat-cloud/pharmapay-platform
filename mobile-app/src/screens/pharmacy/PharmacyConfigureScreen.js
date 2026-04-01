@@ -99,6 +99,10 @@ const PharmacyConfigureScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Choose Your Plan</Text>
       <Text style={styles.subtitle}>Select the plan that fits your pharmacy</Text>
 

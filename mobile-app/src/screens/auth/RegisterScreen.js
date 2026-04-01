@@ -196,10 +196,10 @@ const RegisterScreen = ({ navigation }) => {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            onPress={() => navigation.navigate('Login')}
+            style={{ marginBottom: 16 }}
           >
-            <Ionicons name="arrow-back" size={24} color="#3B82F6" />
+            <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Register</Text>
           <Text style={styles.subtitle}>Create your delivery boy account</Text>

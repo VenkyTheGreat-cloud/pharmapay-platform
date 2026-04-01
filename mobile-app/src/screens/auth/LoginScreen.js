@@ -51,7 +51,7 @@ const LoginScreen = ({ navigation }) => {
     setLoading(false);
 
     if (!result.success) {
-      setError(result.message);
+      setError(result.message || 'Login failed. Please check your credentials and try again.');
     }
   };
 
@@ -64,9 +64,13 @@ const LoginScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
+        </TouchableOpacity>
+
         <View style={styles.header}>
-          <Text style={styles.title}>PharmaPay</Text>
-          <Text style={styles.subtitle}>Delivery Boy Login</Text>
+          <Text style={styles.title}>SwinkPayPharma</Text>
+          <Text style={styles.subtitle}>Login to your account</Text>
         </View>
 
         {error ? <Alert type="error" message={error} /> : null}

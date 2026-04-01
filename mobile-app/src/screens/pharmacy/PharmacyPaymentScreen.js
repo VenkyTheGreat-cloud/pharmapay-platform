@@ -101,6 +101,10 @@ const PharmacyPaymentScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => navigation.navigate('PharmacyBranding')} style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Payment</Text>
       <Text style={styles.subtitle}>Review your plan and complete payment</Text>
 

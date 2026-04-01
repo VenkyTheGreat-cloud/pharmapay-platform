@@ -138,6 +138,10 @@ const PharmacyBrandingScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity onPress={() => navigation.navigate('PharmacyConfigure')} style={{ marginBottom: 16 }}>
+          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Brand Your Pharmacy</Text>
       <Text style={styles.subtitle}>Customize colors and upload your logo</Text>
 
