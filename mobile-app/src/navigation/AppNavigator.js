@@ -10,6 +10,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Main Navigation
+import HomeRouter from '../screens/HomeRouter';
 import MainNavigator from './MainNavigator';
 
 // Pharmacy Owner Screens
@@ -22,7 +23,8 @@ import PharmacyStatusScreen from '../screens/pharmacy/PharmacyStatusScreen';
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, pharmacyStatus } = useAuth();
+  const isPharmacyOwner = user?.role === 'admin' && pharmacyStatus && pharmacyStatus !== 'none';
 
   console.log('🧭 AppNavigator - loading:', loading, 'isAuthenticated:', isAuthenticated);
 
@@ -40,14 +42,14 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <>
+        <Stack.Group>
+          <Stack.Screen name="HomeRouter" component={HomeRouter} />
           <Stack.Screen name="Main" component={MainNavigator} />
-          {/* Pharmacy owner screens accessible when authenticated */}
           <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
           <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />
           <Stack.Screen name="PharmacyPayment" component={PharmacyPaymentScreen} />
           <Stack.Screen name="PharmacyStatus" component={PharmacyStatusScreen} />
-        </>
+        </Stack.Group>
       ) : (
         <>
           <Stack.Screen name="Landing" component={LandingScreen} />

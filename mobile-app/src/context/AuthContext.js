@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pharmacyStatus, setPharmacyStatus] = useState(null); // null = not checked, 'none' = no pharmacy, or pharmacy status
 
   // Load user from storage on app start
   useEffect(() => {
@@ -64,6 +65,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const checkPharmacyStatus = async () => {
+    try {
+      const { pharmacyAPI } = require('../services/api');
+      const res = await pharmacyAPI.getMyPharmacy();
+      const pharmacy = res.data?.data || res.data;
+      if (pharmacy && pharmacy.status) {
+        setPharmacyStatus(pharmacy.status);
+        return pharmacy.status;
+      }
+      setPharmacyStatus('none');
+      return 'none';
+    } catch {
+      setPharmacyStatus('none');
+      return 'none';
+    }
+  };
+
   const login = async (email, password) => {
     try {
       const response = await apiService.login(email, password);
@@ -75,6 +93,13 @@ export const AuthProvider = ({ children }) => {
 
       setUser(userData);
       setIsAuthenticated(true);
+
+      // Check if user has a pharmacy (admin role)
+      if (userData?.role === 'admin') {
+        await checkPharmacyStatus();
+      } else {
+        setPharmacyStatus('none');
+      }
 
       return { success: true };
     } catch (error) {
@@ -160,11 +185,13 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated,
+    pharmacyStatus,
     login,
     register,
     logout,
     updateUser,
     changePassword,
+    checkPharmacyStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
