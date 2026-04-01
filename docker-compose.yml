@@ -47,11 +47,12 @@ services:
     restart: unless-stopped
 
   onboarding-portal:
-    build:
-      context: ./onboarding-portal
-      dockerfile: Dockerfile
+    image: nginx:alpine
     container_name: pharmapay-onboarding
     restart: unless-stopped
+    volumes:
+      - ./swinkpaypharma-dist:/usr/share/nginx/html:ro
+      - ./mobile-app/nginx-pwa.conf:/etc/nginx/conf.d/default.conf:ro
 
   platform-nginx:
     image: nginx:alpine
