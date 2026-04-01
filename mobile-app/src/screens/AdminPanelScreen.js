@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { pharmacyAPI } from '../services/api';
@@ -31,8 +32,13 @@ const STATUS_LABELS = {
   live: 'Live',
 };
 
+const TABS = ['Applications', 'Revenue', 'Analytics', 'Delivery Boys', 'Payments'];
+
 const AdminPanelScreen = ({ navigation }) => {
   const { logout } = useAuth();
+  const [activeTab, setActiveTab] = useState('Applications');
+
+  // Applications state (existing)
   const [pharmacies, setPharmacies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +46,27 @@ const AdminPanelScreen = ({ navigation }) => {
   const [rejectModal, setRejectModal] = useState({ visible: false, pharmacyId: null });
   const [rejectReason, setRejectReason] = useState('');
   const [error, setError] = useState(null);
+
+  // Revenue state
+  const [revenueSummary, setRevenueSummary] = useState(null);
+  const [revenueTransactions, setRevenueTransactions] = useState([]);
+  const [revenueLoading, setRevenueLoading] = useState(false);
+
+  // Analytics state
+  const [pharmacyAnalytics, setPharmacyAnalytics] = useState(null);
+  const [onboardingFunnel, setOnboardingFunnel] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Delivery Boys state
+  const [deliveryBoyOverview, setDeliveryBoyOverview] = useState(null);
+  const [deliveryBoysLoading, setDeliveryBoysLoading] = useState(false);
+
+  // Payments state
+  const [paymentSummary, setPaymentSummary] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  // ---- Applications logic (existing, unchanged) ----
 
   const fetchPharmacies = useCallback(async () => {
     try {
@@ -66,12 +93,15 @@ const AdminPanelScreen = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchPharmacies();
+    if (activeTab === 'Applications') await fetchPharmacies();
+    else if (activeTab === 'Revenue') await fetchRevenueData();
+    else if (activeTab === 'Analytics') await fetchAnalyticsData();
+    else if (activeTab === 'Delivery Boys') await fetchDeliveryBoysData();
+    else if (activeTab === 'Payments') await fetchPaymentsData();
     setRefreshing(false);
   };
 
   const handleApprove = async (id) => {
-    // Find the pharmacy to get its slug for the success message
     const pharmacy = pharmacies.find(p => p.id === id);
     const slug = pharmacy?.slug || '';
 
@@ -250,24 +280,418 @@ const AdminPanelScreen = ({ navigation }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color="#20b1aa" />
-        <Text style={styles.loadingText}>Loading pharmacies...</Text>
-      </SafeAreaView>
-    );
-  }
+  // ---- Tab data fetchers ----
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Admin Panel</Text>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutBtnText}>Logout</Text>
+  const fetchRevenueData = async () => {
+    setRevenueLoading(true);
+    try {
+      const [summaryRes, txRes] = await Promise.all([
+        pharmacyAPI.getRevenueSummary(),
+        pharmacyAPI.getRevenueTransactions(),
+      ]);
+      setRevenueSummary(summaryRes.data?.data || summaryRes.data);
+      const txData = txRes.data?.data || txRes.data;
+      setRevenueTransactions(Array.isArray(txData) ? txData : txData?.transactions || []);
+    } catch (err) {
+      console.error('Failed to load revenue data:', err);
+    } finally {
+      setRevenueLoading(false);
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const [analyticsRes, funnelRes] = await Promise.all([
+        pharmacyAPI.getPharmacyAnalytics(),
+        pharmacyAPI.getOnboardingFunnel(),
+      ]);
+      setPharmacyAnalytics(analyticsRes.data?.data || analyticsRes.data);
+      setOnboardingFunnel(funnelRes.data?.data || funnelRes.data);
+    } catch (err) {
+      console.error('Failed to load analytics data:', err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchDeliveryBoysData = async () => {
+    setDeliveryBoysLoading(true);
+    try {
+      const res = await pharmacyAPI.getDeliveryBoyOverview();
+      setDeliveryBoyOverview(res.data?.data || res.data);
+    } catch (err) {
+      console.error('Failed to load delivery boys data:', err);
+    } finally {
+      setDeliveryBoysLoading(false);
+    }
+  };
+
+  const fetchPaymentsData = async () => {
+    setPaymentsLoading(true);
+    try {
+      const [summaryRes, historyRes] = await Promise.all([
+        pharmacyAPI.getPaymentSummary(),
+        pharmacyAPI.getPaymentHistory(),
+      ]);
+      setPaymentSummary(summaryRes.data?.data || summaryRes.data);
+      const histData = historyRes.data?.data || historyRes.data;
+      setPaymentHistory(Array.isArray(histData) ? histData : histData?.payments || []);
+    } catch (err) {
+      console.error('Failed to load payments data:', err);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
+  // Load data when tab changes
+  useEffect(() => {
+    if (activeTab === 'Revenue' && !revenueSummary && !revenueLoading) {
+      fetchRevenueData();
+    } else if (activeTab === 'Analytics' && !pharmacyAnalytics && !analyticsLoading) {
+      fetchAnalyticsData();
+    } else if (activeTab === 'Delivery Boys' && !deliveryBoyOverview && !deliveryBoysLoading) {
+      fetchDeliveryBoysData();
+    } else if (activeTab === 'Payments' && !paymentSummary && !paymentsLoading) {
+      fetchPaymentsData();
+    }
+  }, [activeTab]);
+
+  // ---- Helpers ----
+
+  const formatCurrency = (amount) => {
+    if (amount == null) return '--';
+    return '\u20B9' + Number(amount).toLocaleString('en-IN');
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  // ---- Tab Renderers ----
+
+  const renderTabBar = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.tabBar}
+      contentContainerStyle={styles.tabBarContent}
+    >
+      {TABS.map((tab) => (
+        <TouchableOpacity
+          key={tab}
+          style={[styles.tab, activeTab === tab && styles.tabActive]}
+          onPress={() => setActiveTab(tab)}
+        >
+          <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
         </TouchableOpacity>
-      </View>
+      ))}
+    </ScrollView>
+  );
 
+  // ---- Revenue Tab ----
+
+  const renderRevenueTab = () => {
+    if (revenueLoading) {
+      return (
+        <View style={styles.centeredTab}>
+          <ActivityIndicator size="large" color="#20b1aa" />
+          <Text style={styles.loadingText}>Loading revenue data...</Text>
+        </View>
+      );
+    }
+
+    const summary = revenueSummary || {};
+    const planDistribution = summary.planDistribution || summary.plan_distribution || {};
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.tabContentInner}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+        }
+      >
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{summary.activePharmacies ?? summary.active_pharmacies ?? '--'}</Text>
+            <Text style={styles.summaryLabel}>Active Pharmacies</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{formatCurrency(summary.totalRevenue ?? summary.total_revenue)}</Text>
+            <Text style={styles.summaryLabel}>Total Revenue</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{formatCurrency(summary.monthlyRecurringRevenue ?? summary.monthly_recurring_revenue)}</Text>
+            <Text style={styles.summaryLabel}>Monthly Recurring</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Plan Distribution</Text>
+        <View style={styles.summaryRow}>
+          {['starter', 'growth', 'enterprise'].map((plan) => (
+            <View key={plan} style={styles.summaryCard}>
+              <Text style={styles.summaryNumber}>{planDistribution[plan] ?? '--'}</Text>
+              <Text style={styles.summaryLabel}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        {revenueTransactions.length === 0 ? (
+          <Text style={styles.emptyText}>No transactions yet.</Text>
+        ) : (
+          revenueTransactions.map((tx, index) => (
+            <View key={tx.id || index} style={styles.listCard}>
+              <View style={styles.listCardRow}>
+                <Text style={styles.listCardName}>{tx.pharmacyName || tx.pharmacy_name || 'Unknown'}</Text>
+                <Text style={styles.listCardAmount}>{formatCurrency(tx.amount)}</Text>
+              </View>
+              <View style={styles.listCardRow}>
+                <Text style={styles.listCardDate}>{formatDate(tx.date || tx.created_at)}</Text>
+                <View style={[
+                  styles.statusDot,
+                  { backgroundColor: tx.status === 'success' || tx.status === 'completed' ? '#10B981' : tx.status === 'pending' ? '#F59E0B' : '#EF4444' },
+                ]} />
+                <Text style={styles.listCardStatus}>{tx.status || '--'}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    );
+  };
+
+  // ---- Analytics Tab ----
+
+  const FUNNEL_STEPS = ['Signed Up', 'Configured', 'Branded', 'Paid', 'Live'];
+  const FUNNEL_KEYS = ['signed_up', 'configured', 'branded', 'paid', 'live'];
+
+  const renderAnalyticsTab = () => {
+    if (analyticsLoading) {
+      return (
+        <View style={styles.centeredTab}>
+          <ActivityIndicator size="large" color="#20b1aa" />
+          <Text style={styles.loadingText}>Loading analytics...</Text>
+        </View>
+      );
+    }
+
+    const funnel = onboardingFunnel || {};
+    const analytics = pharmacyAnalytics || {};
+    const statusBreakdown = analytics.statusBreakdown || analytics.status_breakdown || {};
+    const recentSignups = analytics.recentSignups || analytics.recent_signups || [];
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.tabContentInner}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+        }
+      >
+        <Text style={styles.sectionTitle}>Onboarding Funnel</Text>
+        {FUNNEL_STEPS.map((step, i) => {
+          const count = funnel[FUNNEL_KEYS[i]] ?? funnel[step.toLowerCase()] ?? '--';
+          const maxCount = funnel[FUNNEL_KEYS[0]] || 1;
+          const barWidth = count !== '--' ? Math.max((count / maxCount) * 100, 8) : 8;
+          return (
+            <View key={step} style={styles.funnelRow}>
+              <Text style={styles.funnelLabel}>{step}</Text>
+              <View style={styles.funnelBarBg}>
+                <View style={[styles.funnelBar, { width: `${barWidth}%` }]} />
+              </View>
+              <Text style={styles.funnelCount}>{count}</Text>
+            </View>
+          );
+        })}
+
+        <Text style={styles.sectionTitle}>Status Breakdown</Text>
+        <View style={styles.statusGrid}>
+          {Object.entries(statusBreakdown).map(([status, count]) => {
+            const color = STATUS_COLORS[status] || '#6B7280';
+            return (
+              <View key={status} style={styles.statusItem}>
+                <View style={[styles.statusIndicator, { backgroundColor: color }]} />
+                <Text style={styles.statusItemLabel}>{STATUS_LABELS[status] || status}</Text>
+                <Text style={styles.statusItemCount}>{count}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <Text style={styles.sectionTitle}>Recent Signups</Text>
+        {recentSignups.length === 0 ? (
+          <Text style={styles.emptyText}>No recent signups.</Text>
+        ) : (
+          recentSignups.slice(0, 10).map((pharmacy, index) => (
+            <View key={pharmacy.id || index} style={styles.listCard}>
+              <View style={styles.listCardRow}>
+                <Text style={styles.listCardName}>{pharmacy.name || 'Unnamed'}</Text>
+                {renderStatusBadge(pharmacy.status)}
+              </View>
+              <View style={styles.listCardRow}>
+                <Text style={styles.listCardDate}>{pharmacy.slug || '--'}</Text>
+                <Text style={styles.listCardDate}>{formatDate(pharmacy.created_at || pharmacy.createdAt)}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    );
+  };
+
+  // ---- Delivery Boys Tab ----
+
+  const renderDeliveryBoysTab = () => {
+    if (deliveryBoysLoading) {
+      return (
+        <View style={styles.centeredTab}>
+          <ActivityIndicator size="large" color="#20b1aa" />
+          <Text style={styles.loadingText}>Loading delivery boy data...</Text>
+        </View>
+      );
+    }
+
+    const overview = deliveryBoyOverview || {};
+    const summary = overview.summary || overview;
+    const perPharmacy = overview.perPharmacy || overview.per_pharmacy || [];
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.tabContentInner}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+        }
+      >
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{summary.totalDeliveryBoys ?? summary.total_delivery_boys ?? '--'}</Text>
+            <Text style={styles.summaryLabel}>Total</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{summary.active ?? '--'}</Text>
+            <Text style={styles.summaryLabel}>Active</Text>
+          </View>
+        </View>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{summary.pendingApplications ?? summary.pending_applications ?? '--'}</Text>
+            <Text style={styles.summaryLabel}>Pending Applications</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryNumber}>{summary.approvedEngagements ?? summary.approved_engagements ?? '--'}</Text>
+            <Text style={styles.summaryLabel}>Approved Engagements</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Per Pharmacy</Text>
+        {perPharmacy.length === 0 ? (
+          <Text style={styles.emptyText}>No data available.</Text>
+        ) : (
+          perPharmacy.map((item, index) => (
+            <View key={item.pharmacyId || item.pharmacy_id || index} style={styles.listCard}>
+              <View style={styles.listCardRow}>
+                <Text style={styles.listCardName}>{item.pharmacyName || item.pharmacy_name || 'Unknown'}</Text>
+                <Text style={styles.summaryNumberSmall}>{item.count ?? item.delivery_boys ?? '--'}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    );
+  };
+
+  // ---- Payments Tab ----
+
+  const renderPaymentsTab = () => {
+    if (paymentsLoading) {
+      return (
+        <View style={styles.centeredTab}>
+          <ActivityIndicator size="large" color="#20b1aa" />
+          <Text style={styles.loadingText}>Loading payments data...</Text>
+        </View>
+      );
+    }
+
+    const summary = paymentSummary || {};
+    const revenueByPlan = summary.revenueByPlan || summary.revenue_by_plan || {};
+
+    return (
+      <ScrollView
+        style={styles.tabContent}
+        contentContainerStyle={styles.tabContentInner}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+        }
+      >
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryCard}>
+            <Text style={[styles.summaryNumber, { color: '#10B981' }]}>{formatCurrency(summary.totalCollected ?? summary.total_collected)}</Text>
+            <Text style={styles.summaryLabel}>Total Collected</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={[styles.summaryNumber, { color: '#F59E0B' }]}>{formatCurrency(summary.pending)}</Text>
+            <Text style={styles.summaryLabel}>Pending</Text>
+          </View>
+          <View style={styles.summaryCard}>
+            <Text style={[styles.summaryNumber, { color: '#EF4444' }]}>{formatCurrency(summary.failed)}</Text>
+            <Text style={styles.summaryLabel}>Failed</Text>
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Revenue by Plan</Text>
+        <View style={styles.summaryRow}>
+          {['starter', 'growth', 'enterprise'].map((plan) => (
+            <View key={plan} style={styles.summaryCard}>
+              <Text style={styles.summaryNumber}>{formatCurrency(revenueByPlan[plan])}</Text>
+              <Text style={styles.summaryLabel}>{plan.charAt(0).toUpperCase() + plan.slice(1)}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Payment History</Text>
+        {paymentHistory.length === 0 ? (
+          <Text style={styles.emptyText}>No payments yet.</Text>
+        ) : (
+          paymentHistory.map((payment, index) => {
+            const statusColor = payment.status === 'success' || payment.status === 'completed'
+              ? '#10B981'
+              : payment.status === 'pending'
+                ? '#F59E0B'
+                : '#EF4444';
+            return (
+              <View key={payment.id || index} style={styles.listCard}>
+                <View style={styles.listCardRow}>
+                  <Text style={styles.listCardName}>{payment.name || payment.pharmacyName || payment.pharmacy_name || 'Unknown'}</Text>
+                  <Text style={styles.listCardAmount}>{formatCurrency(payment.amount)}</Text>
+                </View>
+                <View style={styles.listCardRow}>
+                  <Text style={styles.listCardDate}>{payment.slug || '--'}</Text>
+                  <View style={styles.listCardStatusRow}>
+                    <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                    <Text style={[styles.listCardStatus, { color: statusColor }]}>{payment.status || '--'}</Text>
+                  </View>
+                </View>
+                <Text style={styles.listCardDate}>{formatDate(payment.date || payment.created_at || payment.createdAt)}</Text>
+              </View>
+            );
+          })
+        )}
+      </ScrollView>
+    );
+  };
+
+  // ---- Applications Tab (existing content) ----
+
+  const renderApplicationsTab = () => (
+    <>
       <Text style={styles.subtitle}>
         Pharmacy Applications ({pharmacies.length})
       </Text>
@@ -297,6 +721,50 @@ const AdminPanelScreen = ({ navigation }) => {
           </View>
         }
       />
+    </>
+  );
+
+  // ---- Render active tab content ----
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'Applications':
+        return renderApplicationsTab();
+      case 'Revenue':
+        return renderRevenueTab();
+      case 'Analytics':
+        return renderAnalyticsTab();
+      case 'Delivery Boys':
+        return renderDeliveryBoysTab();
+      case 'Payments':
+        return renderPaymentsTab();
+      default:
+        return null;
+    }
+  };
+
+  // ---- Main Render ----
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#20b1aa" />
+        <Text style={styles.loadingText}>Loading pharmacies...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Admin Panel</Text>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutBtnText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+
+      {renderTabBar()}
+      {renderTabContent()}
 
       {/* Reject Reason Modal */}
       <Modal
@@ -350,6 +818,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
   },
+  centeredTab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60,
+  },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
@@ -379,6 +853,210 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // Tab Bar
+  tabBar: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    maxHeight: 48,
+  },
+  tabBarContent: {
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  tab: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginRight: 4,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: '#20b1aa',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  tabTextActive: {
+    color: '#20b1aa',
+    fontWeight: '700',
+  },
+
+  // Tab content area
+  tabContent: {
+    flex: 1,
+  },
+  tabContentInner: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+
+  // Section titles
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+
+  // Summary cards
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 4,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  summaryNumber: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#20b1aa',
+    marginBottom: 4,
+  },
+  summaryNumberSmall: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#20b1aa',
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  // List cards (transactions, payments, signups)
+  listCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  listCardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  listCardName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
+    marginRight: 8,
+  },
+  listCardAmount: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#20b1aa',
+  },
+  listCardDate: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  listCardStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listCardStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    textTransform: 'capitalize',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+
+  // Funnel
+  funnelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  funnelLabel: {
+    width: 85,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  funnelBarBg: {
+    flex: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 6,
+    marginHorizontal: 8,
+    overflow: 'hidden',
+  },
+  funnelBar: {
+    height: '100%',
+    backgroundColor: '#20b1aa',
+    borderRadius: 6,
+  },
+  funnelCount: {
+    width: 36,
+    textAlign: 'right',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  // Status breakdown grid
+  statusGrid: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  statusItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  statusItemLabel: {
+    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+  },
+  statusItemCount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+
+  // Existing styles (Applications tab)
   subtitle: {
     fontSize: 16,
     fontWeight: '600',

@@ -381,6 +381,15 @@ const realPharmacyAPI = {
   listAllPharmacies: () => api.get('/pharmacies'),
   approvePharmacy: (id) => api.put(`/pharmacies/${id}/approve`),
   rejectPharmacy: (id, reason) => api.put(`/pharmacies/${id}/reject`, { reason }),
+
+  // Admin dashboard analytics
+  getRevenueSummary: () => api.get('/admin-dashboard/revenue/summary'),
+  getRevenueTransactions: () => api.get('/admin-dashboard/revenue/transactions'),
+  getPharmacyAnalytics: () => api.get('/admin-dashboard/analytics/pharmacies'),
+  getOnboardingFunnel: () => api.get('/admin-dashboard/analytics/onboarding-funnel'),
+  getDeliveryBoyOverview: () => api.get('/admin-dashboard/analytics/delivery-boys'),
+  getPaymentHistory: () => api.get('/admin-dashboard/payments/history'),
+  getPaymentSummary: () => api.get('/admin-dashboard/payments/summary'),
 };
 
 const mockPharmacyAPI = {

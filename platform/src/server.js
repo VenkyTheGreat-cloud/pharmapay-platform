@@ -23,6 +23,7 @@ const customerRegistryRoutes = require('./routes/customerRegistryRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
 const pharmacyRoutes = require('./routes/pharmacyRoutes');
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 
 // Initialize express app
 const app = express();
@@ -112,6 +113,7 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/config', require('./routes/configRoutes'));
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/pharmacies', pharmacyRoutes);
+app.use('/api/admin-dashboard', adminDashboardRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
