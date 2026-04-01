@@ -13,6 +13,9 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import HomeRouter from '../screens/HomeRouter';
 import MainNavigator from './MainNavigator';
 
+// Admin Screens
+import AdminPanelScreen from '../screens/AdminPanelScreen';
+
 // Pharmacy Owner Screens
 import PharmacySignupScreen from '../screens/pharmacy/PharmacySignupScreen';
 import PharmacyConfigureScreen from '../screens/pharmacy/PharmacyConfigureScreen';
@@ -45,6 +48,7 @@ const AppNavigator = () => {
         <Stack.Group>
           <Stack.Screen name="HomeRouter" component={HomeRouter} />
           <Stack.Screen name="Main" component={MainNavigator} />
+          <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
           <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
           <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />
           <Stack.Screen name="PharmacyPayment" component={PharmacyPaymentScreen} />

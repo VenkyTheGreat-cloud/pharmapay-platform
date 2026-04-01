@@ -39,8 +39,11 @@ const HomeRouter = ({ navigation }) => {
                 } else {
                     navigation.replace('PharmacyConfigure');
                 }
+            } else if (user?.role === 'admin' && (!status || status === 'none')) {
+                // Platform admin with no pharmacy record — go to admin panel
+                navigation.replace('AdminPanel');
             } else {
-                // Delivery boy or no pharmacy — go to main app
+                // Delivery boy or other — go to main app
                 navigation.replace('Main');
             }
         } catch {

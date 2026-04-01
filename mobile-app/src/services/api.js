@@ -376,6 +376,11 @@ const realPharmacyAPI = {
   updateAppName: (appName) => api.put('/pharmacies/mine/app-name', { app_name: appName }),
   initiatePayment: () => api.post('/pharmacies/mine/pay'),
   getBuildStatus: () => api.get('/pharmacies/mine/build-status'),
+
+  // Admin methods
+  listAllPharmacies: () => api.get('/pharmacies'),
+  approvePharmacy: (id) => api.put(`/pharmacies/${id}/approve`),
+  rejectPharmacy: (id, reason) => api.put(`/pharmacies/${id}/reject`, { reason }),
 };
 
 const mockPharmacyAPI = {
