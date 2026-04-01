@@ -45,7 +45,9 @@ const AdminPanelScreen = ({ navigation }) => {
     try {
       setError(null);
       const response = await pharmacyAPI.listAllPharmacies();
-      setPharmacies(response.data.data || response.data || []);
+      const data = response.data?.data || response.data;
+      const list = data?.pharmacies || (Array.isArray(data) ? data : []);
+      setPharmacies(list);
     } catch (err) {
       console.error('Failed to load pharmacies:', err);
       setError('Failed to load pharmacies. Pull down to retry.');
