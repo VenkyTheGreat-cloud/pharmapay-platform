@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Linking,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { pharmacyAPI } from '../../services/api';
 
@@ -34,7 +35,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
   const loadPharmacy = async () => {
     try {
       const res = await pharmacyAPI.getMyPharmacy();
-      const pharmacy = res.data;
+      const pharmacy = res.data?.data || res.data;
       if (pharmacy.app_name) {
         setAppName(pharmacy.app_name);
         setNameSaved(true);
@@ -65,25 +66,33 @@ const PharmacyPaymentScreen = ({ navigation }) => {
     }
   };
 
+  const [payError, setPayError] = useState('');
+
   const handlePay = async () => {
     if (!nameSaved) {
-      Alert.alert('Save App Name', 'Please save your app name before proceeding to payment.');
+      setPayError('Please save your app name before proceeding to payment.');
       return;
     }
     setPaying(true);
+    setPayError('');
     try {
       const res = await pharmacyAPI.initiatePayment();
-      const { paymentUrl } = res.data;
+      const data = res.data?.data || res.data;
+      const paymentUrl = data?.paymentUrl;
       if (paymentUrl) {
-        await Linking.openURL(paymentUrl);
-        // After payment, navigate to status
-        navigation.replace('PharmacyStatus');
+        // On web, use window.location to redirect (Linking.openURL may not work)
+        if (Platform.OS === 'web') {
+          window.location.href = paymentUrl;
+        } else {
+          await Linking.openURL(paymentUrl);
+          navigation.replace('PharmacyStatus');
+        }
       } else {
-        Alert.alert('Error', 'No payment URL received. Please try again.');
+        setPayError('No payment URL received. Please try again.');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Payment initiation failed.';
-      Alert.alert('Payment Error', msg);
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Payment initiation failed.';
+      setPayError(msg);
     } finally {
       setPaying(false);
     }
@@ -171,6 +180,12 @@ const PharmacyPaymentScreen = ({ navigation }) => {
           <Text style={styles.payBtnText}>Pay Now via SwinkPay</Text>
         )}
       </TouchableOpacity>
+
+      {payError ? (
+        <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 8, padding: 12, marginTop: 12 }}>
+          <Text style={{ color: '#DC2626', fontSize: 14 }}>{payError}</Text>
+        </View>
+      ) : null}
 
       <Text style={styles.secureText}>
         Payment is processed securely through SwinkPay. You will be redirected to complete payment.
