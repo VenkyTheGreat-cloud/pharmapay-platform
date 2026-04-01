@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert as RNAlert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -14,29 +15,15 @@ const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    // RNAlert.alert doesn't work on web — use confirm fallback
-    if (typeof window !== 'undefined' && !RNAlert.alert) {
+    if (Platform.OS === 'web') {
       if (window.confirm('Are you sure you want to logout?')) {
         logout();
       }
-      return;
-    }
-    try {
+    } else {
       RNAlert.alert('Logout', 'Are you sure you want to logout?', [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-          },
-        },
+        { text: 'Logout', style: 'destructive', onPress: () => logout() },
       ]);
-    } catch {
-      // Fallback for web
-      if (window.confirm('Are you sure you want to logout?')) {
-        logout();
-      }
     }
   };
 
