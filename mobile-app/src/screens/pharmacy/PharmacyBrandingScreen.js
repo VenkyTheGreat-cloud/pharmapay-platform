@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { pharmacyAPI } from '../../services/api';
@@ -34,7 +35,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
   const loadBranding = async () => {
     try {
       const res = await pharmacyAPI.getMyPharmacy();
-      const pharmacy = res.data;
+      const pharmacy = res.data?.data || res.data;
       if (pharmacy.primary_color) {
         setPrimaryColor(pharmacy.primary_color);
         setHexInput(pharmacy.primary_color);
@@ -80,17 +81,32 @@ const PharmacyBrandingScreen = ({ navigation }) => {
     }
   };
 
+  const [uploadMessage, setUploadMessage] = useState('');
+
   const uploadLogo = async (uri) => {
     setUploadingLogo(true);
+    setUploadMessage('');
     try {
-      const filename = uri.split('/').pop();
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
       const formData = new FormData();
-      formData.append('logo', { uri, name: filename, type });
+
+      if (Platform.OS === 'web') {
+        // On web, fetch the blob from the data URI or object URL
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('logo', blob, 'logo.jpg');
+      } else {
+        // On native, use RN format
+        const filename = uri.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        formData.append('logo', { uri, name: filename, type });
+      }
+
       await pharmacyAPI.uploadLogo(formData);
-    } catch {
-      Alert.alert('Upload Failed', 'Could not upload logo. Please try again.');
+      setUploadMessage('Logo uploaded successfully!');
+    } catch (err) {
+      console.error('Logo upload error:', err);
+      setUploadMessage('Upload failed. Please try again.');
       setLogoUri(null);
     } finally {
       setUploadingLogo(false);
