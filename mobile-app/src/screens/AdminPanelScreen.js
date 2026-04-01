@@ -71,15 +71,26 @@ const AdminPanelScreen = ({ navigation }) => {
   };
 
   const handleApprove = async (id) => {
+    // Find the pharmacy to get its slug for the success message
+    const pharmacy = pharmacies.find(p => p.id === id);
+    const slug = pharmacy?.slug || '';
+
     const doApprove = async () => {
       setActionLoading(id);
       try {
         await pharmacyAPI.approvePharmacy(id);
         await fetchPharmacies();
-      } catch (err) {
-        const msg = err?.response?.data?.error || 'Failed to approve pharmacy.';
+        const successMsg = `Pharmacy "${pharmacy?.name || slug}" is now LIVE!\n\nStore: https://${slug}.pharmapay.swinkpay-fintech.com\nAdmin: https://${slug}.pharmapay.swinkpay-fintech.com/admin\nClient Code: ${slug.toUpperCase()}-01`;
         if (Platform.OS === 'web') {
-          window.alert(msg);
+          window.alert(successMsg);
+        } else {
+          const { Alert } = require('react-native');
+          Alert.alert('Approved!', successMsg);
+        }
+      } catch (err) {
+        const msg = err?.response?.data?.error?.message || err?.response?.data?.message || 'Failed to approve pharmacy.';
+        if (Platform.OS === 'web') {
+          window.alert('Error: ' + msg);
         } else {
           const { Alert } = require('react-native');
           Alert.alert('Error', msg);
@@ -90,12 +101,12 @@ const AdminPanelScreen = ({ navigation }) => {
     };
 
     if (Platform.OS === 'web') {
-      if (window.confirm('Approve this pharmacy application?')) {
+      if (window.confirm(`Approve "${pharmacy?.name || slug}" and make it LIVE?`)) {
         await doApprove();
       }
     } else {
       const { Alert } = require('react-native');
-      Alert.alert('Confirm', 'Approve this pharmacy application?', [
+      Alert.alert('Confirm', `Approve "${pharmacy?.name || slug}" and make it LIVE?`, [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Approve', onPress: doApprove },
       ]);
