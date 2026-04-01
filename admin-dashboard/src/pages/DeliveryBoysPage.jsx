@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { deliveryBoysAPI, marketplaceAPI } from '../services/api';
-import { UserCheck, UserX, Clock, Plus, Edit, Trash2, Truck, Handshake, Calendar, Check, X, Loader2 } from 'lucide-react';
+import { UserCheck, UserX, Clock, Plus, Edit, Trash2, Truck, ClipboardList, Calendar, Check, X, Loader2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
 
@@ -259,7 +259,7 @@ export default function DeliveryBoysPage() {
                                 : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
                         }`}
                     >
-                        <Handshake className="w-3.5 h-3.5" />
+                        <ClipboardList className="w-3.5 h-3.5" />
                         Applications
                     </button>
                 </div>
@@ -457,7 +457,7 @@ export default function DeliveryBoysPage() {
                                             <tr>
                                                 <td colSpan="6" className="px-6 py-12 text-center">
                                                     <div className="text-gray-400 text-sm">
-                                                        <Handshake className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                        <ClipboardList className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                                         <p>No applications found</p>
                                                     </div>
                                                 </td>
@@ -532,7 +532,7 @@ export default function DeliveryBoysPage() {
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
                         <div className="p-5 border-b border-gray-200">
                             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                <Handshake className="w-4 h-4 text-green-600" />
+                                <ClipboardList className="w-4 h-4 text-green-600" />
                                 Approve Application - {approveModal.application?.name || approveModal.application?.user_name}
                             </h3>
                         </div>
