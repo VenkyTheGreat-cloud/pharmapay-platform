@@ -40,7 +40,14 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Main" component={MainNavigator} />
+        <>
+          <Stack.Screen name="Main" component={MainNavigator} />
+          {/* Pharmacy owner screens accessible when authenticated */}
+          <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
+          <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />
+          <Stack.Screen name="PharmacyPayment" component={PharmacyPaymentScreen} />
+          <Stack.Screen name="PharmacyStatus" component={PharmacyStatusScreen} />
+        </>
       ) : (
         <>
           <Stack.Screen name="Landing" component={LandingScreen} />

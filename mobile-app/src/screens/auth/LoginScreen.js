@@ -53,6 +53,9 @@ const LoginScreen = ({ navigation }) => {
     if (!result.success) {
       setError(result.message || 'Login failed. Please check your credentials and try again.');
     }
+    // Note: successful login sets isAuthenticated=true in AuthContext,
+    // which triggers AppNavigator to show Main screen automatically.
+    // Pharmacy owners can access PharmacyStatus from their profile.
   };
 
   return (
