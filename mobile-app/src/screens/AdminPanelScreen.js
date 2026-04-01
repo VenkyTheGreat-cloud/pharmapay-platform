@@ -404,7 +404,10 @@ const AdminPanelScreen = ({ navigation }) => {
     }
 
     const summary = revenueSummary || {};
-    const planDistribution = summary.planDistribution || summary.plan_distribution || {};
+    const rawPlan = summary.planDistribution || summary.plan_distribution || [];
+    const planDistribution = Array.isArray(rawPlan)
+      ? rawPlan.reduce((acc, item) => { acc[item.plan] = parseInt(item.count) || 0; return acc; }, {})
+      : rawPlan;
 
     return (
       <ScrollView
@@ -482,7 +485,11 @@ const AdminPanelScreen = ({ navigation }) => {
 
     const funnel = onboardingFunnel || {};
     const analytics = pharmacyAnalytics || {};
-    const statusBreakdown = analytics.statusBreakdown || analytics.status_breakdown || {};
+    // API returns array [{status, count}], convert to object {status: count}
+    const rawStatus = analytics.statusBreakdown || analytics.status_breakdown || [];
+    const statusBreakdown = Array.isArray(rawStatus)
+      ? rawStatus.reduce((acc, item) => { acc[item.status] = parseInt(item.count) || 0; return acc; }, {})
+      : rawStatus;
     const recentSignups = analytics.recentSignups || analytics.recent_signups || [];
 
     return (
@@ -620,7 +627,10 @@ const AdminPanelScreen = ({ navigation }) => {
     }
 
     const summary = paymentSummary || {};
-    const revenueByPlan = summary.revenueByPlan || summary.revenue_by_plan || {};
+    const rawByPlan = summary.revenueByPlan || summary.revenue_by_plan || [];
+    const revenueByPlan = Array.isArray(rawByPlan)
+      ? rawByPlan.reduce((acc, item) => { acc[item.plan] = parseFloat(item.total) || 0; return acc; }, {})
+      : rawByPlan;
 
     return (
       <ScrollView
