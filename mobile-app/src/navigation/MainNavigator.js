@@ -10,6 +10,7 @@ import PaymentScreen from '../screens/payment/PaymentScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
+import PharmacyMarketplaceScreen from '../screens/marketplace/PharmacyMarketplaceScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -70,6 +71,8 @@ const MainNavigator = () => {
 
           if (route.name === 'Orders') {
             iconName = focused ? 'list-circle' : 'list-circle-outline';
+          } else if (route.name === 'Marketplace') {
+            iconName = focused ? 'storefront' : 'storefront-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person-circle' : 'person-circle-outline';
           }
@@ -82,6 +85,7 @@ const MainNavigator = () => {
       })}
     >
       <Tab.Screen name="Orders" component={OrdersStack} />
+      <Tab.Screen name="Marketplace" component={PharmacyMarketplaceScreen} />
       <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );

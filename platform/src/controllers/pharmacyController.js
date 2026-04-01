@@ -435,6 +435,14 @@ exports.paymentCallback = async (req, res, next) => {
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
             await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
 
+            // Auto-create pharmacy listing for marketplace
+            await query(
+                `INSERT INTO pharmacy_listings (slug, display_name, city, area, is_accepting_riders, plan, created_at)
+                 VALUES ($1, $2, '', '', true, $3, NOW())
+                 ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
+                [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan]
+            );
+
             logger.info('Payment successful, pharmacy set to live', { pharmacyId: pharmacy.id, slug });
 
             return res.redirect('https://pharmapay.swinkpay-fintech.com/build-status');

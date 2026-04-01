@@ -187,6 +187,14 @@ const realPharmacyAPI = {
     triggerBuild: (id) => api.post(`/pharmacies/${id}/build`),
 };
 
+const realMarketplaceAPI = {
+    getApplications: (params) => api.get('/marketplace/applications', { params }),
+    markF2F: (id) => api.put(`/marketplace/applications/${id}/f2f`),
+    approveWithTerms: (id, data) => api.put(`/marketplace/applications/${id}/approve`, data),
+    rejectApplication: (id, reason) => api.put(`/marketplace/applications/${id}/reject`, { reason }),
+    getMyDeliveryBoys: () => api.get('/marketplace/my-delivery-boys'),
+};
+
 const realConfigAPI = {
     get: () => api.get('/config'),
 };
@@ -744,6 +752,29 @@ const mockPharmacyAPI = {
     },
 };
 
+const mockMarketplaceAPI = {
+    getApplications: async () => {
+        await delay();
+        return { data: { success: true, data: [] } };
+    },
+    markF2F: async () => {
+        await delay();
+        return { data: { success: true, message: 'F2F marked successfully' } };
+    },
+    approveWithTerms: async () => {
+        await delay();
+        return { data: { success: true, message: 'Application approved successfully' } };
+    },
+    rejectApplication: async () => {
+        await delay();
+        return { data: { success: true, message: 'Application rejected successfully' } };
+    },
+    getMyDeliveryBoys: async () => {
+        await delay();
+        return { data: { success: true, data: [] } };
+    },
+};
+
 const mockConfigAPI = {
     get: async () => {
         await delay();
@@ -781,5 +812,6 @@ export const accessControlAPI = USE_MOCK_API ? mockAccessControlAPI : realAccess
 export const configAPI = USE_MOCK_API ? mockConfigAPI : realConfigAPI;
 export const reportsAPI = USE_MOCK_API ? mockReportsAPI : realReportsAPI;
 export const pharmacyAPI = USE_MOCK_API ? mockPharmacyAPI : realPharmacyAPI;
+export const marketplaceAPI = USE_MOCK_API ? mockMarketplaceAPI : realMarketplaceAPI;
 
 export default api;

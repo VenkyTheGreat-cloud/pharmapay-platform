@@ -30,6 +30,13 @@ export default {
     // Customers
     CUSTOMERS: '/customers',
     CUSTOMER_BY_ID: (id) => `/customers/${id}`,
+
+    // Marketplace
+    MARKETPLACE: {
+      PHARMACIES: '/marketplace/pharmacies',
+      MY_APPLICATIONS: '/marketplace/my-applications',
+      APPLY: '/marketplace/apply',
+    },
   },
 
   // Order Status (matching backend API)

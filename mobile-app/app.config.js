@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: 'PharmaPay Delivery',
-    slug: 'pharmapay-mobile',
+    name: 'SwinkPayPharma',
+    slug: 'swinkpaypharma',
     version: '1.0.0',
     orientation: 'portrait',
     userInterfaceStyle: 'light',
@@ -59,7 +59,7 @@ export default {
       ],
     ],
     extra: {
-      apiUrl: process.env.API_URL || 'https://pharmapay-api.onrender.com/api',
+      apiUrl: process.env.API_URL || 'https://pharmapay.swinkpay-fintech.com/api',
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
       eas: {
         projectId: 'a0686e3d-7909-4dc1-8d80-cb448a35e70e',

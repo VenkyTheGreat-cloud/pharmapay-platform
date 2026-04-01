@@ -171,6 +171,243 @@ exports.applyToPharmacy = async (req, res, next) => {
     }
 };
 
+// GET /api/marketplace/applications
+// Auth required — pharmacy owner views delivery boy applications
+exports.getApplications = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const { status } = req.query;
+
+        // Find pharmacy owned by this user
+        const pharmacyResult = await query(
+            `SELECT id FROM pharmacy_listings WHERE slug IN (SELECT slug FROM pharmacies WHERE owner_id = $1)`,
+            [ownerId]
+        );
+
+        if (pharmacyResult.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No pharmacy found for this owner'));
+        }
+
+        const pharmacyId = pharmacyResult.rows[0].id;
+
+        let sql = `
+            SELECT dbp.*, db.name, db.mobile, db.email, db.photo_url, db.address
+            FROM delivery_boy_pharmacies dbp
+            JOIN delivery_boys db ON dbp.delivery_boy_id = db.id
+            WHERE dbp.pharmacy_id = $1
+        `;
+        const params = [pharmacyId];
+
+        if (status) {
+            sql += ` AND dbp.status = $2`;
+            params.push(status);
+        }
+
+        sql += ` ORDER BY dbp.applied_at DESC`;
+
+        const result = await query(sql, params);
+
+        res.json(successResponse({ applications: result.rows, count: result.rows.length }));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// PUT /api/marketplace/applications/:id/f2f
+// Auth required — pharmacy owner marks face-to-face completed
+exports.markF2FCompleted = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const applicationId = req.params.id;
+
+        // Verify ownership
+        const pharmacyResult = await query(
+            `SELECT id FROM pharmacy_listings WHERE slug IN (SELECT slug FROM pharmacies WHERE owner_id = $1)`,
+            [ownerId]
+        );
+
+        if (pharmacyResult.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No pharmacy found for this owner'));
+        }
+
+        const pharmacyId = pharmacyResult.rows[0].id;
+
+        // Verify application belongs to this pharmacy
+        const appCheck = await query(
+            `SELECT id FROM delivery_boy_pharmacies WHERE id = $1 AND pharmacy_id = $2`,
+            [applicationId, pharmacyId]
+        );
+
+        if (appCheck.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Application not found'));
+        }
+
+        const result = await query(
+            `UPDATE delivery_boy_pharmacies SET f2f_completed = true, f2f_completed_at = NOW() WHERE id = $1 RETURNING *`,
+            [applicationId]
+        );
+
+        logger.info('F2F marked completed', { applicationId, pharmacyId, ownerId });
+
+        res.json(successResponse(result.rows[0], 'Face-to-face meeting marked as completed'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// PUT /api/marketplace/applications/:id/approve
+// Auth required — pharmacy owner approves application with terms
+exports.approveWithTerms = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const applicationId = req.params.id;
+        const { rate_per_km, base_rate, contract_period, terms_notes } = req.body;
+
+        // Validate contract_period
+        if (!['3_months', '6_months'].includes(contract_period)) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'contract_period must be 3_months or 6_months'));
+        }
+
+        // Verify ownership
+        const pharmacyResult = await query(
+            `SELECT id FROM pharmacy_listings WHERE slug IN (SELECT slug FROM pharmacies WHERE owner_id = $1)`,
+            [ownerId]
+        );
+
+        if (pharmacyResult.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No pharmacy found for this owner'));
+        }
+
+        const pharmacyId = pharmacyResult.rows[0].id;
+
+        // Verify application belongs to this pharmacy and F2F is completed
+        const appCheck = await query(
+            `SELECT id, delivery_boy_id, f2f_completed FROM delivery_boy_pharmacies WHERE id = $1 AND pharmacy_id = $2`,
+            [applicationId, pharmacyId]
+        );
+
+        if (appCheck.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Application not found'));
+        }
+
+        if (!appCheck.rows[0].f2f_completed) {
+            return res.status(400).json(errorResponse('F2F_REQUIRED', 'Face-to-face meeting must be completed before approval'));
+        }
+
+        // Calculate contract dates
+        const contractStart = new Date();
+        const contractEnd = new Date();
+        if (contract_period === '3_months') {
+            contractEnd.setMonth(contractEnd.getMonth() + 3);
+        } else {
+            contractEnd.setMonth(contractEnd.getMonth() + 6);
+        }
+
+        const result = await query(
+            `UPDATE delivery_boy_pharmacies
+             SET status = 'approved', rate_per_km = $1, base_rate = $2, contract_period = $3,
+                 contract_start = $4, contract_end = $5, terms_notes = $6,
+                 approved_at = NOW(), approved_by = $7, engagement_status = 'active'
+             WHERE id = $8
+             RETURNING *`,
+            [rate_per_km, base_rate, contract_period, contractStart, contractEnd, terms_notes, ownerId, applicationId]
+        );
+
+        // Activate the delivery boy
+        const deliveryBoyId = appCheck.rows[0].delivery_boy_id;
+        await query(`UPDATE delivery_boys SET is_active = true WHERE id = $1`, [deliveryBoyId]);
+
+        logger.info('Application approved with terms', { applicationId, pharmacyId, deliveryBoyId, contract_period });
+
+        res.json(successResponse(result.rows[0], 'Application approved'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// PUT /api/marketplace/applications/:id/reject
+// Auth required — pharmacy owner rejects application
+exports.rejectApplication = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+        const applicationId = req.params.id;
+        const { reason } = req.body;
+
+        if (!reason) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Rejection reason is required'));
+        }
+
+        // Verify ownership
+        const pharmacyResult = await query(
+            `SELECT id FROM pharmacy_listings WHERE slug IN (SELECT slug FROM pharmacies WHERE owner_id = $1)`,
+            [ownerId]
+        );
+
+        if (pharmacyResult.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No pharmacy found for this owner'));
+        }
+
+        const pharmacyId = pharmacyResult.rows[0].id;
+
+        // Verify application belongs to this pharmacy
+        const appCheck = await query(
+            `SELECT id FROM delivery_boy_pharmacies WHERE id = $1 AND pharmacy_id = $2`,
+            [applicationId, pharmacyId]
+        );
+
+        if (appCheck.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'Application not found'));
+        }
+
+        const result = await query(
+            `UPDATE delivery_boy_pharmacies SET status = 'rejected', rejection_reason = $1 WHERE id = $2 RETURNING *`,
+            [reason, applicationId]
+        );
+
+        logger.info('Application rejected', { applicationId, pharmacyId, reason });
+
+        res.json(successResponse(result.rows[0], 'Application rejected'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// GET /api/marketplace/my-delivery-boys
+// Auth required — pharmacy owner views their approved delivery boys
+exports.getMyDeliveryBoys = async (req, res, next) => {
+    try {
+        const ownerId = req.user.userId;
+
+        // Find pharmacy owned by this user
+        const pharmacyResult = await query(
+            `SELECT id FROM pharmacy_listings WHERE slug IN (SELECT slug FROM pharmacies WHERE owner_id = $1)`,
+            [ownerId]
+        );
+
+        if (pharmacyResult.rows.length === 0) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No pharmacy found for this owner'));
+        }
+
+        const pharmacyId = pharmacyResult.rows[0].id;
+
+        const result = await query(
+            `SELECT dbp.id, dbp.delivery_boy_id, dbp.status, dbp.rate_per_km, dbp.base_rate,
+                    dbp.contract_start, dbp.contract_end, dbp.contract_period,
+                    dbp.engagement_status, dbp.approved_at, dbp.f2f_completed, dbp.f2f_completed_at,
+                    db.name, db.mobile, db.email, db.photo_url, db.address
+             FROM delivery_boy_pharmacies dbp
+             JOIN delivery_boys db ON dbp.delivery_boy_id = db.id
+             WHERE dbp.pharmacy_id = $1 AND dbp.status = 'approved'
+             ORDER BY dbp.approved_at DESC`,
+            [pharmacyId]
+        );
+
+        res.json(successResponse({ deliveryBoys: result.rows, count: result.rows.length }));
+    } catch (error) {
+        next(error);
+    }
+};
+
 // GET /api/marketplace/my-applications
 // Auth required — delivery boy's own applications
 exports.getMyApplications = async (req, res, next) => {

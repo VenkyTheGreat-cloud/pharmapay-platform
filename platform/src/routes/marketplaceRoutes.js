@@ -22,4 +22,11 @@ router.get(
     marketplaceController.getMyApplications
 );
 
+// Pharmacy owner (admin) routes
+router.get('/applications', authenticateToken, authorizeRoles('admin'), marketplaceController.getApplications);
+router.put('/applications/:id/f2f', authenticateToken, authorizeRoles('admin'), marketplaceController.markF2FCompleted);
+router.put('/applications/:id/approve', authenticateToken, authorizeRoles('admin'), marketplaceController.approveWithTerms);
+router.put('/applications/:id/reject', authenticateToken, authorizeRoles('admin'), marketplaceController.rejectApplication);
+router.get('/my-delivery-boys', authenticateToken, authorizeRoles('admin'), marketplaceController.getMyDeliveryBoys);
+
 module.exports = router;

@@ -5,7 +5,7 @@ import CONFIG from '../config/api';
 // ============================================
 // 🔴 DISABLE REAL API - USE MOCK DATA ONLY
 // ============================================
-const USE_MOCK = true; // Set to false only when backend is ready
+const USE_MOCK = false; // Set to false only when backend is ready
 
 // ============================================
 // MOCK DATA
