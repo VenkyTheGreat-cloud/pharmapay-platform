@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
 // Auth Screens
+import LandingScreen from '../screens/LandingScreen';
 import RoleSelectScreen from '../screens/auth/RoleSelectScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
@@ -42,6 +43,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Main" component={MainNavigator} />
       ) : (
         <>
+          <Stack.Screen name="Landing" component={LandingScreen} />
           <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />

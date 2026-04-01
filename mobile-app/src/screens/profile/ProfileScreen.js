@@ -14,16 +14,30 @@ const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    RNAlert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
+    // RNAlert.alert doesn't work on web — use confirm fallback
+    if (typeof window !== 'undefined' && !RNAlert.alert) {
+      if (window.confirm('Are you sure you want to logout?')) {
+        logout();
+      }
+      return;
+    }
+    try {
+      RNAlert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+          },
         },
-      },
-    ]);
+      ]);
+    } catch {
+      // Fallback for web
+      if (window.confirm('Are you sure you want to logout?')) {
+        logout();
+      }
+    }
   };
 
   const menuItems = [
