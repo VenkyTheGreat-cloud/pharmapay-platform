@@ -85,7 +85,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await apiService.login(email, password);
-      const { token, user: userData } = response.data;
+      // API returns { success, data: { token, refreshToken, user } }
+      const responseData = response.data?.data || response.data;
+      const { token, user: userData } = responseData;
+
+      if (!token) {
+        return { success: false, message: 'Login failed. No token received.' };
+      }
 
       // Save token and user data
       await storage.saveToken(token);
