@@ -38,7 +38,7 @@ const RoleSelectScreen = ({ navigation }) => {
         >
           <Text style={styles.roleEmoji}>🏪</Text>
           <Text style={[styles.roleTitle, styles.roleTitleOutline]}>I own a pharmacy</Text>
-          <Text style={styles.roleDesc}>Set up and manage your pharmacy</Text>
+          <Text style={[styles.roleDesc, { color: '#6B7280' }]}>Set up and manage your pharmacy</Text>
         </TouchableOpacity>
       </View>
     </View>

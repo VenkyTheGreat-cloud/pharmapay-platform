@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, TextInput, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, TextInput, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const Input = ({
   label,
@@ -15,27 +16,43 @@ const Input = ({
   style,
   ...props
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = secureTextEntry;
+
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[
-          styles.input,
-          multiline && styles.multiline,
-          error && styles.inputError,
-          !editable && styles.disabled,
-        ]}
-        value={value || ''}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        editable={editable}
-        {...props}
-      />
+      <View style={[styles.inputRow, error && styles.inputError, !editable && styles.disabled]}>
+        <TextInput
+          style={[
+            styles.input,
+            multiline && styles.multiline,
+            isPassword && { paddingRight: 44 },
+          ]}
+          value={value || ''}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          secureTextEntry={isPassword && !showPassword}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          editable={editable}
+          {...props}
+        />
+        {isPassword && (
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeButton}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color="#6B7280"
+            />
+          </TouchableOpacity>
+        )}
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -51,15 +68,21 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 6,
   },
-  input: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 8,
+  },
+  input: {
+    flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
     color: '#111827',
+    outlineStyle: 'none',
   },
   multiline: {
     minHeight: 80,
@@ -75,7 +98,10 @@ const styles = StyleSheet.create({
   },
   disabled: {
     backgroundColor: '#E5E7EB',
-    color: '#6B7280',
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
 });
 
