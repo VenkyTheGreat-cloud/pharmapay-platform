@@ -45,7 +45,8 @@ const PharmacySignupScreen = ({ navigation }) => {
     slugTimer.current = setTimeout(async () => {
       try {
         const res = await pharmacyAPI.checkSlug(slug);
-        setSlugStatus(res.data.available ? 'available' : 'taken');
+        const available = res.data?.data?.available ?? res.data?.available;
+        setSlugStatus(available ? 'available' : 'taken');
       } catch {
         setSlugStatus(null);
       }
