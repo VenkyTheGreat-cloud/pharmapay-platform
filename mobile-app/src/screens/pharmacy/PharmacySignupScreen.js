@@ -153,14 +153,22 @@ const PharmacySignupScreen = ({ navigation }) => {
       <View style={styles.field}>
         <Text style={styles.label}>Mobile</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, form.mobile.length > 0 && form.mobile.length < 10 && { borderColor: '#EF4444' }]}
           placeholder="10-digit mobile number"
           placeholderTextColor="#9CA3AF"
           value={form.mobile}
-          onChangeText={(v) => updateField('mobile', v)}
+          onChangeText={(v) => {
+            const digits = v.replace(/[^0-9]/g, '');
+            updateField('mobile', digits);
+          }}
           keyboardType="phone-pad"
           maxLength={10}
         />
+        {form.mobile.length > 0 && form.mobile.length < 10 && (
+          <Text style={{ color: '#EF4444', fontSize: 12, marginTop: 4 }}>
+            Must be exactly 10 digits ({form.mobile.length}/10)
+          </Text>
+        )}
       </View>
 
       <View style={styles.field}>
@@ -302,6 +310,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: '#111827',
+    outlineStyle: 'none',
   },
   slugRow: {
     flexDirection: 'row',
