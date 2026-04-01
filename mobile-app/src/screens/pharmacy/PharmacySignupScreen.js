@@ -23,6 +23,7 @@ const PharmacySignupScreen = ({ navigation }) => {
   });
   const [slugStatus, setSlugStatus] = useState(null); // null | 'checking' | 'available' | 'taken'
   const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
   const slugTimer = useRef(null);
 
   const generateSlug = (name) => {
@@ -70,7 +71,7 @@ const PharmacySignupScreen = ({ navigation }) => {
   const validate = () => {
     if (!form.ownerName.trim()) return 'Owner name is required';
     if (!form.email.trim() || !form.email.includes('@')) return 'Valid email is required';
-    if (!form.mobile.trim() || form.mobile.length < 10) return 'Valid mobile number is required';
+    if (!form.mobile.trim() || !/^\d{10}$/.test(form.mobile)) return 'Mobile number must be exactly 10 digits';
     if (!form.password || form.password.length < 6) return 'Password must be at least 6 characters';
     if (!form.pharmacyName.trim()) return 'Pharmacy name is required';
     if (!form.slug || form.slug.length < 3) return 'Slug must be at least 3 characters';
@@ -81,20 +82,23 @@ const PharmacySignupScreen = ({ navigation }) => {
   const handleSignup = async () => {
     const error = validate();
     if (error) {
-      Alert.alert('Validation Error', error);
+      setMessage({ type: 'error', text: error });
       return;
     }
     setSubmitting(true);
+    setMessage({ type: '', text: '' });
     try {
       const res = await pharmacyAPI.signup(form);
-      const { token } = res.data;
+      const data = res.data?.data || res.data;
+      const token = data?.token;
       if (token) {
         await AsyncStorage.setItem('token', token);
       }
-      navigation.replace('PharmacyConfigure');
+      setMessage({ type: 'success', text: 'Account created successfully! Redirecting...' });
+      setTimeout(() => navigation.replace('PharmacyConfigure'), 1500);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Signup failed. Please try again.';
-      Alert.alert('Signup Error', msg);
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Signup failed. Please try again.';
+      setMessage({ type: 'error', text: msg });
     } finally {
       setSubmitting(false);
     }
@@ -105,12 +109,20 @@ const PharmacySignupScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <Text style={styles.backText}>Back</Text>
+      <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={styles.backBtn}>
+        <Text style={styles.backText}>← Back to Home</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Register Your Pharmacy</Text>
-      <Text style={styles.subtitle}>Set up your pharmacy on PharmaPay</Text>
+      <Text style={styles.subtitle}>Set up your pharmacy on SwinkPayPharma</Text>
+
+      {message.text ? (
+        <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
+          <Text style={[styles.messageText, message.type === 'error' ? styles.errorText : styles.successText]}>
+            {message.text}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.field}>
         <Text style={styles.label}>Owner Name</Text>
@@ -245,7 +257,31 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#6B7280',
-    marginBottom: 28,
+    marginBottom: 16,
+  },
+  messageBox: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  successBox: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  messageText: {
+    fontSize: 14,
+  },
+  errorText: {
+    color: '#DC2626',
+  },
+  successText: {
+    color: '#16A34A',
   },
   field: {
     marginBottom: 18,
