@@ -49,24 +49,26 @@ const PharmacyPaymentScreen = ({ navigation }) => {
     }
   };
 
+  const [payError, setPayError] = useState('');
+  const [nameError, setNameError] = useState('');
+
   const handleSaveAppName = async () => {
     if (!appName.trim()) {
-      Alert.alert('Required', 'Please enter an app name.');
+      setNameError('Please enter an app name.');
       return;
     }
     setSavingName(true);
+    setNameError('');
     try {
       await pharmacyAPI.updateAppName(appName.trim());
       setNameSaved(true);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to save app name.';
-      Alert.alert('Error', msg);
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to save app name.';
+      setNameError(msg);
     } finally {
       setSavingName(false);
     }
   };
-
-  const [payError, setPayError] = useState('');
 
   const handlePay = async () => {
     if (!nameSaved) {
@@ -146,6 +148,9 @@ const PharmacyPaymentScreen = ({ navigation }) => {
             )}
           </TouchableOpacity>
         </View>
+        {nameError ? (
+          <Text style={{ color: '#DC2626', fontSize: 13, marginTop: 6 }}>{nameError}</Text>
+        ) : null}
       </View>
 
       {/* Plan Summary */}
