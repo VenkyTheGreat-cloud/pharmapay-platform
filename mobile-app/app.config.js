@@ -41,7 +41,15 @@ export default {
         },
       },
     },
-    web: {},
+    web: {
+      bundler: 'metro',
+      output: 'single',
+      display: 'standalone',
+      startUrl: '/',
+      scope: '/',
+      themeColor: '#20b1aa',
+      favicon: './assets/favicon.png',
+    },
     plugins: [
       [
         'expo-location',

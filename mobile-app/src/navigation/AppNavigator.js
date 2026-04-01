@@ -11,6 +11,13 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 // Main Navigation
 import MainNavigator from './MainNavigator';
 
+// Pharmacy Owner Screens
+import PharmacySignupScreen from '../screens/pharmacy/PharmacySignupScreen';
+import PharmacyConfigureScreen from '../screens/pharmacy/PharmacyConfigureScreen';
+import PharmacyBrandingScreen from '../screens/pharmacy/PharmacyBrandingScreen';
+import PharmacyPaymentScreen from '../screens/pharmacy/PharmacyPaymentScreen';
+import PharmacyStatusScreen from '../screens/pharmacy/PharmacyStatusScreen';
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -38,6 +45,11 @@ const AppNavigator = () => {
           <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="PharmacySignup" component={PharmacySignupScreen} />
+          <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
+          <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />
+          <Stack.Screen name="PharmacyPayment" component={PharmacyPaymentScreen} />
+          <Stack.Screen name="PharmacyStatus" component={PharmacyStatusScreen} />
         </>
       )}
     </Stack.Navigator>

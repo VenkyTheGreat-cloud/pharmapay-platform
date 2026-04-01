@@ -361,9 +361,49 @@ const realApiService = {
 };
 
 // ============================================
+// PHARMACY API SERVICE
+// ============================================
+const realPharmacyAPI = {
+  signup: (data) => api.post('/pharmacies/signup', data),
+  checkSlug: (slug) => api.get(`/pharmacies/check-slug/${slug}`),
+  getMyPharmacy: () => api.get('/pharmacies/mine'),
+  updateConfig: (data) => api.put('/pharmacies/mine/config', data),
+  updateBranding: (data) => api.put('/pharmacies/mine/branding', data),
+  uploadLogo: (formData) =>
+    api.post('/pharmacies/mine/branding/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateAppName: (appName) => api.put('/pharmacies/mine/app-name', { app_name: appName }),
+  initiatePayment: () => api.post('/pharmacies/mine/pay'),
+  getBuildStatus: () => api.get('/pharmacies/mine/build-status'),
+};
+
+const mockPharmacyAPI = {
+  signup: async (data) => {
+    await delay(800);
+    return { data: { token: 'mock-pharmacy-token-' + Date.now(), pharmacy: { id: 1, name: data.pharmacyName, slug: data.slug } } };
+  },
+  checkSlug: async (slug) => {
+    await delay(400);
+    return { data: { available: slug !== 'taken-slug' } };
+  },
+  getMyPharmacy: async () => {
+    await delay(300);
+    return { data: { id: 1, name: 'Mock Pharmacy', plan: 'starter', features: {}, status: 'pending_approval' } };
+  },
+  updateConfig: async (data) => { await delay(500); return { data: { success: true } }; },
+  updateBranding: async (data) => { await delay(500); return { data: { success: true } }; },
+  uploadLogo: async () => { await delay(500); return { data: { url: 'https://example.com/logo.png' } }; },
+  updateAppName: async (appName) => { await delay(300); return { data: { success: true } }; },
+  initiatePayment: async () => { await delay(500); return { data: { paymentUrl: 'https://pay.swinkpay.com/mock' } }; },
+  getBuildStatus: async () => { await delay(300); return { data: { status: 'pending_approval' } }; },
+};
+
+// ============================================
 // EXPORT - MOCK OR REAL
 // ============================================
 const apiService = USE_MOCK ? mockApiService : realApiService;
+export const pharmacyAPI = USE_MOCK ? mockPharmacyAPI : realPharmacyAPI;
 
 // Big warning in console
 if (USE_MOCK) {

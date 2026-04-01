@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ROLE_KEY = 'pharma_user_role';
@@ -11,7 +11,7 @@ const RoleSelectScreen = ({ navigation }) => {
   };
 
   const handlePharmacyOwner = () => {
-    Linking.openURL('https://pharmapay.swinkpay-fintech.com');
+    navigation.navigate('PharmacySignup');
   };
 
   return (
@@ -34,7 +34,7 @@ const RoleSelectScreen = ({ navigation }) => {
         >
           <Text style={styles.roleEmoji}>🏪</Text>
           <Text style={[styles.roleTitle, styles.roleTitleOutline]}>I own a pharmacy</Text>
-          <Text style={styles.roleDesc}>Manage your store on the web</Text>
+          <Text style={styles.roleDesc}>Set up and manage your pharmacy</Text>
         </TouchableOpacity>
       </View>
     </View>
