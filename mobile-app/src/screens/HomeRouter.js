@@ -35,7 +35,7 @@ const HomeRouter = ({ navigation }) => {
                 } else if (status === 'submitted' || status === 'approved' || status === 'building') {
                     navigation.replace('PharmacyStatus');
                 } else if (status === 'live') {
-                    navigation.replace('Main');
+                    navigation.replace('PharmacyStatus');
                 } else {
                     navigation.replace('PharmacyConfigure');
                 }
