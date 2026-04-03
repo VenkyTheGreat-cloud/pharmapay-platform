@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
 
     // CTA
     ctaContainer: { paddingHorizontal: 24, paddingVertical: 24, gap: 12 },
-    primaryButton: { backgroundColor: '#20b1aa', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    primaryButton: { backgroundColor: '#20b1aa', paddingVertical: 18, paddingHorizontal: 32, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%' },
+    primaryButtonText: { color: '#fff', fontSize: 18, fontWeight: '700' },
     secondaryButton: { borderWidth: 2, borderColor: '#20b1aa', paddingVertical: 14, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     secondaryButtonText: { color: '#20b1aa', fontSize: 14, fontWeight: '600' },
 

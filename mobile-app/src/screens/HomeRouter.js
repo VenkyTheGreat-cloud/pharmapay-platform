@@ -21,10 +21,9 @@ const HomeRouter = ({ navigation }) => {
 
     const route = async () => {
         try {
-            let status = pharmacyStatus;
-
-            // If admin and status not yet checked, check now
-            if (user?.role === 'admin' && (!status || status === null)) {
+            // Always check fresh pharmacy status for admin users
+            let status = 'none';
+            if (user?.role === 'admin') {
                 status = await checkPharmacyStatus();
             }
 

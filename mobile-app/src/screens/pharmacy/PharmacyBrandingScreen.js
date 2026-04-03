@@ -209,9 +209,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
           <Text style={styles.previewTitle}>Your Pharmacy</Text>
         </View>
         <View style={styles.previewBody}>
-          <TouchableOpacity style={[styles.previewButton, { backgroundColor: primaryColor }]}>
-            <Text style={styles.previewButtonText}>Order Now</Text>
-          </TouchableOpacity>
+          <Text style={{ fontSize: 13, color: '#6B7280' }}>Your pharmacy's branded storefront</Text>
         </View>
       </View>
 
