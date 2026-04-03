@@ -103,7 +103,7 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 export const handleApiError = (error) => {
   if (error.response) {
     // Server responded with error
-    return error.response.data?.message || 'An error occurred';
+    return error.response.data?.error?.message || error.response.data?.message || 'An error occurred';
   } else if (error.request) {
     // Request made but no response
     return 'Network error. Please check your connection.';

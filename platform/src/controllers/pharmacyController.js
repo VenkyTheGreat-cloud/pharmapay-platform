@@ -320,15 +320,16 @@ exports.initiatePayment = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Pharmacy not found'));
         }
 
-        // Calculate setup fee based on plan
-        const setupFees = {
-            starter: 2000,
-            growth: 5000,
-            enterprise: 10000
+        // Calculate total first payment: setup fee + first month subscription
+        const pricing = {
+            starter: { setup: 2000, monthly: 999 },
+            growth: { setup: 5000, monthly: 2499 },
+            enterprise: { setup: 10000, monthly: 5999 }
         };
 
         const plan = pharmacy.plan || 'starter';
-        const amount = setupFees[plan];
+        const planPricing = pricing[plan];
+        const amount = planPricing ? (planPricing.setup + planPricing.monthly) : null;
 
         if (!amount) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid plan'));

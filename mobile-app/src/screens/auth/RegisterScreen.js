@@ -135,6 +135,11 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const showPhotoOptions = () => {
+    // On web, just open file picker directly (no camera, no Alert)
+    if (Platform.OS === 'web') {
+      pickImage();
+      return;
+    }
     RNAlert.alert('Profile Photo', 'Choose an option', [
       { text: 'Take Photo', onPress: takePhoto },
       { text: 'Choose from Library', onPress: pickImage },

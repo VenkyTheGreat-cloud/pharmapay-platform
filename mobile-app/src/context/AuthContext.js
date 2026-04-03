@@ -120,7 +120,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (registrationData) => {
     try {
       const response = await apiService.register(registrationData);
-      const { token, user: userData, message } = response.data;
+      const responseData = response.data?.data || response.data;
+      const { token, user: userData } = responseData || {};
+      const message = response.data?.message || responseData?.message;
 
       // If token is provided, user is approved and can login
       if (token) {
