@@ -7,8 +7,10 @@ import {
   ActivityIndicator,
   Linking,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { pharmacyAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_CONFIG = {
   pending_approval: {
@@ -49,6 +51,7 @@ const STATUS_CONFIG = {
 };
 
 const PharmacyStatusScreen = ({ navigation }) => {
+  const { logout } = useAuth();
   const [pharmacy, setPharmacy] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -92,10 +95,23 @@ const PharmacyStatusScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Back to Home */}
-      <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={{ marginBottom: 16 }}>
-        <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
-      </TouchableOpacity>
+      {/* Navigation */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <TouchableOpacity onPress={() => navigation.navigate('Landing')}>
+          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => {
+          if (Platform.OS === 'web') { logout(); } else {
+            const { Alert } = require('react-native');
+            Alert.alert('Logout', 'Are you sure?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Logout', style: 'destructive', onPress: logout },
+            ]);
+          }
+        }}>
+          <Text style={{ fontSize: 14, color: '#EF4444', fontWeight: '600' }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Status Card */}
       <View style={[styles.statusCard, { backgroundColor: config.bgColor, borderColor: config.color }]}>
