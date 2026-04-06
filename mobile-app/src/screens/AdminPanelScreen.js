@@ -12,6 +12,7 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { pharmacyAPI } from '../services/api';
@@ -873,9 +874,14 @@ const AdminPanelScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Admin Panel</Text>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutBtnText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={onRefresh}>
+            <Text style={styles.logoutBtnText}>Refresh</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutBtnText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {renderTabBar()}
@@ -949,7 +955,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 48 : 16,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 44) + 8 : 16,
     paddingBottom: 16,
     backgroundColor: '#20b1aa',
   },

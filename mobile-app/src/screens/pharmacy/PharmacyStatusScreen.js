@@ -57,14 +57,19 @@ const PharmacyStatusScreen = ({ navigation }) => {
 
   const loadStatus = useCallback(async () => {
     try {
-      const res = await pharmacyAPI.getBuildStatus();
+      // getMyPharmacy returns full pharmacy object with status field
+      const res = await pharmacyAPI.getMyPharmacy();
       const data = res.data?.data || res.data;
       setPharmacy(data);
     } catch {
-      // Try fallback
+      // Fallback to build status endpoint
       try {
-        const res = await pharmacyAPI.getMyPharmacy();
+        const res = await pharmacyAPI.getBuildStatus();
         const data = res.data?.data || res.data;
+        // getBuildStatus returns build_status, map to status
+        if (data.build_status && !data.status) {
+          data.status = data.build_status;
+        }
         setPharmacy(data);
       } catch {
         // Will show loading state
@@ -99,18 +104,10 @@ const PharmacyStatusScreen = ({ navigation }) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Navigation */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => navigation.navigate('Landing')}>
+        <TouchableOpacity onPress={() => logout()}>
           <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => {
-          if (Platform.OS === 'web') { logout(); } else {
-            const { Alert } = require('react-native');
-            Alert.alert('Logout', 'Are you sure?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Logout', style: 'destructive', onPress: logout },
-            ]);
-          }
-        }}>
+        <TouchableOpacity onPress={() => logout()}>
           <Text style={{ fontSize: 14, color: '#EF4444', fontWeight: '600' }}>Logout</Text>
         </TouchableOpacity>
       </View>
