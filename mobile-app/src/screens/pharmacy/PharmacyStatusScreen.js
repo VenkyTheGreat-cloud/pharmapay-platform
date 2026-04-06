@@ -58,12 +58,14 @@ const PharmacyStatusScreen = ({ navigation }) => {
   const loadStatus = useCallback(async () => {
     try {
       const res = await pharmacyAPI.getBuildStatus();
-      setPharmacy(res.data);
+      const data = res.data?.data || res.data;
+      setPharmacy(data);
     } catch {
       // Try fallback
       try {
         const res = await pharmacyAPI.getMyPharmacy();
-        setPharmacy(res.data);
+        const data = res.data?.data || res.data;
+        setPharmacy(data);
       } catch {
         // Will show loading state
       }

@@ -388,6 +388,8 @@ const realPharmacyAPI = {
   getPharmacyAnalytics: () => api.get('/admin-dashboard/analytics/pharmacies'),
   getOnboardingFunnel: () => api.get('/admin-dashboard/analytics/onboarding-funnel'),
   getDeliveryBoyOverview: () => api.get('/admin-dashboard/analytics/delivery-boys'),
+  listDeliveryBoys: () => api.get('/delivery-boys'),
+  approveDeliveryBoy: (id) => api.patch(`/delivery-boys/${id}/approve`),
   getPaymentHistory: () => api.get('/admin-dashboard/payments/history'),
   getPaymentSummary: () => api.get('/admin-dashboard/payments/summary'),
 };

@@ -59,7 +59,9 @@ const AdminPanelScreen = ({ navigation }) => {
 
   // Delivery Boys state
   const [deliveryBoyOverview, setDeliveryBoyOverview] = useState(null);
+  const [deliveryBoysList, setDeliveryBoysList] = useState([]);
   const [deliveryBoysLoading, setDeliveryBoysLoading] = useState(false);
+  const [deliveryBoyActionLoading, setDeliveryBoyActionLoading] = useState(null);
 
   // Payments state
   const [paymentSummary, setPaymentSummary] = useState(null);
@@ -318,12 +320,56 @@ const AdminPanelScreen = ({ navigation }) => {
   const fetchDeliveryBoysData = async () => {
     setDeliveryBoysLoading(true);
     try {
-      const res = await pharmacyAPI.getDeliveryBoyOverview();
-      setDeliveryBoyOverview(res.data?.data || res.data);
+      const [overviewRes, listRes] = await Promise.all([
+        pharmacyAPI.getDeliveryBoyOverview().catch(() => ({ data: null })),
+        pharmacyAPI.listDeliveryBoys().catch(() => ({ data: [] })),
+      ]);
+      setDeliveryBoyOverview(overviewRes.data?.data || overviewRes.data);
+      const listData = listRes.data?.data || listRes.data;
+      setDeliveryBoysList(Array.isArray(listData) ? listData : listData?.deliveryBoys || listData?.delivery_boys || []);
     } catch (err) {
       console.error('Failed to load delivery boys data:', err);
     } finally {
       setDeliveryBoysLoading(false);
+    }
+  };
+
+  const handleApproveDeliveryBoy = async (id, name) => {
+    const doApprove = async () => {
+      setDeliveryBoyActionLoading(id);
+      try {
+        await pharmacyAPI.approveDeliveryBoy(id);
+        await fetchDeliveryBoysData();
+        const msg = `Delivery boy "${name}" has been approved!`;
+        if (Platform.OS === 'web') {
+          window.alert(msg);
+        } else {
+          const { Alert } = require('react-native');
+          Alert.alert('Approved!', msg);
+        }
+      } catch (err) {
+        const msg = err?.response?.data?.error?.message || err?.response?.data?.message || 'Failed to approve delivery boy.';
+        if (Platform.OS === 'web') {
+          window.alert('Error: ' + msg);
+        } else {
+          const { Alert } = require('react-native');
+          Alert.alert('Error', msg);
+        }
+      } finally {
+        setDeliveryBoyActionLoading(null);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Approve delivery boy "${name}"?`)) {
+        await doApprove();
+      }
+    } else {
+      const { Alert } = require('react-native');
+      Alert.alert('Confirm', `Approve delivery boy "${name}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Approve', onPress: doApprove },
+      ]);
     }
   };
 
@@ -597,7 +643,66 @@ const AdminPanelScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Per Pharmacy</Text>
+        <Text style={styles.sectionTitle}>Delivery Boy Applications</Text>
+        {deliveryBoysList.length === 0 ? (
+          <Text style={styles.emptyText}>No delivery boys registered yet.</Text>
+        ) : (
+          deliveryBoysList.map((boy, index) => {
+            const isPending = !boy.is_approved && !boy.isApproved;
+            const isApproved = boy.is_approved || boy.isApproved;
+            const isLoading = deliveryBoyActionLoading === boy.id;
+            return (
+              <View key={boy.id || index} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{boy.name || 'Unnamed'}</Text>
+                  <View style={[styles.badge, {
+                    backgroundColor: isApproved ? '#10B98120' : '#F59E0B20',
+                    borderColor: isApproved ? '#10B981' : '#F59E0B',
+                  }]}>
+                    <Text style={[styles.badgeText, { color: isApproved ? '#10B981' : '#F59E0B' }]}>
+                      {isApproved ? 'Approved' : 'Pending'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.cardBody}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Email:</Text>
+                    <Text style={styles.detailValue}>{boy.email || '-'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Mobile:</Text>
+                    <Text style={styles.detailValue}>{boy.mobile || boy.phone || '-'}</Text>
+                  </View>
+                  {boy.address && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Address:</Text>
+                      <Text style={styles.detailValue}>{boy.address}</Text>
+                    </View>
+                  )}
+                </View>
+                {isPending && (
+                  isLoading ? (
+                    <ActivityIndicator size="small" color="#20b1aa" style={{ marginTop: 8 }} />
+                  ) : (
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity
+                        style={[styles.actionBtn, styles.approveBtn]}
+                        onPress={() => handleApproveDeliveryBoy(boy.id, boy.name)}
+                      >
+                        <Text style={styles.actionBtnText}>Approve</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )
+                )}
+                {isApproved && (
+                  <Text style={styles.statusNoteLive}>Approved {'\u2713'}</Text>
+                )}
+              </View>
+            );
+          })
+        )}
+
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Per Pharmacy</Text>
         {perPharmacy.length === 0 ? (
           <Text style={styles.emptyText}>No data available.</Text>
         ) : (
@@ -844,7 +949,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 40 : 16,
+    paddingTop: Platform.OS === 'android' ? 48 : 16,
     paddingBottom: 16,
     backgroundColor: '#20b1aa',
   },

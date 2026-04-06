@@ -112,7 +112,7 @@ const LoginScreen = ({ navigation }) => {
           />
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.navigate('RoleSelect')}
             style={styles.registerLink}
           >
             <Text style={styles.registerText}>

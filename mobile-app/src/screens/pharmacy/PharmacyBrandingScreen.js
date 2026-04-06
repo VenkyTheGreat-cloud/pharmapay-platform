@@ -17,6 +17,10 @@ import { pharmacyAPI } from '../../services/api';
 const PRESET_COLORS = [
   '#20b1aa', '#3B82F6', '#8B5CF6', '#EC4899',
   '#EF4444', '#F59E0B', '#10B981', '#1F2937',
+  '#6366F1', '#14B8A6', '#F97316', '#84CC16',
+  '#06B6D4', '#A855F7', '#E11D48', '#0EA5E9',
+  '#D946EF', '#059669', '#DC2626', '#7C3AED',
+  '#2563EB', '#CA8A04', '#BE185D', '#4F46E5',
 ];
 
 const PharmacyBrandingScreen = ({ navigation }) => {

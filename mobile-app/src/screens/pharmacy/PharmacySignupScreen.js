@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pharmacyAPI } from '../../services/api';
 
@@ -23,6 +24,7 @@ const PharmacySignupScreen = ({ navigation }) => {
   });
   const [slugStatus, setSlugStatus] = useState(null); // null | 'checking' | 'available' | 'taken'
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const slugTimer = useRef(null);
 
@@ -173,14 +175,27 @@ const PharmacySignupScreen = ({ navigation }) => {
 
       <View style={styles.field}>
         <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Min 6 characters"
-          placeholderTextColor="#9CA3AF"
-          value={form.password}
-          onChangeText={(v) => updateField('password', v)}
-          secureTextEntry
-        />
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={[styles.input, styles.passwordInput]}
+            placeholder="Min 6 characters"
+            placeholderTextColor="#9CA3AF"
+            value={form.password}
+            onChangeText={(v) => updateField('password', v)}
+            secureTextEntry={!showPassword}
+            autoComplete="new-password"
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeButton}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color="#6B7280"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.field}>
@@ -311,6 +326,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#111827',
     outlineStyle: 'none',
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 10,
+  },
+  passwordInput: {
+    flex: 1,
+    borderWidth: 0,
+  },
+  eyeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
   },
   slugRow: {
     flexDirection: 'row',

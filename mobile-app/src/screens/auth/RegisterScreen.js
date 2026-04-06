@@ -269,7 +269,7 @@ const RegisterScreen = ({ navigation }) => {
             label="Password"
             value={formData.password}
             onChangeText={(text) => updateField('password', text)}
-            placeholder="Create a password (min 6 characters)"
+            placeholder="Min 6 characters"
             secureTextEntry
             error={errors.password}
           />
@@ -278,7 +278,7 @@ const RegisterScreen = ({ navigation }) => {
             label="Confirm Password"
             value={formData.confirmPassword}
             onChangeText={(text) => updateField('confirmPassword', text)}
-            placeholder="Re-enter your password"
+            placeholder="Confirm password"
             secureTextEntry
             error={errors.confirmPassword}
           />

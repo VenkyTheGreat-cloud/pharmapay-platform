@@ -7,7 +7,7 @@ const ROLE_KEY = 'pharma_user_role';
 const RoleSelectScreen = ({ navigation }) => {
   const handleDeliveryBoy = async () => {
     await AsyncStorage.setItem(ROLE_KEY, 'delivery_boy');
-    navigation.replace('Login');
+    navigation.replace('Register');
   };
 
   const handlePharmacyOwner = () => {
