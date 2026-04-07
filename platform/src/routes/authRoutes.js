@@ -27,10 +27,15 @@ const otpVerifyValidation = [
     body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
 ];
 
+const resetPasswordValidation = [
+    body('email').trim().notEmpty().withMessage('Email is required').isEmail().normalizeEmail().withMessage('Valid email is required'),
+];
+
 // Public routes
 router.get('/admins-stores', authController.getAdminsAndStores);
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
+router.post('/reset-password', resetPasswordValidation, authController.resetPassword);
 router.post('/otp/send', otpSendValidation, authController.sendOTP);
 router.post('/otp/verify', otpVerifyValidation, authController.verifyOTP);
 router.post('/refresh', authController.refreshToken);

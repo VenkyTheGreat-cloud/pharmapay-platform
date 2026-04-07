@@ -432,4 +432,5 @@ if (USE_MOCK) {
   console.log('🌐 REAL API ENABLED - Backend connection active');
 }
 
+export { api as apiAxios };
 export default apiService;

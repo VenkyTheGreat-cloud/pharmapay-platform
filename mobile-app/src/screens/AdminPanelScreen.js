@@ -238,6 +238,19 @@ const AdminPanelScreen = ({ navigation }) => {
       return <Text style={styles.statusNoteLive}>Live {'\u2713'}</Text>;
     }
 
+    if (pharmacy.status === 'rejected') {
+      return (
+        <View>
+          {pharmacy.rejection_reason && (
+            <View style={{ backgroundColor: '#FEF2F2', borderRadius: 8, padding: 10, marginTop: 8, borderWidth: 1, borderColor: '#FECACA' }}>
+              <Text style={{ fontSize: 12, color: '#991B1B' }}>Reason: {pharmacy.rejection_reason}</Text>
+            </View>
+          )}
+          <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600', marginTop: 8 }}>Rejected</Text>
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -497,16 +510,16 @@ const AdminPanelScreen = ({ navigation }) => {
           revenueTransactions.map((tx, index) => (
             <View key={tx.id || index} style={styles.listCard}>
               <View style={styles.listCardRow}>
-                <Text style={styles.listCardName}>{tx.pharmacyName || tx.pharmacy_name || 'Unknown'}</Text>
-                <Text style={styles.listCardAmount}>{formatCurrency(tx.amount)}</Text>
+                <Text style={styles.listCardName}>{tx.name || tx.pharmacyName || tx.pharmacy_name || 'Unknown'}</Text>
+                <Text style={styles.listCardAmount}>{formatCurrency(tx.amount || tx.payment_amount)}</Text>
               </View>
               <View style={styles.listCardRow}>
-                <Text style={styles.listCardDate}>{formatDate(tx.date || tx.created_at)}</Text>
+                <Text style={styles.listCardDate}>{formatDate(tx.date || tx.payment_date || tx.created_at)}</Text>
                 <View style={[
                   styles.statusDot,
-                  { backgroundColor: tx.status === 'success' || tx.status === 'completed' ? '#10B981' : tx.status === 'pending' ? '#F59E0B' : '#EF4444' },
+                  { backgroundColor: (tx.status || tx.payment_status) === 'success' || (tx.status || tx.payment_status) === 'completed' || (tx.status || tx.payment_status) === 'paid' ? '#10B981' : (tx.status || tx.payment_status) === 'pending' ? '#F59E0B' : '#EF4444' },
                 ]} />
-                <Text style={styles.listCardStatus}>{tx.status || '--'}</Text>
+                <Text style={styles.listCardStatus}>{tx.status || tx.payment_status || '--'}</Text>
               </View>
             </View>
           ))
@@ -530,7 +543,11 @@ const AdminPanelScreen = ({ navigation }) => {
       );
     }
 
-    const funnel = onboardingFunnel || {};
+    // API returns { funnel: [{stage, count}] } - convert to { signed_up: N, configured: N, ... }
+    const rawFunnel = onboardingFunnel?.funnel || onboardingFunnel || {};
+    const funnel = Array.isArray(rawFunnel)
+      ? rawFunnel.reduce((acc, item) => { acc[item.stage] = parseInt(item.count) || 0; return acc; }, {})
+      : rawFunnel;
     const analytics = pharmacyAnalytics || {};
     // API returns array [{status, count}], convert to object {status: count}
     const rawStatus = analytics.statusBreakdown || analytics.status_breakdown || [];
@@ -955,7 +972,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 44) + 8 : 16,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 48) + 12 : Platform.OS === 'web' ? 16 : 8,
     paddingBottom: 16,
     backgroundColor: '#20b1aa',
   },

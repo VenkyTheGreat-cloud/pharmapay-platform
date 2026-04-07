@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
 const LandingScreen = ({ navigation }) => {
@@ -45,7 +46,7 @@ const LandingScreen = ({ navigation }) => {
                 {/* Pharmacy Owner Card */}
                 <TouchableOpacity
                     style={styles.roleCard}
-                    onPress={() => navigation.navigate('RoleSelect')}
+                    onPress={() => navigation.navigate('PharmacySignup')}
                 >
                     <View style={[styles.roleIcon, { backgroundColor: '#E0F7F6' }]}>
                         <Ionicons name="storefront-outline" size={32} color="#20b1aa" />
@@ -67,7 +68,10 @@ const LandingScreen = ({ navigation }) => {
                 {/* Delivery Boy Card */}
                 <TouchableOpacity
                     style={styles.roleCard}
-                    onPress={() => navigation.navigate('RoleSelect')}
+                    onPress={async () => {
+                        await AsyncStorage.setItem('pharma_user_role', 'delivery_boy');
+                        navigation.navigate('Register');
+                    }}
                 >
                     <View style={[styles.roleIcon, { backgroundColor: '#FFF4E0' }]}>
                         <Ionicons name="bicycle-outline" size={32} color="#F59E0B" />

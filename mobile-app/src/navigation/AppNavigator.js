@@ -8,6 +8,7 @@ import LandingScreen from '../screens/LandingScreen';
 import RoleSelectScreen from '../screens/auth/RoleSelectScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 // Main Navigation
 import HomeRouter from '../screens/HomeRouter';
@@ -64,6 +65,7 @@ const AppNavigator = () => {
           <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
           <Stack.Screen name="Terms" component={TermsScreen} />
           <Stack.Screen name="PharmacySignup" component={PharmacySignupScreen} />

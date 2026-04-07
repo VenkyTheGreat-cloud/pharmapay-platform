@@ -381,6 +381,67 @@ exports.changePassword = async (req, res, next) => {
     }
 };
 
+// Reset password (public endpoint - forgot password)
+exports.resetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Email is required'));
+        }
+
+        const DeliveryBoy = require('../models/DeliveryBoy');
+
+        // Check users table first
+        let user = await User.findByEmailOrMobile(email);
+        let userType = 'user';
+
+        // If not found in users, check delivery_boys
+        if (!user) {
+            user = await DeliveryBoy.findByEmailOrMobile(email);
+            userType = 'delivery_boy';
+        }
+
+        if (!user) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No account found with that email'));
+        }
+
+        // Generate random 8-character alphanumeric temporary password
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let tempPassword = '';
+        for (let i = 0; i < 8; i++) {
+            tempPassword += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        // Hash the temporary password
+        const password_hash = await AuthService.hashPassword(tempPassword);
+
+        // Update password in the appropriate table
+        if (userType === 'delivery_boy') {
+            await DeliveryBoy.update(user.id, { password_hash });
+        } else {
+            await User.update(user.id, { password_hash });
+        }
+
+        // Log the temporary password (no email service available)
+        logger.info('Password reset', {
+            userId: user.id,
+            userType,
+            email: user.email,
+            tempPassword
+        });
+
+        res.json(successResponse(null, 'Password has been reset. Please check your email for the temporary password.'));
+    } catch (error) {
+        logger.error('Password reset error', {
+            error: error.message,
+            email: req.body?.email,
+            stack: error.stack
+        });
+        next(error);
+    }
+};
+
 // Verify token
 exports.verify = async (req, res, next) => {
     try {
