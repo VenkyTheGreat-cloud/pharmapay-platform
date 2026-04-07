@@ -998,11 +998,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
-    maxHeight: 48,
+    flexGrow: 0,
   },
   tabBarContent: {
     paddingHorizontal: 12,
-    alignItems: 'center',
   },
   tab: {
     paddingHorizontal: 16,
