@@ -484,7 +484,7 @@ const AdminPanelScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>Active Pharmacies</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryNumber}>{formatCurrency(summary.totalRevenue ?? summary.total_revenue)}</Text>
+            <Text style={styles.summaryNumber}>{formatCurrency(summary.totalRevenue ?? summary.total_revenue ?? summary.total_setup_fees_collected)}</Text>
             <Text style={styles.summaryLabel}>Total Revenue</Text>
           </View>
           <View style={styles.summaryCard}>
@@ -646,7 +646,7 @@ const AdminPanelScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>Total</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryNumber}>{summary.active ?? '--'}</Text>
+            <Text style={styles.summaryNumber}>{summary.active ?? summary.active_delivery_boys ?? '--'}</Text>
             <Text style={styles.summaryLabel}>Active</Text>
           </View>
         </View>
@@ -666,8 +666,8 @@ const AdminPanelScreen = ({ navigation }) => {
           <Text style={styles.emptyText}>No delivery boys registered yet.</Text>
         ) : (
           deliveryBoysList.map((boy, index) => {
-            const isPending = !boy.is_approved && !boy.isApproved;
-            const isApproved = boy.is_approved || boy.isApproved;
+            const isApproved = boy.status === 'approved' || boy.is_approved || boy.isApproved;
+            const isPending = !isApproved;
             const isLoading = deliveryBoyActionLoading === boy.id;
             return (
               <View key={boy.id || index} style={styles.card}>
@@ -750,9 +750,9 @@ const AdminPanelScreen = ({ navigation }) => {
     }
 
     const summary = paymentSummary || {};
-    const rawByPlan = summary.revenueByPlan || summary.revenue_by_plan || [];
+    const rawByPlan = summary.revenueByPlan || summary.revenue_by_plan || summary.by_plan || [];
     const revenueByPlan = Array.isArray(rawByPlan)
-      ? rawByPlan.reduce((acc, item) => { acc[item.plan] = parseFloat(item.total) || 0; return acc; }, {})
+      ? rawByPlan.reduce((acc, item) => { acc[item.plan] = parseFloat(item.total || item.collected) || 0; return acc; }, {})
       : rawByPlan;
 
     return (
@@ -770,11 +770,11 @@ const AdminPanelScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>Total Collected</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryNumber, { color: '#F59E0B' }]}>{formatCurrency(summary.pending)}</Text>
+            <Text style={[styles.summaryNumber, { color: '#F59E0B' }]}>{formatCurrency(summary.pending ?? summary.total_pending)}</Text>
             <Text style={styles.summaryLabel}>Pending</Text>
           </View>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryNumber, { color: '#EF4444' }]}>{formatCurrency(summary.failed)}</Text>
+            <Text style={[styles.summaryNumber, { color: '#EF4444' }]}>{formatCurrency(summary.failed ?? summary.total_failed)}</Text>
             <Text style={styles.summaryLabel}>Failed</Text>
           </View>
         </View>
@@ -794,25 +794,26 @@ const AdminPanelScreen = ({ navigation }) => {
           <Text style={styles.emptyText}>No payments yet.</Text>
         ) : (
           paymentHistory.map((payment, index) => {
-            const statusColor = payment.status === 'success' || payment.status === 'completed'
+            const pStatus = payment.status || payment.payment_status || '--';
+            const statusColor = pStatus === 'success' || pStatus === 'completed' || pStatus === 'paid'
               ? '#10B981'
-              : payment.status === 'pending'
+              : pStatus === 'pending'
                 ? '#F59E0B'
                 : '#EF4444';
             return (
               <View key={payment.id || index} style={styles.listCard}>
                 <View style={styles.listCardRow}>
                   <Text style={styles.listCardName}>{payment.name || payment.pharmacyName || payment.pharmacy_name || 'Unknown'}</Text>
-                  <Text style={styles.listCardAmount}>{formatCurrency(payment.amount)}</Text>
+                  <Text style={styles.listCardAmount}>{formatCurrency(payment.amount || payment.payment_amount)}</Text>
                 </View>
                 <View style={styles.listCardRow}>
                   <Text style={styles.listCardDate}>{payment.slug || '--'}</Text>
                   <View style={styles.listCardStatusRow}>
                     <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-                    <Text style={[styles.listCardStatus, { color: statusColor }]}>{payment.status || '--'}</Text>
+                    <Text style={[styles.listCardStatus, { color: statusColor }]}>{pStatus}</Text>
                   </View>
                 </View>
-                <Text style={styles.listCardDate}>{formatDate(payment.date || payment.created_at || payment.createdAt)}</Text>
+                <Text style={styles.listCardDate}>{formatDate(payment.date || payment.payment_date || payment.created_at || payment.createdAt)}</Text>
               </View>
             );
           })

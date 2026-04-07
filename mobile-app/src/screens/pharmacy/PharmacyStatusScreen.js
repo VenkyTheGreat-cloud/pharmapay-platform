@@ -100,6 +100,12 @@ const PharmacyStatusScreen = ({ navigation }) => {
   const status = pharmacy?.status || 'pending_approval';
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending_approval;
 
+  // URLs may be in config_json (from approval) or top-level fields
+  const configJson = pharmacy?.config_json || {};
+  const storeUrl = pharmacy?.store_url || configJson.store_url;
+  const adminUrl = pharmacy?.admin_url || configJson.admin_url;
+  const clientCode = pharmacy?.client_code || configJson.client_code;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Navigation */}
@@ -124,28 +130,28 @@ const PharmacyStatusScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Pharmacy Details</Text>
 
-          {pharmacy.store_url && (
+          {storeUrl && (
             <View style={styles.urlCard}>
               <Text style={styles.urlLabel}>Store URL</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(pharmacy.store_url)}>
-                <Text style={styles.urlValue}>{pharmacy.store_url}</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(storeUrl)}>
+                <Text style={styles.urlValue}>{storeUrl}</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {pharmacy.admin_url && (
+          {adminUrl && (
             <View style={styles.urlCard}>
               <Text style={styles.urlLabel}>Admin Panel</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(pharmacy.admin_url)}>
-                <Text style={styles.urlValue}>{pharmacy.admin_url}</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(adminUrl)}>
+                <Text style={styles.urlValue}>{adminUrl}</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {pharmacy.client_code && (
+          {clientCode && (
             <View style={styles.urlCard}>
               <Text style={styles.urlLabel}>Client Code</Text>
-              <Text style={styles.clientCode}>{pharmacy.client_code}</Text>
+              <Text style={styles.clientCode}>{clientCode}</Text>
             </View>
           )}
         </View>

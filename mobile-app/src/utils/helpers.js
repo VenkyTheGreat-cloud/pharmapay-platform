@@ -102,7 +102,10 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 // Handle API errors
 export const handleApiError = (error) => {
   if (error.response) {
-    // Server responded with error
+    const code = error.response.data?.error?.code;
+    if (code === 'INACTIVE_USER' || code === 'NOT_APPROVED') {
+      return 'Your account is pending admin approval. You will be able to login once approved.';
+    }
     return error.response.data?.error?.message || error.response.data?.message || 'An error occurred';
   } else if (error.request) {
     // Request made but no response
