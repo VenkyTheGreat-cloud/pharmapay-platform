@@ -140,6 +140,15 @@ const LandingScreen = ({ navigation }) => {
 
             {/* Footer */}
             <View style={styles.footer}>
+                <View style={styles.footerLinks}>
+                    <TouchableOpacity onPress={() => navigation.navigate('PrivacyPolicy')}>
+                        <Text style={styles.footerLink}>Privacy Policy</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.footerDivider}>|</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Terms')}>
+                        <Text style={styles.footerLink}>Terms & Conditions</Text>
+                    </TouchableOpacity>
+                </View>
                 <Text style={styles.footerText}>Powered by SwinkPay Fintech Pvt Ltd</Text>
                 <Text style={styles.footerVersion}>Version 1.0.0</Text>
             </View>
@@ -219,7 +228,10 @@ const styles = StyleSheet.create({
     footerTitle: { fontSize: 20, fontWeight: '700', color: '#1F2937' },
 
     // Footer
-    footer: { paddingVertical: 24, alignItems: 'center', gap: 4 },
+    footer: { paddingVertical: 24, alignItems: 'center', gap: 8 },
+    footerLinks: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+    footerLink: { fontSize: 13, color: '#20b1aa', fontWeight: '600' },
+    footerDivider: { fontSize: 13, color: '#D1D5DB' },
     footerText: { fontSize: 12, color: '#9CA3AF' },
     footerVersion: { fontSize: 11, color: '#D1D5DB' },
 });

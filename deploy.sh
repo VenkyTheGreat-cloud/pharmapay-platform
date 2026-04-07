@@ -42,6 +42,11 @@ echo ""
 echo "Building and starting Docker services..."
 docker compose up -d --build
 
+# Restart nginx to pick up any new container IPs
+echo ""
+echo "Restarting nginx to refresh upstream connections..."
+docker compose restart platform-nginx
+
 # Wait for health check
 echo ""
 echo "Waiting for services to be ready..."
