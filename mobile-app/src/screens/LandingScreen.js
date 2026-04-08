@@ -54,6 +54,23 @@ const LandingScreen = ({ navigation }) => {
                 </View>
             </View>
 
+            {/* Quick Nav */}
+            <View style={styles.navBar}>
+                {[
+                    { label: 'Features', screen: 'Features' },
+                    { label: 'How It Works', screen: 'HowItWorks' },
+                    { label: 'Pricing', screen: 'Pricing' },
+                ].map((item) => (
+                    <TouchableOpacity
+                        key={item.screen}
+                        style={styles.navItem}
+                        onPress={() => navigation.navigate(item.screen)}
+                    >
+                        <Text style={styles.navItemText}>{item.label}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+
             {/* Two-sided marketplace */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>A platform designed for both sides</Text>
@@ -239,6 +256,11 @@ const styles = StyleSheet.create({
     primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     secondaryButtonText: { color: '#334155', fontSize: 15, fontWeight: '600' },
+
+    // Nav Bar
+    navBar: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 12, gap: 8 },
+    navItem: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+    navItemText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
 
     // Sections
     section: { paddingHorizontal: 24, paddingVertical: 32 },

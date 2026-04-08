@@ -17,7 +17,10 @@ import MainNavigator from './MainNavigator';
 // Admin Screens
 import AdminPanelScreen from '../screens/AdminPanelScreen';
 
-// Legal Screens
+// Info Screens
+import FeaturesScreen from '../screens/FeaturesScreen';
+import HowItWorksScreen from '../screens/HowItWorksScreen';
+import PricingScreen from '../screens/PricingScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import TermsScreen from '../screens/TermsScreen';
 
@@ -66,6 +69,9 @@ const AppNavigator = () => {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="Features" component={FeaturesScreen} />
+          <Stack.Screen name="HowItWorks" component={HowItWorksScreen} />
+          <Stack.Screen name="Pricing" component={PricingScreen} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
           <Stack.Screen name="Terms" component={TermsScreen} />
           <Stack.Screen name="PharmacySignup" component={PharmacySignupScreen} />
