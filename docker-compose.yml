@@ -71,6 +71,8 @@ services:
       - uploads:/usr/share/nginx/uploads:ro
       - /etc/letsencrypt/live/pharmagig.swinkpay-fintech.com:/etc/letsencrypt/live/pharmagig.swinkpay-fintech.com:ro
       - /etc/letsencrypt/archive/pharmagig.swinkpay-fintech.com:/etc/letsencrypt/archive/pharmagig.swinkpay-fintech.com:ro
+      - /etc/letsencrypt/live/pharmapay.swinkpay-fintech.com:/etc/letsencrypt/live/pharmapay.swinkpay-fintech.com:ro
+      - /etc/letsencrypt/archive/pharmapay.swinkpay-fintech.com:/etc/letsencrypt/archive/pharmapay.swinkpay-fintech.com:ro
 
 volumes:
   pgdata:
