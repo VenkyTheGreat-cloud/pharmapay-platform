@@ -80,10 +80,10 @@ const LoginScreen = ({ navigation }) => {
         {/* Logo */}
         <View style={styles.header}>
           <View style={[styles.logoIcon, { backgroundColor: activeRole.color }]}>
-            <Ionicons name="medical" size={24} color="#fff" />
+            <Ionicons name="storefront" size={22} color="#fff" />
           </View>
           <Text style={styles.brand}>
-            SwinkPay<Text style={{ color: activeRole.color }}>Pharma</Text>
+            Pharma<Text style={{ color: activeRole.color }}>Gig</Text>
           </Text>
           <Text style={styles.heading}>Sign in to your account</Text>
         </View>

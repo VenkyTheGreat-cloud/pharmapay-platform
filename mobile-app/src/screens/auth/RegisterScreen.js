@@ -129,7 +129,7 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.logoIcon}>
             <Ionicons name="bicycle" size={24} color="#fff" />
           </View>
-          <Text style={styles.brand}>SwinkPay<Text style={{ color: ACCENT }}>Pharma</Text></Text>
+          <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
         </View>
 
         <Text style={styles.title}>Delivery Partner Registration</Text>

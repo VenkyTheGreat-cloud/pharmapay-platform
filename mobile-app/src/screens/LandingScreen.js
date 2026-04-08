@@ -9,9 +9,9 @@ const LandingScreen = ({ navigation }) => {
             {/* Hero Section */}
             <View style={styles.hero}>
                 <View style={styles.logoContainer}>
-                    <Ionicons name="medical" size={36} color="#fff" />
+                    <Ionicons name="storefront" size={32} color="#fff" />
                 </View>
-                <Text style={styles.appName}>SwinkPayPharma</Text>
+                <Text style={styles.appName}>PharmaGig</Text>
 
                 {/* Badge */}
                 <View style={styles.badge}>
@@ -36,7 +36,7 @@ const LandingScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('PharmacySignup')}
                         activeOpacity={0.8}
                     >
-                        <Ionicons name="medical" size={18} color="#fff" />
+                        <Ionicons name="storefront" size={18} color="#fff" />
                         <Text style={styles.primaryButtonText}>Start as Pharmacy Owner</Text>
                     </TouchableOpacity>
 
@@ -137,6 +137,10 @@ const LandingScreen = ({ navigation }) => {
                     <PricingCard title="Starter" price="999" highlight={false} />
                     <PricingCard title="Growth" price="2,499" highlight={true} />
                     <PricingCard title="Enterprise" price="5,999" highlight={false} />
+                </View>
+                <View style={styles.setupFeeBadge}>
+                    <Ionicons name="pricetag" size={14} color="#059669" />
+                    <Text style={styles.setupFeeText}>One-time Setup Fee Applies</Text>
                 </View>
                 <View style={styles.freeBadge}>
                     <Ionicons name="information-circle" size={16} color="#2563EB" />
@@ -264,13 +268,15 @@ const styles = StyleSheet.create({
     pricingRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
     pricingCard: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
     pricingCardHighlight: { backgroundColor: '#10B981', borderColor: '#10B981', transform: [{ scale: 1.03 }] },
-    popularBadge: { fontSize: 10, fontWeight: '800', color: '#fff', backgroundColor: '#059669', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginBottom: 6, overflow: 'hidden', textTransform: 'uppercase' },
+    popularBadge: { fontSize: 9, fontWeight: '800', color: '#fff', backgroundColor: '#059669', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginBottom: 4, overflow: 'hidden' },
     pricingTitle: { fontSize: 12, fontWeight: '600', color: '#64748B', marginBottom: 4 },
     pricingTitleHighlight: { color: 'rgba(255,255,255,0.8)' },
     pricingPrice: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
     pricingPriceHighlight: { color: '#fff' },
     pricingPeriod: { fontSize: 11, color: '#94A3B8' },
     pricingPeriodHighlight: { color: 'rgba(255,255,255,0.7)' },
+    setupFeeBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, backgroundColor: '#ECFDF5', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, alignSelf: 'center', borderWidth: 1, borderColor: '#A7F3D0' },
+    setupFeeText: { fontSize: 13, color: '#065F46', fontWeight: '600' },
     freeBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'center', borderWidth: 1, borderColor: '#BFDBFE' },
     freeText: { fontSize: 13, color: '#1E40AF', fontWeight: '600' },
 

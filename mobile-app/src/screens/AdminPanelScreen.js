@@ -113,7 +113,7 @@ const AdminPanelScreen = ({ navigation }) => {
       try {
         await pharmacyAPI.approvePharmacy(id);
         await fetchPharmacies();
-        const successMsg = `Pharmacy "${pharmacy?.name || slug}" is now LIVE!\n\nStore: https://${slug}.pharmapay.swinkpay-fintech.com\nAdmin: https://${slug}.pharmapay.swinkpay-fintech.com/admin\nClient Code: ${slug.toUpperCase()}-01`;
+        const successMsg = `Pharmacy "${pharmacy?.name || slug}" is now LIVE!\n\nStore: https://${slug}.pharmagig.swinkpay-fintech.com\nAdmin: https://${slug}.pharmagig.swinkpay-fintech.com/admin\nClient Code: ${slug.toUpperCase()}-01`;
         if (Platform.OS === 'web') {
           window.alert(successMsg);
         } else {

@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 // On native: use full URL from app.config.js or production default
 const API_URL = Platform.OS === 'web'
   ? '/api'
-  : (Constants.expoConfig?.extra?.apiUrl || 'https://pharmapay.swinkpay-fintech.com/api');
+  : (Constants.expoConfig?.extra?.apiUrl || 'https://pharmagig.swinkpay-fintech.com/api');
 
 export default {
   API_URL,

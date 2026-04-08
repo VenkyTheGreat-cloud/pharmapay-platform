@@ -335,7 +335,7 @@ exports.initiatePayment = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid plan'));
         }
 
-        const returnURL = `https://pharmapay.swinkpay-fintech.com/api/pharmacies/payment/callback`;
+        const returnURL = `https://pharmagig.swinkpay-fintech.com/api/pharmacies/payment/callback`;
 
         const { referenceNo, paymentUrl, invoiceNumber } = await swinkpayService.initiatePayment(amount, pharmacy.id, returnURL);
 
@@ -387,7 +387,7 @@ exports.paymentCallback = async (req, res, next) => {
 
         if (!pharmacy) {
             logger.error('Payment callback: pharmacy not found', { transactionId });
-            return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=not_found');
+            return res.redirect('https://pharmagig.swinkpay-fintech.com/payment?error=not_found');
         }
 
         // SwinkPay statusCode: 0=Initiated, 1=Success, 2=Failed
@@ -413,9 +413,9 @@ exports.paymentCallback = async (req, res, next) => {
                     primary_color: pharmacy.primary_color || '#185FA5',
                     logo_url: pharmacy.logo_url || ''
                 },
-                api_base_url: `https://${slug}.pharmapay.swinkpay-fintech.com/api`,
-                admin_url: `https://${slug}.pharmapay.swinkpay-fintech.com/admin`,
-                store_url: `https://${slug}.pharmapay.swinkpay-fintech.com`,
+                api_base_url: `https://${slug}.pharmagig.swinkpay-fintech.com/api`,
+                admin_url: `https://${slug}.pharmagig.swinkpay-fintech.com/admin`,
+                store_url: `https://${slug}.pharmagig.swinkpay-fintech.com`,
                 features: pharmacy.features || {},
                 plan: pharmacy.plan || 'starter',
                 max_delivery_boys: pharmacy.max_delivery_boys || 10,
@@ -438,7 +438,7 @@ exports.paymentCallback = async (req, res, next) => {
 
             logger.info('Payment successful, pharmacy submitted for approval', { pharmacyId: pharmacy.id, slug });
 
-            return res.redirect('https://pharmapay.swinkpay-fintech.com/build-status');
+            return res.redirect('https://pharmagig.swinkpay-fintech.com/build-status');
         } else {
             // Payment failed or initiated
             await Pharmacy.updatePayment(pharmacy.id, {
@@ -451,11 +451,11 @@ exports.paymentCallback = async (req, res, next) => {
 
             logger.info('Payment failed', { pharmacyId: pharmacy.id, statusCode });
 
-            return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=failed');
+            return res.redirect('https://pharmagig.swinkpay-fintech.com/payment?error=failed');
         }
     } catch (error) {
         logger.error('Payment callback error', { error: error.message });
-        return res.redirect('https://pharmapay.swinkpay-fintech.com/payment?error=server_error');
+        return res.redirect('https://pharmagig.swinkpay-fintech.com/payment?error=server_error');
     }
 };
 
@@ -510,9 +510,9 @@ exports.approvePharmacy = async (req, res, next) => {
                 primary_color: pharmacy.primary_color || '#185FA5',
                 logo_url: pharmacy.logo_url || ''
             },
-            api_base_url: `https://${slug}.pharmapay.swinkpay-fintech.com/api`,
-            admin_url: `https://${slug}.pharmapay.swinkpay-fintech.com/admin`,
-            store_url: `https://${slug}.pharmapay.swinkpay-fintech.com`,
+            api_base_url: `https://${slug}.pharmagig.swinkpay-fintech.com/api`,
+            admin_url: `https://${slug}.pharmagig.swinkpay-fintech.com/admin`,
+            store_url: `https://${slug}.pharmagig.swinkpay-fintech.com`,
             features: pharmacy.features || {},
             plan: pharmacy.plan || 'starter',
             max_delivery_boys: pharmacy.max_delivery_boys || 10,
@@ -536,9 +536,9 @@ exports.approvePharmacy = async (req, res, next) => {
         const { query: dbQuery } = require('../config/database');
         await dbQuery(
             `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)
-             VALUES (gen_random_uuid(), $1, $2, '', '', true, $3, NOW())
+             VALUES ($4, $1, $2, '', '', true, $3, NOW())
              ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
-            [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan]
+            [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id]
         );
 
         logger.info('Pharmacy approved and set to live', { pharmacyId: pharmacy.id, slug });

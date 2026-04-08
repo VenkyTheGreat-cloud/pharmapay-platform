@@ -53,9 +53,9 @@ const ForgotPasswordScreen = ({ navigation }) => {
         {/* Logo */}
         <View style={styles.header}>
           <View style={styles.logoIcon}>
-            <Ionicons name="medical" size={24} color="#fff" />
+            <Ionicons name="storefront" size={22} color="#fff" />
           </View>
-          <Text style={styles.brand}>SwinkPay<Text style={{ color: ACCENT }}>Pharma</Text></Text>
+          <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
         </View>
 
         {success ? (

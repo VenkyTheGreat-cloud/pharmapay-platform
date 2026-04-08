@@ -30,6 +30,7 @@ const PharmacySignupScreen = ({ navigation }) => {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const slugTimer = useRef(null);
 
@@ -72,6 +73,7 @@ const PharmacySignupScreen = ({ navigation }) => {
     if (form.password !== form.confirmPassword) return 'Passwords do not match';
     if (!form.slug || form.slug.length < 3) return 'Slug must be at least 3 characters';
     if (slugStatus === 'taken') return 'This slug is already taken';
+    if (!agreedTerms) return 'Please agree to the Terms & Conditions and Privacy Policy';
     return null;
   };
 
@@ -130,13 +132,13 @@ const PharmacySignupScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoIcon}>
-          <Ionicons name="medical" size={24} color="#fff" />
+          <Ionicons name="storefront" size={22} color="#fff" />
         </View>
-        <Text style={styles.brand}>SwinkPay<Text style={{ color: ACCENT }}>Pharma</Text></Text>
+        <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
       </View>
 
       <Text style={styles.title}>Create Pharmacy Account</Text>
-      <Text style={styles.subtitle}>Set up your pharmacy on SwinkPayPharma</Text>
+      <Text style={styles.subtitle}>Set up your pharmacy on PharmaGig</Text>
 
       {message.text ? (
         <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
@@ -236,10 +238,20 @@ const PharmacySignupScreen = ({ navigation }) => {
             <Text style={styles.errorHint}>Slug is already taken</Text>
           )}
           {!slugStatus && form.slug.length > 0 && (
-            <Text style={styles.slugHint}>{form.slug}.pharmapay.swinkpay-fintech.com</Text>
+            <Text style={styles.slugHint}>{form.slug}.pharmagig.swinkpay-fintech.com</Text>
           )}
         </View>
       </View>
+
+      {/* Terms Checkbox */}
+      <TouchableOpacity style={styles.termsRow} onPress={() => setAgreedTerms(!agreedTerms)} activeOpacity={0.7}>
+        <View style={[styles.checkbox, agreedTerms && styles.checkboxChecked]}>
+          {agreedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+        </View>
+        <Text style={styles.termsText}>
+          I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text> and <Text style={styles.termsLink}>Privacy Policy</Text>
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
@@ -300,6 +312,12 @@ const styles = StyleSheet.create({
 
   slugRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, minHeight: 18 },
   slugHint: { fontSize: 12, color: '#64748B' },
+
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 16, marginTop: 4 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  checkboxChecked: { backgroundColor: '#10B981', borderColor: '#10B981' },
+  termsText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 20 },
+  termsLink: { color: '#10B981', fontWeight: '600', textDecorationLine: 'underline' },
 
   submitBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   submitBtnDisabled: { opacity: 0.6 },
