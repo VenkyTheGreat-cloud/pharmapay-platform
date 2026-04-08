@@ -74,7 +74,7 @@ const FeaturesScreen = ({ navigation }) => (
     <View style={styles.cta}>
       <TouchableOpacity
         style={styles.ctaBtn}
-        onPress={() => navigation.navigate('RoleSelect')}
+        onPress={() => navigation.navigate('PharmacySignup')}
       >
         <Text style={styles.ctaBtnText}>Get Started</Text>
       </TouchableOpacity>

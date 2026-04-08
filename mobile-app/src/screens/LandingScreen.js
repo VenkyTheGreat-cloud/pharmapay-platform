@@ -178,32 +178,6 @@ const LandingScreen = ({ navigation }) => {
                 </View>
             </View>
 
-            {/* How It Works */}
-            <View style={[styles.section, { backgroundColor: '#F8FAFC' }]}>
-                <Text style={styles.sectionTitle}>How It Works</Text>
-                <StepCard number="1" title="Choose Your Role" description="Pharmacy owner or delivery partner — pick your path" color="#6366F1" icon="people" />
-                <StepCard number="2" title="Sign Up & Configure" description="Create your account, set up branding, and choose your plan" color="#3B82F6" icon="settings" />
-                <StepCard number="3" title="Go Live & Thrive" description="Start managing deliveries or earning as a delivery partner" color="#10B981" icon="rocket" />
-            </View>
-
-            {/* Pricing */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Plans for Pharmacy Owners</Text>
-                <View style={styles.pricingRow}>
-                    <PricingCard title="Starter" price="999" highlight={false} />
-                    <PricingCard title="Growth" price="2,499" highlight={true} />
-                    <PricingCard title="Enterprise" price="5,999" highlight={false} />
-                </View>
-                <View style={styles.setupFeeBadge}>
-                    <Ionicons name="pricetag" size={14} color="#059669" />
-                    <Text style={styles.setupFeeText}>One-time Setup Fee Applies</Text>
-                </View>
-                <View style={styles.freeBadge}>
-                    <Ionicons name="information-circle" size={16} color="#2563EB" />
-                    <Text style={styles.freeText}>Always 100% Free for Delivery Partners</Text>
-                </View>
-            </View>
-
             {/* CTA Section */}
             <View style={styles.ctaSection}>
                 <Text style={styles.ctaSectionTitle}>Ready to transform your delivery operations?</Text>
@@ -314,7 +288,7 @@ const styles = StyleSheet.create({
     // CTA
     ctaContainer: { width: '100%', gap: 12 },
     ctaContainerWide: { flexDirection: 'row', gap: 16 },
-    primaryButton: { backgroundColor: '#10B981', paddingVertical: 16, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, flex: isWeb ? undefined : undefined },
+    primaryButton: { backgroundColor: '#10B981', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     secondaryButtonText: { color: '#334155', fontSize: 15, fontWeight: '600' },

@@ -1000,9 +1000,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
     flexGrow: 0,
+    minHeight: 48,
   },
   tabBarContent: {
     paddingHorizontal: 12,
+    minHeight: 48,
   },
   tab: {
     paddingHorizontal: 16,
@@ -1201,7 +1203,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 8,
   },
   list: {
