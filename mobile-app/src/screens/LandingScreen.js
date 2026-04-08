@@ -33,11 +33,34 @@ const LandingScreen = ({ navigation }) => {
                         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                             <Text style={styles.navLoginText}>Log in</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navGetStartedBtn} onPress={() => navigation.navigate('RoleSelect')}>
+                        <TouchableOpacity style={styles.navGetStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
                             <Text style={styles.navGetStartedText}>Get Started</Text>
                             <Ionicons name="arrow-forward" size={14} color="#fff" />
                         </TouchableOpacity>
                     </View>
+                </View>
+            )}
+
+            {/* Mobile-only logo + nav at TOP */}
+            {!isWeb && (
+                <View style={styles.mobileLogoSection}>
+                    <View style={styles.logoContainer}>
+                        <Ionicons name="storefront" size={32} color="#fff" />
+                    </View>
+                    <Text style={styles.appName}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+                </View>
+            )}
+            {!isWeb && (
+                <View style={styles.navBar}>
+                    {[
+                        { label: 'Features', screen: 'Features' },
+                        { label: 'How It Works', screen: 'HowItWorks' },
+                        { label: 'Pricing', screen: 'Pricing' },
+                    ].map((item) => (
+                        <TouchableOpacity key={item.screen} style={styles.navItem} onPress={() => navigation.navigate(item.screen)}>
+                            <Text style={styles.navItemText}>{item.label}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             )}
 
@@ -77,37 +100,18 @@ const LandingScreen = ({ navigation }) => {
                 {/* Hero Visual */}
                 <View style={[styles.heroVisual, isWide && { flex: 1 }]}>
                     <View style={styles.heroImageRow}>
-                        {isWeb ? (
-                            <>
-                                <View style={[styles.heroImageCard, { overflow: 'hidden' }]}>
-                                    <Image source={{ uri: PHARMACY_IMG }} style={styles.heroImg} />
-                                    <View style={styles.heroImageOverlay}>
-                                        <Text style={styles.heroImageLabel}>For Pharmacies</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.heroImageCard, { overflow: 'hidden' }]}>
-                                    <Image source={{ uri: DELIVERY_IMG }} style={styles.heroImg} />
-                                    <View style={styles.heroImageOverlay}>
-                                        <Text style={styles.heroImageLabel}>For Delivery Partners</Text>
-                                    </View>
-                                </View>
-                            </>
-                        ) : (
-                            <>
-                                <View style={[styles.heroImageCard, { backgroundColor: '#1E293B' }]}>
-                                    <Ionicons name="storefront" size={32} color="#10B981" style={{ opacity: 0.6 }} />
-                                    <View style={styles.heroImageOverlay}>
-                                        <Text style={styles.heroImageLabel}>For Pharmacies</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.heroImageCard, { backgroundColor: '#334155' }]}>
-                                    <Ionicons name="bicycle" size={32} color="#3B82F6" style={{ opacity: 0.6 }} />
-                                    <View style={styles.heroImageOverlay}>
-                                        <Text style={styles.heroImageLabel}>For Delivery Partners</Text>
-                                    </View>
-                                </View>
-                            </>
-                        )}
+                        <View style={[styles.heroImageCard, { overflow: 'hidden' }]}>
+                            <Image source={{ uri: PHARMACY_IMG }} style={styles.heroImg} />
+                            <View style={styles.heroImageOverlay}>
+                                <Text style={styles.heroImageLabel}>For Pharmacies</Text>
+                            </View>
+                        </View>
+                        <View style={[styles.heroImageCard, { overflow: 'hidden' }]}>
+                            <Image source={{ uri: DELIVERY_IMG }} style={styles.heroImg} />
+                            <View style={styles.heroImageOverlay}>
+                                <Text style={styles.heroImageLabel}>For Delivery Partners</Text>
+                            </View>
+                        </View>
                     </View>
                     {/* Floating Badges */}
                     <View style={[styles.floatingBadge, { left: -8, top: 10 }]}>
@@ -130,31 +134,6 @@ const LandingScreen = ({ navigation }) => {
                     </View>
                 </View>
             </View>
-
-            {/* Mobile-only logo (hidden on web with navbar) */}
-            {!isWeb && (
-                <View style={styles.mobileLogoSection}>
-                    <View style={styles.logoContainer}>
-                        <Ionicons name="storefront" size={32} color="#fff" />
-                    </View>
-                    <Text style={styles.appName}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
-                </View>
-            )}
-
-            {/* Quick Nav */}
-            {!isWeb && (
-                <View style={styles.navBar}>
-                    {[
-                        { label: 'Features', screen: 'Features' },
-                        { label: 'How It Works', screen: 'HowItWorks' },
-                        { label: 'Pricing', screen: 'Pricing' },
-                    ].map((item) => (
-                        <TouchableOpacity key={item.screen} style={styles.navItem} onPress={() => navigation.navigate(item.screen)}>
-                            <Text style={styles.navItemText}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
 
             {/* Two-sided marketplace */}
             <View style={styles.section}>
@@ -228,7 +207,7 @@ const LandingScreen = ({ navigation }) => {
             {/* CTA Section */}
             <View style={styles.ctaSection}>
                 <Text style={styles.ctaSectionTitle}>Ready to transform your delivery operations?</Text>
-                <TouchableOpacity style={styles.ctaSectionBtn} onPress={() => navigation.navigate('RoleSelect')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.ctaSectionBtn} onPress={() => navigation.navigate('PharmacySignup')} activeOpacity={0.8}>
                     <Text style={styles.ctaSectionBtnText}>Get Started Now</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
