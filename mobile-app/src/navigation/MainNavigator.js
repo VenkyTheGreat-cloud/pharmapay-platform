@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 // Screens
+import DashboardScreen from '../screens/DashboardScreen';
 import OrdersScreen from '../screens/orders/OrdersScreen';
 import OrderDetailsScreen from '../screens/orders/OrderDetailsScreen';
 import PaymentScreen from '../screens/payment/PaymentScreen';
@@ -69,7 +70,9 @@ const MainNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Orders') {
+          if (route.name === 'Dashboard') {
+            iconName = focused ? 'grid' : 'grid-outline';
+          } else if (route.name === 'Orders') {
             iconName = focused ? 'list-circle' : 'list-circle-outline';
           } else if (route.name === 'Marketplace') {
             iconName = focused ? 'storefront' : 'storefront-outline';
@@ -84,6 +87,7 @@ const MainNavigator = () => {
         headerShown: false,
       })}
     >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Orders" component={OrdersStack} />
       <Tab.Screen name="Marketplace" component={PharmacyMarketplaceScreen} />
       <Tab.Screen name="Profile" component={ProfileStack} />
