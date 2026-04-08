@@ -83,7 +83,7 @@ const LoginScreen = ({ navigation }) => {
             <Ionicons name="storefront" size={22} color="#fff" />
           </View>
           <Text style={styles.brand}>
-            Pharma<Text style={{ color: activeRole.color }}>Gig</Text>
+            Pharma<Text style={{ color: '#10B981' }}>Gig</Text>
           </Text>
           <Text style={styles.heading}>Sign in to your account</Text>
         </View>

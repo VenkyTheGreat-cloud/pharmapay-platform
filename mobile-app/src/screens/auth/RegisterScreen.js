@@ -78,9 +78,28 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
+  const takePhoto = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        RNAlert.alert('Permission Required', 'Please allow access to your camera.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled) setPhoto(result.assets[0]);
+    } catch (err) {
+      console.error('Error taking photo:', err);
+    }
+  };
+
   const showPhotoOptions = () => {
     if (Platform.OS === 'web') { pickImage(); return; }
     RNAlert.alert('Profile Photo', 'Choose an option', [
+      { text: 'Take Photo', onPress: takePhoto },
       { text: 'Choose from Library', onPress: pickImage },
       { text: 'Cancel', style: 'cancel' },
     ]);
@@ -129,7 +148,7 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.logoIcon}>
             <Ionicons name="bicycle" size={24} color="#fff" />
           </View>
-          <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
+          <Text style={styles.brand}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
         </View>
 
         <Text style={styles.title}>Delivery Partner Registration</Text>

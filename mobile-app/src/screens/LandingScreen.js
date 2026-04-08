@@ -11,7 +11,7 @@ const LandingScreen = ({ navigation }) => {
                 <View style={styles.logoContainer}>
                     <Ionicons name="storefront" size={32} color="#fff" />
                 </View>
-                <Text style={styles.appName}>PharmaGig</Text>
+                <Text style={styles.appName}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
 
                 {/* Badge */}
                 <View style={styles.badge}>

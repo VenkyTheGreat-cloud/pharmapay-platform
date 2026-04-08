@@ -21,7 +21,7 @@ const RoleSelectScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.title}>PharmaGig</Text>
+        <Text style={styles.title}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
         <Text style={styles.subtitle}>Choose how you'd like to get started</Text>
       </View>
 
