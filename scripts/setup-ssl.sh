@@ -2,22 +2,22 @@
 set -euo pipefail
 
 # ===========================================
-# SSL Setup — Wildcard cert for PharmaPay
+# SSL Setup — Wildcard cert for PharmaGig
 # ===========================================
 #
 # Prerequisites:
 #   - AWS CLI configured with Route53 permissions:
 #     route53:ListHostedZones, route53:GetChange, route53:ChangeResourceRecordSets
-#   - DNS wildcard A record: *.pharmapay.swinkpay-fintech.com → 15.207.142.166
-#   - DNS A record: pharmapay.swinkpay-fintech.com → 15.207.142.166
+#   - DNS wildcard A record: *.pharmagig.swinkpay-fintech.com → 15.207.142.166
+#   - DNS A record: pharmagig.swinkpay-fintech.com → 15.207.142.166
 #
 # Usage:
 #   sudo ./scripts/setup-ssl.sh
 
-DOMAIN="pharmapay.swinkpay-fintech.com"
+DOMAIN="pharmagig.swinkpay-fintech.com"
 EMAIL="admin@swinkpay-fintech.com"
 
-echo "=== PharmaPay: Wildcard SSL Setup ==="
+echo "=== PharmaGig: Wildcard SSL Setup ==="
 
 # Step 1: Install certbot + Route53 plugin
 echo ""
