@@ -26,7 +26,7 @@ const LandingScreen = ({ navigation }) => {
                     <Text style={{ color: '#3B82F6' }}>deliveries</Text>
                 </Text>
                 <Text style={styles.heroDesc}>
-                    Launch your own branded pharmacy delivery platform or join as a delivery partner and earn on your schedule.
+                    PharmaGig connects independent Indian pharmacies with reliable delivery partners. Launch your own white-labeled delivery platform or join as a partner for flexible earning.
                 </Text>
 
                 {/* CTA Buttons */}
@@ -51,6 +51,44 @@ const LandingScreen = ({ navigation }) => {
                         <Ionicons name="bicycle" size={18} color="#3B82F6" />
                         <Text style={styles.secondaryButtonText}>Join as Delivery Partner</Text>
                     </TouchableOpacity>
+                </View>
+
+                {/* Hero Visual - Split Image Cards */}
+                <View style={styles.heroVisual}>
+                    <View style={styles.heroImageRow}>
+                        <View style={[styles.heroImageCard, { backgroundColor: '#1E293B' }]}>
+                            <Ionicons name="storefront" size={32} color="#10B981" style={{ opacity: 0.6 }} />
+                            <View style={styles.heroImageOverlay}>
+                                <Text style={styles.heroImageLabel}>For Pharmacies</Text>
+                            </View>
+                        </View>
+                        <View style={[styles.heroImageCard, { backgroundColor: '#334155' }]}>
+                            <Ionicons name="bicycle" size={32} color="#3B82F6" style={{ opacity: 0.6 }} />
+                            <View style={styles.heroImageOverlay}>
+                                <Text style={styles.heroImageLabel}>For Delivery Partners</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Floating Badges */}
+                    <View style={[styles.floatingBadge, { left: -8, top: 10 }]}>
+                        <View style={[styles.floatingIcon, { backgroundColor: '#ECFDF5' }]}>
+                            <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                        </View>
+                        <View>
+                            <Text style={styles.floatingLabel}>Verified Delivery</Text>
+                            <Text style={styles.floatingValue}>100% Safe</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.floatingBadge, { right: -8, bottom: 10 }]}>
+                        <View style={[styles.floatingIcon, { backgroundColor: '#EFF6FF' }]}>
+                            <Ionicons name="time" size={16} color="#3B82F6" />
+                        </View>
+                        <View>
+                            <Text style={styles.floatingLabel}>Avg. Delivery</Text>
+                            <Text style={styles.floatingValue}>18 Mins</Text>
+                        </View>
+                    </View>
                 </View>
             </View>
 
@@ -249,6 +287,17 @@ const styles = StyleSheet.create({
 
     heroTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A', textAlign: 'center', lineHeight: 36, marginBottom: 12, letterSpacing: -0.5 },
     heroDesc: { fontSize: 15, color: '#64748B', textAlign: 'center', lineHeight: 22, maxWidth: 400, marginBottom: 24 },
+
+    // Hero Visual
+    heroVisual: { width: '100%', marginTop: 28, position: 'relative' },
+    heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 160, borderWidth: 1, borderColor: '#E2E8F0' },
+    heroImageCard: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+    heroImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(15,23,42,0.6)' },
+    heroImageLabel: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    floatingBadge: { position: 'absolute', backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: '#F1F5F9', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    floatingIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+    floatingLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '500' },
+    floatingValue: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
 
     // CTA
     ctaContainer: { width: '100%', gap: 12 },
