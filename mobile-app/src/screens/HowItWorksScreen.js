@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TopNavBar from '../components/TopNavBar';
 
 const STEPS = [
   {
@@ -32,9 +33,7 @@ const STEPS = [
 
 const HowItWorksScreen = ({ navigation }) => (
   <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-      <Text style={styles.backText}>← Back</Text>
-    </TouchableOpacity>
+    <TopNavBar activeScreen="HowItWorks" />
 
     <View style={styles.header}>
       <Text style={styles.title}>
@@ -139,11 +138,9 @@ const HowItWorksScreen = ({ navigation }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { padding: 24, paddingTop: 56, paddingBottom: 40 },
-  backBtn: { marginBottom: 20 },
-  backText: { fontSize: 15, color: '#10B981', fontWeight: '600' },
+  content: { paddingBottom: 40 },
 
-  header: { marginBottom: 32 },
+  header: { marginBottom: 32, paddingHorizontal: 24, paddingTop: 24 },
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22 },
 

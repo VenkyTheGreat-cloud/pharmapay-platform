@@ -1,99 +1,53 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Image,
-  Alert as RNAlert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Image, Alert as RNAlert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
-import Button from '../../components/Button';
 import Alert from '../../components/Alert';
 import PasswordStrength from '../../components/PasswordStrength';
-import { isValidEmail, isValidPhone } from '../../utils/helpers';
+import TopNavBar from '../../components/TopNavBar';
+import { isValidPhone } from '../../utils/helpers';
 
 const ACCENT = '#3B82F6';
 
 const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
-
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    address: '',
-  });
-
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [agreedTerms, setAgreedTerms] = useState(false);
 
-  const updateField = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-    setErrors({ ...errors, [field]: '' });
-  };
+  const updateField = (f, v) => { setFormData({ ...formData, [f]: v }); setErrors({ ...errors, [f]: '' }); };
 
   const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim() || formData.name.trim().length < 2) newErrors.name = 'Full name is required (min 2 characters)';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!isValidPhone(formData.phone)) newErrors.phone = 'Invalid phone (10 digits, starting with 6-9)';
-    if (formData.email.trim() && !isValidEmail(formData.email)) newErrors.email = 'Invalid email format';
-    if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6) newErrors.password = 'Min 6 characters';
-    if (!formData.confirmPassword) newErrors.confirmPassword = 'Confirm your password';
-    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+    if (!formData.name.trim() || formData.name.trim().length < 2) e.name = 'Full name required (min 2 chars)';
+    if (!formData.phone.trim()) e.phone = 'Phone number is required';
+    else if (!isValidPhone(formData.phone)) e.phone = 'Invalid phone (10 digits, starting 6-9)';
+    if (!formData.password) e.password = 'Password is required';
+    else if (formData.password.length < 6) e.password = 'Min 6 characters';
+    if (!formData.confirmPassword) e.confirmPassword = 'Confirm your password';
+    else if (formData.password !== formData.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    if (!agreedTerms) e.terms = 'Please agree to Terms & Privacy Policy';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const pickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        RNAlert.alert('Permission Required', 'Please allow access to your photos.');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      if (!result.canceled) setPhoto(result.assets[0]);
-    } catch (err) {
-      console.error('Error picking image:', err);
-    }
+    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!p.granted) { RNAlert.alert('Permission Required', 'Allow photo access.'); return; }
+    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    if (!r.canceled) setPhoto(r.assets[0]);
   };
 
   const takePhoto = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permissionResult.granted) {
-        RNAlert.alert('Permission Required', 'Please allow access to your camera.');
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      if (!result.canceled) setPhoto(result.assets[0]);
-    } catch (err) {
-      console.error('Error taking photo:', err);
-    }
+    const p = await ImagePicker.requestCameraPermissionsAsync();
+    if (!p.granted) { RNAlert.alert('Permission Required', 'Allow camera access.'); return; }
+    const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
+    if (!r.canceled) setPhoto(r.assets[0]);
   };
 
   const showPhotoOptions = () => {
@@ -107,161 +61,82 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-    setLoading(true);
-    setError('');
-
-    const registrationData = {
-      name: formData.name.trim(),
-      email: formData.email.trim().toLowerCase() || undefined,
-      mobile: formData.phone.trim(),
-      password: formData.password,
-      address: formData.address.trim() || undefined,
-    };
-    if (photo) registrationData.photo = photo.uri;
-
-    const result = await register(registrationData);
+    setLoading(true); setError('');
+    const data = { name: formData.name.trim(), mobile: formData.phone.trim(), password: formData.password };
+    if (formData.email.trim()) data.email = formData.email.trim().toLowerCase();
+    if (photo) data.photo = photo.uri;
+    const result = await register(data);
     setLoading(false);
-
     if (result.success && result.pending) {
-      RNAlert.alert(
-        'Registration Successful!',
-        result.message || 'Your account is pending admin approval. You will be able to login once approved.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
-    } else if (!result.success) {
-      setError(result.message);
-    }
+      RNAlert.alert('Registration Successful!', result.message || 'Your account is pending admin approval.', [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
+    } else if (!result.success) setError(result.message);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.logoIcon}>
-            <Ionicons name="bicycle" size={24} color="#fff" />
+        <TopNavBar />
+        <View style={styles.body}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.logoIcon}><Ionicons name="storefront" size={22} color="#fff" /></View>
+            <Text style={styles.brand}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+            <Text style={styles.heading}>Create your account</Text>
+            <Text style={styles.subheading}>Join as a delivery partner and earn on your schedule.</Text>
           </View>
-          <Text style={styles.brand}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
-        </View>
 
-        <Text style={styles.title}>Delivery Partner Registration</Text>
-        <Text style={styles.subtitle}>Join as a delivery partner and start earning</Text>
+          {/* Role Toggle */}
+          <View style={styles.roleToggle}>
+            <TouchableOpacity style={styles.roleTabInactive} onPress={() => navigation.navigate('PharmacySignup')}>
+              <Ionicons name="storefront-outline" size={15} color="#64748B" />
+              <Text style={styles.roleTabTextInactive}>Pharmacy Owner</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.roleTabActive}>
+              <Ionicons name="bicycle-outline" size={15} color={ACCENT} />
+              <Text style={styles.roleTabTextActive}>Delivery Partner</Text>
+            </TouchableOpacity>
+          </View>
 
-        {error ? <Alert type="error" message={error} /> : null}
+          {/* Form Card */}
+          <View style={styles.formCard}>
+            {error ? <Alert type="error" message={error} /> : null}
 
-        {/* Photo Upload */}
-        <TouchableOpacity style={styles.photoContainer} onPress={showPhotoOptions}>
-          {photo ? (
-            <View>
-              <Image source={{ uri: photo.uri }} style={styles.photo} />
-              <TouchableOpacity style={styles.photoDelete} onPress={() => setPhoto(null)}>
-                <Ionicons name="close" size={14} color="#fff" />
+            {/* Photo Upload */}
+            <Text style={styles.fieldLabel}>Delivery Partner Photo (Optional)</Text>
+            <View style={styles.photoRow}>
+              <TouchableOpacity onPress={showPhotoOptions} style={styles.photoBox}>
+                {photo ? <Image source={{ uri: photo.uri }} style={styles.photoImg} /> : <Ionicons name="camera" size={24} color="#94A3B8" />}
               </TouchableOpacity>
+              <TouchableOpacity style={styles.uploadBtn} onPress={showPhotoOptions}>
+                <Ionicons name="cloud-upload-outline" size={16} color={ACCENT} />
+                <Text style={styles.uploadBtnText}>Upload Photo</Text>
+              </TouchableOpacity>
+              <Text style={styles.photoHint}>JPG, PNG (Max 5MB)</Text>
             </View>
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Ionicons name="camera" size={28} color="#94A3B8" />
-            </View>
-          )}
-          <Text style={styles.photoText}>{photo ? 'Change Photo' : 'Add Photo'}</Text>
-          <Text style={styles.photoHint}>JPG, PNG (Optional)</Text>
-        </TouchableOpacity>
 
-        <View style={styles.form}>
-          <Input
-            label="Full Name *"
-            value={formData.name}
-            onChangeText={(text) => updateField('name', text)}
-            placeholder="e.g. Rahul Sharma"
-            autoCapitalize="words"
-            error={errors.name}
-          />
+            <Input label="Full Name" value={formData.name} onChangeText={(t) => updateField('name', t)} placeholder="e.g. Rahul Sharma" autoCapitalize="words" error={errors.name} />
+            <Input label="Phone Number *" value={formData.phone} onChangeText={(t) => updateField('phone', t)} placeholder="+91 98765 43210" keyboardType="phone-pad" maxLength={10} error={errors.phone} />
+            <Input label="Password" value={formData.password} onChangeText={(t) => updateField('password', t)} placeholder="Create a password" secureTextEntry error={errors.password} />
+            <View style={{ marginTop: -8, marginBottom: 8 }}><PasswordStrength password={formData.password} accentColor={ACCENT} /></View>
+            <Input label="Confirm Password" value={formData.confirmPassword} onChangeText={(t) => updateField('confirmPassword', t)} placeholder="Re-enter password" secureTextEntry error={errors.confirmPassword} />
 
-          <Input
-            label="Phone Number *"
-            value={formData.phone}
-            onChangeText={(text) => updateField('phone', text)}
-            placeholder="+91 98765 43210"
-            keyboardType="phone-pad"
-            maxLength={10}
-            error={errors.phone}
-          />
-
-          <Input
-            label="Email"
-            value={formData.email}
-            onChangeText={(text) => updateField('email', text)}
-            placeholder="your@email.com (optional)"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={errors.email}
-          />
-
-          <Input
-            label="Address"
-            value={formData.address}
-            onChangeText={(text) => updateField('address', text)}
-            placeholder="Your address (optional)"
-            multiline
-            numberOfLines={2}
-          />
-
-          {/* Password with strength */}
-          <Input
-            label="Password *"
-            value={formData.password}
-            onChangeText={(text) => updateField('password', text)}
-            placeholder="Create a strong password"
-            secureTextEntry
-            error={errors.password}
-          />
-          <View style={{ marginTop: -8, marginBottom: 8 }}>
-            <PasswordStrength password={formData.password} accentColor={ACCENT} />
-          </View>
-
-          {/* Confirm Password */}
-          <Input
-            label="Confirm Password *"
-            value={formData.confirmPassword}
-            onChangeText={(text) => updateField('confirmPassword', text)}
-            placeholder="Re-enter your password"
-            secureTextEntry
-            error={errors.confirmPassword}
-          />
-          {formData.confirmPassword.length > 0 && formData.password === formData.confirmPassword && (
-            <View style={styles.matchRow}>
-              <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
-              <Text style={{ fontSize: 12, color: '#22C55E' }}>Passwords match</Text>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[styles.registerButton, loading && { opacity: 0.6 }]}
-            onPress={handleRegister}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <Text style={styles.registerButtonText}>Creating account...</Text>
-            ) : (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={styles.registerButtonText}>Create Account</Text>
-                <Ionicons name="arrow-forward" size={18} color="#fff" />
+            {/* Terms */}
+            <TouchableOpacity style={styles.termsRow} onPress={() => setAgreedTerms(!agreedTerms)} activeOpacity={0.7}>
+              <View style={[styles.checkbox, agreedTerms && styles.checkboxChecked]}>
+                {agreedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
-            )}
-          </TouchableOpacity>
+              <Text style={styles.termsText}>I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text> and <Text style={styles.termsLink}>Privacy Policy</Text></Text>
+            </TouchableOpacity>
+            {errors.terms && <Text style={styles.errorHint}>{errors.terms}</Text>}
+
+            <TouchableOpacity style={[styles.registerBtn, loading && { opacity: 0.6 }]} onPress={handleRegister} disabled={loading} activeOpacity={0.8}>
+              <Text style={styles.registerBtnText}>{loading ? 'Creating...' : 'Create Account'}</Text>
+              {!loading && <Ionicons name="arrow-forward" size={16} color="#fff" />}
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
-            <Text style={styles.loginText}>
-              Already have an account? <Text style={{ color: ACCENT, fontWeight: '700' }}>Login here</Text>
-            </Text>
+            <Text style={styles.loginText}>Already have an account? <Text style={{ color: ACCENT, fontWeight: '700' }}>Log in</Text></Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -271,42 +146,42 @@ const RegisterScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  scrollContent: { flexGrow: 1, padding: 24, paddingTop: 48 },
-  backBtn: { marginBottom: 16 },
-  backText: { fontSize: 15, color: '#20b1aa', fontWeight: '600' },
+  scrollContent: { flexGrow: 1 },
+  body: { padding: 24, maxWidth: 480, width: '100%', alignSelf: 'center' },
 
-  header: { alignItems: 'center', marginBottom: 20 },
-  logoIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  brand: { fontSize: 22, fontWeight: '700', color: '#0F172A' },
+  header: { alignItems: 'center', marginTop: 20, marginBottom: 20 },
+  logoIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  brand: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
+  heading: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  subheading: { fontSize: 14, color: '#64748B' },
 
-  title: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#64748B', marginBottom: 20 },
+  roleToggle: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  roleTabInactive: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
+  roleTabTextInactive: { fontSize: 13, fontWeight: '500', color: '#64748B' },
+  roleTabActive: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#DBEAFE', borderWidth: 1, borderColor: '#3B82F6' },
+  roleTabTextActive: { fontSize: 13, fontWeight: '700', color: '#3B82F6' },
 
-  photoContainer: { alignSelf: 'center', alignItems: 'center', marginBottom: 24 },
-  photoPlaceholder: {
-    width: 96, height: 96, borderRadius: 48,
-    backgroundColor: '#F1F5F9', borderWidth: 2, borderColor: '#CBD5E1', borderStyle: 'dashed',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  photo: { width: 96, height: 96, borderRadius: 48 },
-  photoDelete: {
-    position: 'absolute', top: -2, right: -2,
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: '#EF4444', alignItems: 'center', justifyContent: 'center',
-  },
-  photoText: { marginTop: 8, fontSize: 13, color: ACCENT, fontWeight: '600' },
-  photoHint: { fontSize: 11, color: '#94A3B8', marginTop: 2 },
+  formCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
 
-  form: { width: '100%' },
-  matchRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: -8, marginBottom: 8 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  photoBox: { width: 56, height: 56, borderRadius: 12, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photoImg: { width: 56, height: 56 },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EFF6FF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: '#BFDBFE' },
+  uploadBtnText: { fontSize: 13, color: '#3B82F6', fontWeight: '600' },
+  photoHint: { fontSize: 11, color: '#94A3B8' },
 
-  registerButton: {
-    backgroundColor: ACCENT, borderRadius: 14,
-    paddingVertical: 16, alignItems: 'center', marginTop: 8,
-  },
-  registerButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginVertical: 12 },
+  checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  checkboxChecked: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  termsText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 20 },
+  termsLink: { color: '#3B82F6', fontWeight: '600', textDecorationLine: 'underline' },
+  errorHint: { color: '#EF4444', fontSize: 12, marginTop: -8, marginBottom: 8 },
 
-  loginLink: { marginTop: 20, alignItems: 'center' },
+  registerBtn: { backgroundColor: '#3B82F6', borderRadius: 12, paddingVertical: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 4 },
+  registerBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  loginLink: { alignItems: 'center', marginTop: 4 },
   loginText: { fontSize: 14, color: '#64748B' },
 });
 

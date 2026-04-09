@@ -151,11 +151,12 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await storage.clearAuth();
-      setUser(null);
-      setIsAuthenticated(false);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout storage error:', error);
     }
+    setUser(null);
+    setIsAuthenticated(false);
+    setPharmacyStatus(null);
   };
 
   const updateUser = async (userData) => {

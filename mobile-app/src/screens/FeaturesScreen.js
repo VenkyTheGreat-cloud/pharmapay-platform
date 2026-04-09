@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import TopNavBar from '../components/TopNavBar';
 
 const OWNER_FEATURES = [
   { icon: 'storefront-outline', title: 'White-labeled Platform', desc: 'Launch your pharmacy\'s custom-branded delivery app. Your logo, your colors, your rules.' },
@@ -20,9 +21,7 @@ const PARTNER_FEATURES = [
 
 const FeaturesScreen = ({ navigation }) => (
   <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-      <Text style={styles.backText}>← Back</Text>
-    </TouchableOpacity>
+    <TopNavBar activeScreen="Features" />
 
     <View style={styles.header}>
       <Text style={styles.title}>
@@ -84,11 +83,9 @@ const FeaturesScreen = ({ navigation }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { padding: 24, paddingTop: 56, paddingBottom: 40 },
-  backBtn: { marginBottom: 20 },
-  backText: { fontSize: 15, color: '#10B981', fontWeight: '600' },
+  content: { paddingBottom: 40 },
 
-  header: { marginBottom: 28 },
+  header: { marginBottom: 28, paddingHorizontal: 24, paddingTop: 24 },
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22 },
 

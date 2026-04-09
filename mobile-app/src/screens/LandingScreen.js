@@ -61,6 +61,9 @@ const LandingScreen = ({ navigation }) => {
                             <Text style={styles.navItemText}>{item.label}</Text>
                         </TouchableOpacity>
                     ))}
+                    <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Login')}>
+                        <Text style={[styles.navItemText, { color: '#10B981', fontWeight: '700' }]}>Log in</Text>
+                    </TouchableOpacity>
                 </View>
             )}
 
@@ -290,7 +293,7 @@ const styles = StyleSheet.create({
     ctaContainerWide: { flexDirection: 'row', gap: 16 },
     primaryButton: { backgroundColor: '#10B981', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-    secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     secondaryButtonText: { color: '#334155', fontSize: 15, fontWeight: '600' },
 
     // Nav Bar (mobile)
