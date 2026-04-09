@@ -41,29 +41,31 @@ const LandingScreen = ({ navigation }) => {
                 </View>
             )}
 
-            {/* Mobile-only logo + nav at TOP */}
+            {/* Mobile-only compact header */}
             {!isWeb && (
-                <View style={styles.mobileLogoSection}>
-                    <View style={styles.logoContainer}>
-                        <Ionicons name="storefront" size={32} color="#fff" />
-                    </View>
-                    <Text style={styles.appName}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
-                </View>
-            )}
-            {!isWeb && (
-                <View style={styles.navBar}>
-                    {[
-                        { label: 'Features', screen: 'Features' },
-                        { label: 'How It Works', screen: 'HowItWorks' },
-                        { label: 'Pricing', screen: 'Pricing' },
-                    ].map((item) => (
-                        <TouchableOpacity key={item.screen} style={styles.navItem} onPress={() => navigation.navigate(item.screen)}>
-                            <Text style={styles.navItemText}>{item.label}</Text>
+                <View style={styles.mobileHeader}>
+                    <View style={styles.mobileHeaderTop}>
+                        <View style={styles.mobileLogoRow}>
+                            <View style={styles.mobileLogoIcon}>
+                                <Ionicons name="storefront" size={16} color="#fff" />
+                            </View>
+                            <Text style={styles.mobileLogoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+                        </View>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                            <Text style={styles.mobileLoginText}>Log in</Text>
                         </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Login')}>
-                        <Text style={[styles.navItemText, { color: '#10B981', fontWeight: '700' }]}>Log in</Text>
-                    </TouchableOpacity>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mobilePillRow}>
+                        {[
+                            { label: 'Features', screen: 'Features' },
+                            { label: 'How It Works', screen: 'HowItWorks' },
+                            { label: 'Pricing', screen: 'Pricing' },
+                        ].map((item) => (
+                            <TouchableOpacity key={item.screen} style={styles.mobilePill} onPress={() => navigation.navigate(item.screen)}>
+                                <Text style={styles.mobilePillText}>{item.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
                 </View>
             )}
 
@@ -260,13 +262,19 @@ const styles = StyleSheet.create({
     navGetStartedText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
     // Hero
-    hero: { backgroundColor: '#F1F5F9', paddingTop: 56, paddingBottom: 36, paddingHorizontal: 24, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+    hero: { backgroundColor: '#F1F5F9', paddingTop: 24, paddingBottom: 36, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
     heroWide: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 48, paddingTop: 80, paddingBottom: 60 },
 
-    // Mobile logo
-    mobileLogoSection: { alignItems: 'center', paddingTop: 56, paddingBottom: 16, backgroundColor: '#F1F5F9' },
-    logoContainer: { width: 64, height: 64, borderRadius: 18, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-    appName: { fontSize: 28, fontWeight: '800', color: '#0F172A', marginBottom: 12, letterSpacing: -0.5 },
+    // Mobile compact header
+    mobileHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingTop: 48 },
+    mobileHeaderTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
+    mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    mobileLogoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
+    mobileLogoText: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+    mobileLoginText: { fontSize: 14, fontWeight: '600', color: '#10B981' },
+    mobilePillRow: { paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
+    mobilePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9' },
+    mobilePillText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
 
     badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16, gap: 6, alignSelf: 'flex-start' },
     badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
@@ -278,7 +286,7 @@ const styles = StyleSheet.create({
 
     // Hero Visual
     heroVisual: { width: '100%', marginTop: 28, position: 'relative' },
-    heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 200, borderWidth: 1, borderColor: '#E2E8F0' },
+    heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 220, borderWidth: 1, borderColor: '#E2E8F0' },
     heroImageCard: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     heroImg: { width: '100%', height: '100%', position: 'absolute' },
     heroImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(15,23,42,0.6)' },
@@ -296,10 +304,6 @@ const styles = StyleSheet.create({
     secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     secondaryButtonText: { color: '#334155', fontSize: 15, fontWeight: '600' },
 
-    // Nav Bar (mobile)
-    navBar: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 12, gap: 8 },
-    navItem: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-    navItemText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
 
     // Sections
     section: { paddingHorizontal: 24, paddingVertical: 32 },

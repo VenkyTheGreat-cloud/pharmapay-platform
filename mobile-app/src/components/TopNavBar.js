@@ -16,56 +16,88 @@ const TopNavBar = ({ activeScreen }) => {
   ];
 
   return (
-    <View style={[styles.navbar, isWide && styles.navbarWide]}>
-      <TouchableOpacity style={styles.logo} onPress={() => navigation.navigate('Landing')}>
-        <View style={styles.logoIcon}>
-          <Ionicons name="storefront" size={14} color="#fff" />
-        </View>
-        {isWide && <Text style={styles.logoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>}
-      </TouchableOpacity>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.linksScroll}>
-        {links.map((l) => (
-          <TouchableOpacity key={l.screen} onPress={() => navigation.navigate(l.screen)} style={styles.linkBtn}>
-            <Text style={[styles.linkText, activeScreen === l.screen && styles.linkActive]}>{l.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={styles.auth}>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.loginText}>Log in</Text>
+    <View style={styles.container}>
+      {/* Top row: Logo + Login */}
+      <View style={[styles.topRow, isWide && styles.topRowWide]}>
+        <TouchableOpacity style={styles.logo} onPress={() => navigation.navigate('Landing')}>
+          <View style={styles.logoIcon}>
+            <Ionicons name="storefront" size={14} color="#fff" />
+          </View>
+          <Text style={styles.logoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
         </TouchableOpacity>
+
+        {/* Wide: inline links */}
         {isWide && (
-          <TouchableOpacity style={styles.getStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
-            <Text style={styles.getStartedText}>Get Started</Text>
-            <Ionicons name="arrow-forward" size={12} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.inlineLinks}>
+            {links.map((l) => (
+              <TouchableOpacity key={l.screen} onPress={() => navigation.navigate(l.screen)}>
+                <Text style={[styles.inlineLinkText, activeScreen === l.screen && styles.inlineLinkActive]}>{l.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
+
+        <View style={styles.authRow}>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginText}>Log in</Text>
+          </TouchableOpacity>
+          {isWide && (
+            <TouchableOpacity style={styles.getStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
+              <Text style={styles.getStartedText}>Get Started</Text>
+              <Ionicons name="arrow-forward" size={12} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      {/* Narrow: scrollable pill tabs below */}
+      {!isWide && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pillRow} contentContainerStyle={styles.pillRowContent}>
+          {links.map((l) => (
+            <TouchableOpacity
+              key={l.screen}
+              style={[styles.pill, activeScreen === l.screen && styles.pillActive]}
+              onPress={() => navigation.navigate(l.screen)}
+            >
+              <Text style={[styles.pillText, activeScreen === l.screen && styles.pillTextActive]}>{l.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  navbar: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 10, paddingVertical: 8,
+  container: {
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
     ...(Platform.OS === 'web' ? { position: 'sticky', top: 0, zIndex: 50 } : {}),
   },
-  navbarWide: { paddingHorizontal: 24 },
-  logo: { flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 8 },
-  logoIcon: { width: 26, height: 26, borderRadius: 6, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
+  topRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 10,
+  },
+  topRowWide: { paddingHorizontal: 32 },
+
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  logoIcon: { width: 26, height: 26, borderRadius: 7, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
   logoText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
-  linksScroll: { flexDirection: 'row', gap: 4, flex: 1 },
-  linkBtn: { paddingHorizontal: 8, paddingVertical: 6 },
-  linkText: { fontSize: 11, fontWeight: '500', color: '#64748B' },
-  linkActive: { color: '#10B981', fontWeight: '700' },
-  auth: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 },
-  loginText: { fontSize: 11, fontWeight: '600', color: '#64748B' },
-  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10B981', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 14 },
-  getStartedText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+
+  inlineLinks: { flexDirection: 'row', gap: 24 },
+  inlineLinkText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
+  inlineLinkActive: { color: '#10B981', fontWeight: '700' },
+
+  authRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  loginText: { fontSize: 13, fontWeight: '600', color: '#10B981' },
+  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10B981', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  getStartedText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+
+  pillRow: { paddingBottom: 8 },
+  pillRowContent: { paddingHorizontal: 12, gap: 6 },
+  pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9' },
+  pillActive: { backgroundColor: '#D1FAE5' },
+  pillText: { fontSize: 12, fontWeight: '500', color: '#64748B' },
+  pillTextActive: { color: '#065F46', fontWeight: '700' },
 });
 
 export default TopNavBar;
