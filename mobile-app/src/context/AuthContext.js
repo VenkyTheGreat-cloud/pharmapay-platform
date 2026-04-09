@@ -148,15 +148,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
-    try {
-      await storage.clearAuth();
-    } catch (error) {
-      console.error('Logout storage error:', error);
-    }
+  const logout = () => {
+    // Set state immediately (synchronous) so UI updates instantly
     setUser(null);
     setIsAuthenticated(false);
     setPharmacyStatus(null);
+    // Clear storage in background
+    storage.clearAuth().catch((e) => console.error('Logout storage error:', e));
   };
 
   const updateUser = async (userData) => {
