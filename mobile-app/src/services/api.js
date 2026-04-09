@@ -380,7 +380,7 @@ const realPharmacyAPI = {
   // Admin methods
   listAllPharmacies: () => api.get('/pharmacies'),
   approvePharmacy: (id) => api.put(`/pharmacies/${id}/approve`),
-  rejectPharmacy: (id, reason) => api.put(`/pharmacies/${id}/reject`, { reason }),
+  rejectPharmacy: (id, reason) => api.put(`/pharmacies/${id}/reject`, { rejection_reason: reason }),
 
   // Admin dashboard analytics
   getRevenueSummary: () => api.get('/admin-dashboard/revenue/summary'),
