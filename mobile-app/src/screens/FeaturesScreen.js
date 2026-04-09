@@ -85,23 +85,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
   content: { paddingBottom: 40 },
 
-  header: { marginBottom: 28, paddingHorizontal: 24, paddingTop: 24 },
+  header: { marginBottom: 28, paddingHorizontal: 20, paddingTop: 24 },
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22 },
 
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginHorizontal: 20 },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#0F172A' },
   proBadge: { backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   proBadgeText: { fontSize: 12, fontWeight: '700', color: '#065F46' },
 
-  featureCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  featureCardRow: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', gap: 16 },
+  featureCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', marginHorizontal: 20 },
+  featureCardRow: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', gap: 16, marginHorizontal: 20 },
   iconCircle: { width: 48, height: 48, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   featureTextWrap: { flex: 1 },
   featureTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A', marginBottom: 6 },
   featureDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
 
-  cta: { marginTop: 32, alignItems: 'center' },
+  cta: { marginTop: 32, alignItems: 'center', marginHorizontal: 20 },
   ctaBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40 },
   ctaBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

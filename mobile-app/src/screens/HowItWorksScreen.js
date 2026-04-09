@@ -140,11 +140,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
   content: { paddingBottom: 40 },
 
-  header: { marginBottom: 32, paddingHorizontal: 24, paddingTop: 24 },
+  header: { marginBottom: 32, paddingHorizontal: 20, paddingTop: 24 },
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22 },
 
-  stepContainer: { marginBottom: 40 },
+  stepContainer: { marginBottom: 40, paddingHorizontal: 20 },
 
   mockup: { backgroundColor: '#fff', borderRadius: 20, padding: 24, borderWidth: 1, marginBottom: 20, alignItems: 'center', justifyContent: 'center', minHeight: 180 },
 
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   stepTitle: { fontSize: 22, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
   stepDesc: { fontSize: 15, color: '#64748B', lineHeight: 22 },
 
-  ctaSection: { marginTop: 20, alignItems: 'center' },
+  ctaSection: { marginTop: 20, alignItems: 'center', paddingHorizontal: 20 },
   ctaTitle: { fontSize: 22, fontWeight: '700', color: '#0F172A', marginBottom: 20, textAlign: 'center' },
   ctaBtn: { borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, width: '100%', alignItems: 'center', marginBottom: 12 },
   ctaBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
