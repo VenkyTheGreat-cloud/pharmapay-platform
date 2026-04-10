@@ -25,7 +25,11 @@ const LoginScreen = ({ navigation }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!email.trim()) newErrors.email = 'Email or phone is required';
+    if (!email.trim()) {
+      newErrors.email = role === 'partner' ? 'Phone number is required' : 'Email or phone is required';
+    } else if (role === 'partner' && !/^\+?\d[\d\s-]{7,}$/.test(email.trim())) {
+      newErrors.email = 'Please enter a valid phone number';
+    }
     if (!password) newErrors.password = 'Password is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -83,11 +87,11 @@ const LoginScreen = ({ navigation }) => {
             {error ? <Alert type="error" message={error} /> : null}
 
             <Input
-              label="Email or Phone"
+              label={role === 'partner' ? 'Phone Number' : 'Email or Phone'}
               value={email}
               onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: '' }); }}
-              placeholder={role === 'owner' ? 'owner@pharmacy.com' : '+91 98765 43210'}
-              keyboardType="email-address"
+              placeholder={role === 'partner' ? '+91 98765 43210' : 'owner@pharmacy.com'}
+              keyboardType={role === 'partner' ? 'phone-pad' : 'email-address'}
               autoCapitalize="none"
               error={errors.email}
             />

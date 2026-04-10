@@ -442,6 +442,170 @@ exports.resetPassword = async (req, res, next) => {
     }
 };
 
+// Forgot Password - Step 1: Send verification code
+exports.forgotPasswordSendCode = async (req, res, next) => {
+    try {
+        const { identifier } = req.body;
+
+        if (!identifier) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Email or phone is required'));
+        }
+
+        const DeliveryBoy = require('../models/DeliveryBoy');
+        const OtpVerification = require('../models/OtpVerification');
+
+        // Find user by email or mobile in both tables
+        let user = await User.findByEmailOrMobile(identifier);
+        let userType = 'user';
+
+        if (!user) {
+            user = await DeliveryBoy.findByEmailOrMobile(identifier);
+            userType = 'delivery_boy';
+        }
+
+        if (!user) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'No account found with that email or phone'));
+        }
+
+        // Generate OTP using the identifier as key
+        const otpRecord = await OtpVerification.create(identifier);
+
+        // Mask the email/phone for display
+        let maskedContact = '';
+        if (user.email && identifier.includes('@')) {
+            const [local, domain] = user.email.split('@');
+            maskedContact = local.substring(0, 2) + '**@' + domain;
+        } else if (user.mobile) {
+            maskedContact = user.mobile.substring(0, 2) + '****' + user.mobile.slice(-2);
+        }
+
+        logger.info('Forgot password OTP sent', {
+            userId: user.id,
+            userType,
+            identifier: identifier.substring(0, 3) + '***',
+            otp: otpRecord.otp // Log OTP since no SMS/email service
+        });
+
+        res.json(successResponse({
+            maskedContact,
+            expiresIn: 600
+        }, 'Verification code sent successfully'));
+    } catch (error) {
+        logger.error('Forgot password send code error', {
+            error: error.message,
+            identifier: req.body?.identifier?.substring(0, 3) + '***'
+        });
+        next(error);
+    }
+};
+
+// Forgot Password - Step 2: Verify code
+exports.forgotPasswordVerifyCode = async (req, res, next) => {
+    try {
+        const { identifier, otp } = req.body;
+
+        if (!identifier || !otp) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Email/phone and OTP are required'));
+        }
+
+        const OtpVerification = require('../models/OtpVerification');
+
+        // Verify OTP
+        const otpRecord = await OtpVerification.verify(identifier, otp);
+        if (!otpRecord) {
+            return res.status(400).json(errorResponse('INVALID_OTP', 'Invalid or expired verification code'));
+        }
+
+        // Generate a short-lived reset token (15 minutes)
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-production-use-strong-secret-key-minimum-256-bits';
+        const resetToken = jwt.sign(
+            { identifier, type: 'password_reset' },
+            JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        logger.info('Forgot password OTP verified', {
+            identifier: identifier.substring(0, 3) + '***'
+        });
+
+        res.json(successResponse({ resetToken }, 'Code verified successfully'));
+    } catch (error) {
+        logger.error('Forgot password verify code error', {
+            error: error.message,
+            identifier: req.body?.identifier?.substring(0, 3) + '***'
+        });
+        next(error);
+    }
+};
+
+// Forgot Password - Step 3: Reset password with token
+exports.forgotPasswordReset = async (req, res, next) => {
+    try {
+        const { resetToken, newPassword } = req.body;
+
+        if (!resetToken || !newPassword) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Reset token and new password are required'));
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
+        }
+
+        // Verify reset token
+        const jwt = require('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-production-use-strong-secret-key-minimum-256-bits';
+        let decoded;
+        try {
+            decoded = jwt.verify(resetToken, JWT_SECRET);
+        } catch {
+            return res.status(400).json(errorResponse('INVALID_TOKEN', 'Reset token is invalid or expired'));
+        }
+
+        if (decoded.type !== 'password_reset') {
+            return res.status(400).json(errorResponse('INVALID_TOKEN', 'Invalid reset token'));
+        }
+
+        const { identifier } = decoded;
+        const DeliveryBoy = require('../models/DeliveryBoy');
+
+        // Find user
+        let user = await User.findByEmailOrMobile(identifier);
+        let userType = 'user';
+
+        if (!user) {
+            user = await DeliveryBoy.findByEmailOrMobile(identifier);
+            userType = 'delivery_boy';
+        }
+
+        if (!user) {
+            return res.status(404).json(errorResponse('NOT_FOUND', 'User not found'));
+        }
+
+        // Hash and update password
+        const password_hash = await AuthService.hashPassword(newPassword);
+
+        if (userType === 'delivery_boy') {
+            await DeliveryBoy.update(user.id, { password_hash });
+        } else {
+            await User.update(user.id, { password_hash });
+        }
+
+        logger.info('Password reset via forgot password flow', {
+            userId: user.id,
+            userType,
+            identifier: identifier.substring(0, 3) + '***'
+        });
+
+        res.json(successResponse(null, 'Password reset successfully'));
+    } catch (error) {
+        logger.error('Forgot password reset error', {
+            error: error.message
+        });
+        next(error);
+    }
+};
+
 // Verify token
 exports.verify = async (req, res, next) => {
     try {

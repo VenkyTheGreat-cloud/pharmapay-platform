@@ -31,11 +31,28 @@ const resetPasswordValidation = [
     body('email').trim().notEmpty().withMessage('Email is required').isEmail().normalizeEmail().withMessage('Valid email is required'),
 ];
 
+const forgotPasswordSendValidation = [
+    body('identifier').trim().notEmpty().withMessage('Email or phone is required'),
+];
+
+const forgotPasswordVerifyValidation = [
+    body('identifier').trim().notEmpty().withMessage('Email or phone is required'),
+    body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+];
+
+const forgotPasswordResetValidation = [
+    body('resetToken').trim().notEmpty().withMessage('Reset token is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+];
+
 // Public routes
 router.get('/admins-stores', authController.getAdminsAndStores);
 router.post('/register', registerValidation, authController.register);
 router.post('/login', loginValidation, authController.login);
 router.post('/reset-password', resetPasswordValidation, authController.resetPassword);
+router.post('/forgot-password/send-code', forgotPasswordSendValidation, authController.forgotPasswordSendCode);
+router.post('/forgot-password/verify-code', forgotPasswordVerifyValidation, authController.forgotPasswordVerifyCode);
+router.post('/forgot-password/reset', forgotPasswordResetValidation, authController.forgotPasswordReset);
 router.post('/otp/send', otpSendValidation, authController.sendOTP);
 router.post('/otp/verify', otpVerifyValidation, authController.verifyOTP);
 router.post('/refresh', authController.refreshToken);

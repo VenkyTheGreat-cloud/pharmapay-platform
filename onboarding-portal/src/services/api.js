@@ -36,6 +36,12 @@ api.interceptors.response.use(
     }
 );
 
+export const authAPI = {
+    forgotPasswordSendCode: (identifier) => api.post('/auth/forgot-password/send-code', { identifier }),
+    forgotPasswordVerifyCode: (identifier, otp) => api.post('/auth/forgot-password/verify-code', { identifier, otp }),
+    forgotPasswordReset: (resetToken, newPassword) => api.post('/auth/forgot-password/reset', { resetToken, newPassword }),
+};
+
 export const pharmacyAPI = {
     signup: (data) => api.post('/pharmacies/signup', data),
 

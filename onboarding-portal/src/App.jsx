@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ConfiguratorPage from './pages/ConfiguratorPage';
 import BrandingPage from './pages/BrandingPage';
 import PaymentPage from './pages/PaymentPage';
@@ -38,6 +39,10 @@ function AppRoutes() {
             <Route
                 path="/login"
                 element={isAuthenticated ? <Navigate to={isPlatformAdmin ? '/admin-panel' : '/configure'} replace /> : <LoginPage />}
+            />
+            <Route
+                path="/forgot-password"
+                element={isAuthenticated ? <Navigate to={isPlatformAdmin ? '/admin-panel' : '/configure'} replace /> : <ForgotPasswordPage />}
             />
             <Route
                 path="/configure"
