@@ -488,7 +488,10 @@ exports.forgotPasswordSendCode = async (req, res, next) => {
 
         res.json(successResponse({
             maskedContact,
-            expiresIn: 600
+            expiresIn: 600,
+            // Include OTP in response since no SMS/email service is configured
+            // TODO: Remove this when SMS/email service is integrated
+            otp: otpRecord.otp
         }, 'Verification code sent successfully'));
     } catch (error) {
         logger.error('Forgot password send code error', {

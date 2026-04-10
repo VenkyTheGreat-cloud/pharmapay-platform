@@ -56,6 +56,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
       const data = res.data?.data;
       setMaskedContact(data?.maskedContact || '');
       setCountdown(data?.expiresIn || 600);
+      // Auto-fill OTP for testing (backend returns it since no SMS/email service)
+      if (data?.otp) {
+        setOtp(data.otp.split(''));
+      }
       setStep(STEPS.VERIFY_CODE);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to send verification code.');
@@ -371,6 +375,7 @@ const styles = StyleSheet.create({
   otpInput: {
     width: 48, height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#CBD5E1',
     backgroundColor: '#fff', fontSize: 20, fontWeight: '700', color: '#0F172A',
+    textAlign: 'center',
   },
 
   timerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
