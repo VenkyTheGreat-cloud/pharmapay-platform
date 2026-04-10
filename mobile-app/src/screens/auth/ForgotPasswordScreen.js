@@ -346,7 +346,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
+  scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center', maxWidth: 640, width: '100%', alignSelf: 'center' },
 
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 24 },
   backText: { fontSize: 14, fontWeight: '600', color: '#64748B' },

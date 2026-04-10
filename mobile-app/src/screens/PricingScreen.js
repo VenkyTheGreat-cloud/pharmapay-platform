@@ -106,7 +106,7 @@ const PricingScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
   body: { padding: 24 },
 
   header: { marginBottom: 20, alignItems: 'center' },

@@ -280,7 +280,7 @@ const PharmacySignupScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { padding: 24, paddingTop: 56, paddingBottom: 40 },
+  content: { padding: 24, paddingTop: 56, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' },
   backBtn: { marginBottom: 16 },
   backText: { fontSize: 15, color: '#20b1aa', fontWeight: '600' },
 

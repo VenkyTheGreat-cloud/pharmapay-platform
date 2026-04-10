@@ -23,9 +23,9 @@ const LandingScreen = ({ navigation }) => {
                         <Text style={styles.navLogoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
                     </TouchableOpacity>
                     <View style={styles.navLinks}>
-                        {['Features', 'HowItWorks', 'Pricing'].map((s) => (
-                            <TouchableOpacity key={s} onPress={() => navigation.navigate(s)}>
-                                <Text style={styles.navLinkText}>{s === 'HowItWorks' ? 'How It Works' : s}</Text>
+                        {[{ screen: 'Landing', label: 'Home' }, { screen: 'Features', label: 'Features' }, { screen: 'HowItWorks', label: 'How It Works' }, { screen: 'Pricing', label: 'Pricing' }].map((s) => (
+                            <TouchableOpacity key={s.screen} onPress={() => navigation.navigate(s.screen)}>
+                                <Text style={[styles.navLinkText, s.screen === 'Landing' && { color: '#10B981', fontWeight: '700' }]}>{s.label}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>

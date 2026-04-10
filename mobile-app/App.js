@@ -34,11 +34,36 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const linking = {
+  prefixes: ['https://pharmagig.swinkpay-fintech.com', 'pharmapay://'],
+  config: {
+    screens: {
+      Landing: '',
+      Login: 'login',
+      Register: 'register',
+      ForgotPassword: 'forgot-password',
+      Features: 'features',
+      HowItWorks: 'how-it-works',
+      Pricing: 'pricing',
+      PharmacySignup: 'signup',
+      PharmacyConfigure: 'configure',
+      PharmacyBranding: 'branding',
+      PharmacyPayment: 'payment',
+      PharmacyStatus: 'status',
+      PrivacyPolicy: 'privacy-policy',
+      Terms: 'terms',
+      HomeRouter: 'home',
+      Main: 'main',
+      AdminPanel: 'admin-panel',
+    },
+  },
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <NavigationContainer>
+        <NavigationContainer linking={linking}>
           <AppNavigator />
         </NavigationContainer>
       </AuthProvider>

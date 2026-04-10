@@ -138,7 +138,7 @@ const HowItWorksScreen = ({ navigation }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
 
   header: { marginBottom: 32, paddingHorizontal: 20, paddingTop: 24 },
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
