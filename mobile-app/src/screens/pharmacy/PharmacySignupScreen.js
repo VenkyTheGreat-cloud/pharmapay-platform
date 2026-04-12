@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { pharmacyAPI } from '../../services/api';
 import PasswordStrength from '../../components/PasswordStrength';
+import TopNavBar from '../../components/TopNavBar';
 
 const ACCENT = '#10B981';
 
@@ -125,10 +126,9 @@ const PharmacySignupScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={styles.backBtn}>
-        <Text style={styles.backText}>← Back to Home</Text>
-      </TouchableOpacity>
+      <TopNavBar />
 
+      <View style={styles.bodyWrap}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoIcon}>
@@ -137,8 +137,8 @@ const PharmacySignupScreen = ({ navigation }) => {
         <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
       </View>
 
-      <Text style={styles.title}>Create Pharmacy Account</Text>
-      <Text style={styles.subtitle}>Set up your pharmacy on PharmaGig</Text>
+      <Text style={styles.title}>Create your account</Text>
+      <Text style={styles.subtitle}>Start managing your pharmacy deliveries today.</Text>
 
       {message.text ? (
         <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
@@ -274,22 +274,22 @@ const PharmacySignupScreen = ({ navigation }) => {
           Already have an account? <Text style={{ color: ACCENT, fontWeight: '700' }}>Log in</Text>
         </Text>
       </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { padding: 24, paddingTop: 56, paddingBottom: 40, maxWidth: 640, width: '100%', alignSelf: 'center' },
-  backBtn: { marginBottom: 16 },
-  backText: { fontSize: 15, color: '#20b1aa', fontWeight: '600' },
+  content: { paddingBottom: 40 },
+  bodyWrap: { padding: 24, maxWidth: 640, width: '100%', alignSelf: 'center' },
 
   header: { alignItems: 'center', marginBottom: 20 },
   logoIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   brand: { fontSize: 22, fontWeight: '700', color: '#0F172A' },
 
-  title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  subtitle: { fontSize: 15, color: '#64748B', marginBottom: 20 },
+  title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: '#64748B', marginBottom: 20, textAlign: 'center' },
 
   messageBox: { padding: 12, borderRadius: 10, marginBottom: 16 },
   errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
