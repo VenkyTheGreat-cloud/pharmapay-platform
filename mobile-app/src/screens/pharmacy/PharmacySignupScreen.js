@@ -146,7 +146,8 @@ const PharmacySignupScreen = ({ navigation }) => {
         </View>
       ) : null}
 
-      {renderField('Owner Name', 'ownerName', 'e.g. Dr. Rajesh Kumar', { icon: 'person-outline', autoCapitalize: 'words' })}
+      <View style={styles.formCard}>
+      {renderField('Pharmacy Owner Name', 'ownerName', 'e.g. Dr. Rajesh Kumar', { icon: 'person-outline', autoCapitalize: 'words' })}
       {renderField('Pharmacy Name', 'pharmacyName', 'e.g. Apollo Pharmacy', {
         icon: 'medical-outline',
         onChangeText: handlePharmacyNameChange,
@@ -268,6 +269,7 @@ const PharmacySignupScreen = ({ navigation }) => {
           </View>
         )}
       </TouchableOpacity>
+      </View>
 
       <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.loginLink}>
         <Text style={styles.loginLinkText}>
@@ -297,6 +299,13 @@ const styles = StyleSheet.create({
   messageText: { fontSize: 14 },
   errorTextStyle: { color: '#DC2626' },
   successTextStyle: { color: '#16A34A' },
+
+  formCard: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 24,
+    borderWidth: 1, borderColor: '#E2E8F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12,
+    elevation: 3, marginBottom: 16,
+  },
 
   field: { marginBottom: 18 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },

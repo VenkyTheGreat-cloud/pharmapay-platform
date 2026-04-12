@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import TopNavBar from '../components/TopNavBar';
 
@@ -19,7 +19,11 @@ const PARTNER_FEATURES = [
   { icon: 'checkmark-circle-outline', title: 'Easy Onboarding', desc: 'Sign up in minutes. No vehicle ownership required. Start earning the same day.' },
 ];
 
-const FeaturesScreen = ({ navigation }) => (
+const FeaturesScreen = ({ navigation }) => {
+  const { width } = useWindowDimensions();
+  const isWide = width > 768;
+
+  return (
   <ScrollView style={styles.container} contentContainerStyle={styles.content}>
     <TopNavBar activeScreen="Features" />
 
@@ -39,8 +43,9 @@ const FeaturesScreen = ({ navigation }) => (
       <View style={styles.proBadge}><Text style={styles.proBadgeText}>Pro Tools</Text></View>
     </View>
 
+    <View style={isWide ? styles.gridRow : undefined}>
     {OWNER_FEATURES.map((f) => (
-      <View key={f.title} style={styles.featureCard}>
+      <View key={f.title} style={[styles.featureCard, isWide && { flex: 1 }]}>
         <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
           <Ionicons name={f.icon} size={24} color="#10B981" />
         </View>
@@ -48,6 +53,7 @@ const FeaturesScreen = ({ navigation }) => (
         <Text style={styles.featureDesc}>{f.desc}</Text>
       </View>
     ))}
+    </View>
 
     {/* Delivery Partners */}
     <View style={[styles.sectionHeader, { marginTop: 32 }]}>
@@ -57,8 +63,9 @@ const FeaturesScreen = ({ navigation }) => (
       </View>
     </View>
 
+    <View style={isWide ? styles.gridRow : undefined}>
     {PARTNER_FEATURES.map((f) => (
-      <View key={f.title} style={styles.featureCardRow}>
+      <View key={f.title} style={[styles.featureCardRow, isWide && { flex: 1 }]}>
         <View style={[styles.iconCircle, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
           <Ionicons name={f.icon} size={24} color="#3B82F6" />
         </View>
@@ -68,6 +75,7 @@ const FeaturesScreen = ({ navigation }) => (
         </View>
       </View>
     ))}
+    </View>
 
     {/* CTA */}
     <View style={styles.cta}>
@@ -79,23 +87,25 @@ const FeaturesScreen = ({ navigation }) => (
       </TouchableOpacity>
     </View>
   </ScrollView>
-);
+  );
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F1F5F9' },
-  content: { paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
+  container: { flex: 1, backgroundColor: '#fff' },
+  content: { paddingBottom: 40, maxWidth: 1100, width: '100%', alignSelf: 'center' },
 
-  header: { marginBottom: 28, paddingHorizontal: 20, paddingTop: 24 },
-  title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 34 },
-  subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22 },
+  header: { marginBottom: 28, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
+  title: { fontSize: 32, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 42, textAlign: 'center' },
+  subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22, textAlign: 'center', maxWidth: 600 },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginHorizontal: 20 },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#0F172A' },
   proBadge: { backgroundColor: '#ECFDF5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   proBadgeText: { fontSize: 12, fontWeight: '700', color: '#065F46' },
 
-  featureCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', marginHorizontal: 20 },
-  featureCardRow: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', gap: 16, marginHorizontal: 20 },
+  gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginHorizontal: 20 },
+  featureCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', marginHorizontal: 20, minWidth: 250 },
+  featureCardRow: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', flexDirection: 'row', gap: 16, marginHorizontal: 20, minWidth: 250 },
   iconCircle: { width: 48, height: 48, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   featureTextWrap: { flex: 1 },
   featureTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A', marginBottom: 6 },

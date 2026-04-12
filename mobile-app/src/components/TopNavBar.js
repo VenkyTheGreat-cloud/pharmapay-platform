@@ -17,11 +17,11 @@ const TopNavBar = ({ activeScreen }) => {
 
   return (
     <View style={styles.container}>
-      {/* Top row: Logo + Login */}
+      {/* Top row: Logo + Links + Auth */}
       <View style={[styles.topRow, isWide && styles.topRowWide]}>
         <TouchableOpacity style={styles.logo} onPress={() => navigation.navigate('Landing')}>
           <View style={styles.logoIcon}>
-            <Ionicons name="storefront" size={14} color="#fff" />
+            <Ionicons name="storefront" size={18} color="#fff" />
           </View>
           <Text style={styles.logoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
         </TouchableOpacity>
@@ -41,12 +41,10 @@ const TopNavBar = ({ activeScreen }) => {
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
             <Text style={styles.loginText}>Log in</Text>
           </TouchableOpacity>
-          {isWide && (
-            <TouchableOpacity style={styles.getStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
-              <Text style={styles.getStartedText}>Get Started</Text>
-              <Ionicons name="arrow-forward" size={12} color="#fff" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.getStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
+            <Text style={styles.getStartedText}>Get Started</Text>
+            <Ionicons name="arrow-forward" size={14} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -75,22 +73,22 @@ const styles = StyleSheet.create({
   },
   topRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
+    paddingHorizontal: 24, paddingVertical: 12,
   },
-  topRowWide: { paddingHorizontal: 32 },
+  topRowWide: { paddingHorizontal: 48 },
 
-  logo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  logoIcon: { width: 26, height: 26, borderRadius: 7, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
+  logoText: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
 
-  inlineLinks: { flexDirection: 'row', gap: 24 },
-  inlineLinkText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
+  inlineLinks: { flexDirection: 'row', gap: 28 },
+  inlineLinkText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
   inlineLinkActive: { color: '#10B981', fontWeight: '700' },
 
-  authRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  loginText: { fontSize: 13, fontWeight: '600', color: '#10B981' },
-  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10B981', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  getStartedText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  authRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  loginText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
+  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  getStartedText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
   pillRow: { paddingBottom: 8 },
   pillRowContent: { paddingHorizontal: 12, gap: 6 },
