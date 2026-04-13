@@ -176,7 +176,19 @@ const PharmacyBrandingScreen = ({ navigation }) => {
           autoCapitalize="none"
           maxLength={7}
         />
-        <View style={[styles.colorPreviewBox, { backgroundColor: primaryColor }]} />
+        <Text style={styles.customLabel}>Custom</Text>
+        {Platform.OS === 'web' ? (
+          <TouchableOpacity style={[styles.colorPickerCircle, { backgroundColor: primaryColor }]}>
+            <input
+              type="color"
+              value={primaryColor}
+              onChange={(e) => { handleHexChange(e.target.value); }}
+              style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', border: 'none' }}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.colorPickerCircle, { backgroundColor: primaryColor }]} />
+        )}
       </View>
 
       {/* Logo Upload */}
@@ -300,6 +312,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: '#111827',
+  },
+  customLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  colorPickerCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    position: 'relative',
+    overflow: 'hidden',
   },
   colorPreviewBox: {
     width: 40,

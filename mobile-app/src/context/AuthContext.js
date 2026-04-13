@@ -155,6 +155,10 @@ export const AuthProvider = ({ children }) => {
     setPharmacyStatus(null);
     // Clear storage in background
     storage.clearAuth().catch((e) => console.error('Logout storage error:', e));
+    // On web, force URL reset to landing page
+    if (typeof window !== 'undefined' && window.location) {
+      window.location.href = '/';
+    }
   };
 
   const updateUser = async (userData) => {

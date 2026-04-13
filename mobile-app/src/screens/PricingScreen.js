@@ -106,10 +106,10 @@ const PricingScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { paddingBottom: 40, maxWidth: 900, width: '100%', alignSelf: 'center' },
-  body: { padding: 24 },
+  content: { paddingBottom: 40 },
+  body: { padding: 24, maxWidth: 1100, width: '100%', alignSelf: 'center' },
 
-  header: { marginBottom: 20, alignItems: 'center' },
+  header: { marginBottom: 20, alignItems: 'center', paddingTop: 16 },
   title: { fontSize: 28, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 36, textAlign: 'center' },
   subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22, textAlign: 'center' },
 

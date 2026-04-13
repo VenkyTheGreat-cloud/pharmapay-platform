@@ -27,6 +27,7 @@ const FeaturesScreen = ({ navigation }) => {
   <ScrollView style={styles.container} contentContainerStyle={styles.content}>
     <TopNavBar activeScreen="Features" />
 
+    <View style={styles.bodyWrap}>
     <View style={styles.header}>
       <Text style={styles.title}>
         Powerful features for modern{' '}
@@ -86,13 +87,15 @@ const FeaturesScreen = ({ navigation }) => {
         <Text style={styles.ctaBtnText}>Get Started</Text>
       </TouchableOpacity>
     </View>
+    </View>
   </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  content: { paddingBottom: 40, maxWidth: 1100, width: '100%', alignSelf: 'center' },
+  content: { paddingBottom: 40 },
+  bodyWrap: { maxWidth: 1100, width: '100%', alignSelf: 'center' },
 
   header: { marginBottom: 28, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
   title: { fontSize: 32, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 42, textAlign: 'center' },
