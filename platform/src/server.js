@@ -129,11 +129,17 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     logger.info(`PharmaPay API server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+
+    // Start background capture processor (processes inbound calls + WhatsApp)
+    const { startCaptureProcessor } = require('./services/captureProcessor');
+    startCaptureProcessor();
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
     logger.info('SIGTERM signal received: closing HTTP server');
+    const { stopCaptureProcessor } = require('./services/captureProcessor');
+    stopCaptureProcessor();
     process.exit(0);
 });
 

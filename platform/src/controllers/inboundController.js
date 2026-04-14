@@ -27,8 +27,9 @@ exports.uploadVoice = async (req, res, next) => {
             fileSize: req.file.size,
         });
 
-        // TODO: Queue for STT processing (Whisper) and AI extraction (Claude)
-        // For now, mark as pending — a background job will process it
+        // Trigger background processing (non-blocking)
+        const { processPendingCaptures } = require('../services/captureProcessor');
+        setImmediate(processPendingCaptures);
 
         res.status(201).json(successResponse({ id: capture.id }, 'Voice capture uploaded successfully'));
     } catch (error) {
@@ -62,7 +63,9 @@ exports.uploadWhatsApp = async (req, res, next) => {
             messageLength: message.length,
         });
 
-        // TODO: Queue for AI extraction (Claude) to parse customer name, area, items
+        // Trigger background processing (non-blocking)
+        const { processPendingCaptures } = require('../services/captureProcessor');
+        setImmediate(processPendingCaptures);
 
         res.status(201).json(successResponse({ id: capture.id }, 'WhatsApp capture uploaded successfully'));
     } catch (error) {
