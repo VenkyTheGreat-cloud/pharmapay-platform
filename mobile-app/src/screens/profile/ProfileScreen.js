@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,34 @@ import {
   TouchableOpacity,
   Alert as RNAlert,
   Platform,
+  NativeModules,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
+
+const { CaptureNativeModule } = NativeModules;
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
+  const [notifAccessEnabled, setNotifAccessEnabled] = useState(true);
+
+  const checkNotifAccess = useCallback(async () => {
+    if (Platform.OS !== 'android' || !CaptureNativeModule) return;
+    try {
+      const enabled = await CaptureNativeModule.isNotificationAccessEnabled();
+      setNotifAccessEnabled(enabled);
+    } catch {
+      // Native module not available (e.g. iOS or dev build)
+    }
+  }, []);
+
+  // Re-check every time the screen comes into focus (user may return from settings)
+  useFocusEffect(
+    useCallback(() => {
+      checkNotifAccess();
+    }, [checkNotifAccess])
+  );
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -59,6 +81,26 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.badgeText}>Delivery Boy</Text>
         </View>
       </View>
+
+      {/* Notification Access Banner */}
+      {Platform.OS === 'android' && !notifAccessEnabled && (
+        <TouchableOpacity
+          style={styles.notifBanner}
+          onPress={() => CaptureNativeModule?.openNotificationSettings()}
+          activeOpacity={0.7}
+        >
+          <View style={styles.notifBannerIcon}>
+            <Ionicons name="notifications-off-outline" size={24} color="#F59E0B" />
+          </View>
+          <View style={styles.notifBannerContent}>
+            <Text style={styles.notifBannerTitle}>Enable WhatsApp Capture</Text>
+            <Text style={styles.notifBannerDesc}>
+              Tap to grant Notification Access so incoming WhatsApp orders are captured automatically.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#F59E0B" />
+        </TouchableOpacity>
+      )}
 
       {/* Profile Info Card */}
       <View style={styles.card}>
@@ -233,6 +275,41 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginLeft: 12,
     fontWeight: '500',
+  },
+  notifBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  notifBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  notifBannerContent: {
+    flex: 1,
+    marginRight: 8,
+  },
+  notifBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 2,
+  },
+  notifBannerDesc: {
+    fontSize: 12,
+    color: '#A16207',
+    lineHeight: 16,
   },
   version: {
     textAlign: 'center',

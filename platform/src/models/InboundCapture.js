@@ -65,6 +65,40 @@ class InboundCapture {
         );
         return parseInt(result.rows[0].count);
     }
+
+    static async findConvertibleByStore(storeId, { limit = 50, offset = 0 } = {}) {
+        const result = await query(
+            `SELECT ic.*,
+                    c.id as matched_customer_id,
+                    c.name as matched_customer_name,
+                    c.mobile as matched_customer_mobile,
+                    c.address as matched_customer_address,
+                    c.area as matched_customer_area
+             FROM inbound_captures ic
+             LEFT JOIN customers c
+               ON RIGHT(ic.caller_number, 10) = RIGHT(c.mobile, 10)
+               AND c.store_id = ic.store_id
+             WHERE ic.store_id = $1
+               AND ic.status = 'completed'
+               AND ic.extracted_data->>'is_order' = 'true'
+             ORDER BY ic.created_at DESC
+             LIMIT $2 OFFSET $3`,
+            [storeId, limit, offset]
+        );
+        return result.rows;
+    }
+
+    static async countConvertibleByStore(storeId) {
+        const result = await query(
+            `SELECT COUNT(*) as count
+             FROM inbound_captures
+             WHERE store_id = $1
+               AND status = 'completed'
+               AND extracted_data->>'is_order' = 'true'`,
+            [storeId]
+        );
+        return parseInt(result.rows[0].count);
+    }
 }
 
 module.exports = InboundCapture;

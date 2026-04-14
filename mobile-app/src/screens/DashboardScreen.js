@@ -164,6 +164,15 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
+            onPress={() => navigation.navigate('Orders', { screen: 'CaptureReview' })}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="mic-outline" size={22} color="#F59E0B" />
+            </View>
+            <Text style={styles.actionLabel}>Incoming Orders</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionBtn}
             onPress={() => navigation.navigate('Orders')}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#EFF6FF' }]}>

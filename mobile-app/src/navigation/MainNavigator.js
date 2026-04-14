@@ -12,6 +12,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
 import PharmacyMarketplaceScreen from '../screens/marketplace/PharmacyMarketplaceScreen';
+import CaptureReviewScreen from '../screens/captures/CaptureReviewScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -34,6 +35,11 @@ const OrdersStack = () => {
         name="Payment"
         component={PaymentScreen}
         options={{ title: 'Record Payment' }}
+      />
+      <Stack.Screen
+        name="CaptureReview"
+        component={CaptureReviewScreen}
+        options={{ title: 'Incoming Orders' }}
       />
     </Stack.Navigator>
   );

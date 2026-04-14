@@ -40,4 +40,9 @@ router.post('/whatsapp', authenticateToken, inboundController.uploadWhatsApp);
 // List captures for authenticated store
 router.get('/captures', authenticateToken, inboundController.listCaptures);
 
+// Capture-to-order conversion endpoints
+router.get('/captures/convertible', authenticateToken, inboundController.listConvertibleCaptures);
+router.post('/captures/:id/convert', authenticateToken, inboundController.convertCaptureToOrder);
+router.post('/captures/:id/dismiss', authenticateToken, inboundController.dismissCapture);
+
 module.exports = router;

@@ -358,6 +358,16 @@ const realApiService = {
       },
     });
   },
+
+  // Capture-to-order conversion
+  getConvertibleCaptures: (limit = 50, offset = 0) =>
+    api.get('/inbound/captures/convertible', { params: { limit, offset } }),
+
+  convertCaptureToOrder: (captureId, data) =>
+    api.post(`/inbound/captures/${captureId}/convert`, data),
+
+  dismissCapture: (captureId) =>
+    api.post(`/inbound/captures/${captureId}/dismiss`),
 };
 
 // ============================================
