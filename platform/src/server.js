@@ -24,6 +24,7 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const marketplaceRoutes = require('./routes/marketplaceRoutes');
 const pharmacyRoutes = require('./routes/pharmacyRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
+const inboundRoutes = require('./routes/inboundRoutes');
 
 // Initialize express app
 const app = express();
@@ -114,6 +115,7 @@ app.use('/api/config', require('./routes/configRoutes'));
 app.use('/api/marketplace', marketplaceRoutes);
 app.use('/api/pharmacies', pharmacyRoutes);
 app.use('/api/admin-dashboard', adminDashboardRoutes);
+app.use('/api/inbound', inboundRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
