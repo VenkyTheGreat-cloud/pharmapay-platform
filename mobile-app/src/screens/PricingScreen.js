@@ -36,11 +36,15 @@ const PricingScreen = ({ navigation }) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TopNavBar activeScreen="Pricing" />
 
-      <View style={styles.body}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Simple, transparent{'\n'}<Text style={{ color: '#10B981' }}>pricing</Text></Text>
-          <Text style={styles.subtitle}>Choose the perfect plan for your pharmacy. No hidden fees. Cancel anytime.</Text>
+      {/* Hero Header */}
+      <View style={styles.heroSection}>
+        <View style={styles.heroContent}>
+          <Text style={styles.heroTitle}>Simple, transparent{' '}<Text style={styles.heroTitleGreen}>pricing</Text></Text>
+          <Text style={styles.heroSubtitle}>Choose the perfect plan for your pharmacy. No hidden fees. Cancel anytime.</Text>
         </View>
+      </View>
+
+      <View style={styles.body}>
 
         {/* Badges */}
         <View style={[styles.badgeRow, isWide && { flexDirection: 'row', justifyContent: 'center' }]}>
@@ -107,11 +111,13 @@ const PricingScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { paddingBottom: 40 },
-  body: { padding: 24, maxWidth: 1100, width: '100%', alignSelf: 'center' },
+  heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
+  heroTitle: { fontSize: 36, fontWeight: '800', fontStyle: 'italic', color: '#1E293B', textAlign: 'center', lineHeight: 48 },
+  heroTitleGreen: { color: '#10B981', fontStyle: 'italic' },
+  heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12 },
 
-  header: { marginBottom: 20, alignItems: 'center', paddingTop: 16 },
-  title: { fontSize: 28, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 36, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22, textAlign: 'center' },
+  body: { padding: 24, maxWidth: 1100, width: '100%', alignSelf: 'center' },
 
   badgeRow: { gap: 8, marginBottom: 24, alignItems: 'center' },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },

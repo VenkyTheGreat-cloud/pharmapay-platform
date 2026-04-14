@@ -68,11 +68,13 @@ const PharmacySignupScreen = ({ navigation }) => {
   const validate = () => {
     if (!form.ownerName.trim() || form.ownerName.trim().length < 2) return 'Owner name is required (min 2 characters)';
     if (!form.pharmacyName.trim()) return 'Pharmacy name is required';
-    if (!form.email.trim() || !form.email.includes('@')) return 'Valid email is required';
-    if (!form.mobile.trim() || !/^[6-9]\d{9}$/.test(form.mobile)) return 'Valid 10-digit mobile number starting with 6-9';
+    if (!form.email.trim()) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return 'Enter a valid email address (e.g. owner@pharmacy.com)';
+    if (!form.mobile.trim()) return 'Phone number is required';
+    if (!/^[6-9]\d{9}$/.test(form.mobile.trim())) return 'Enter a valid 10-digit mobile number starting with 6-9';
     if (!form.password || form.password.length < 6) return 'Password must be at least 6 characters';
     if (form.password !== form.confirmPassword) return 'Passwords do not match';
-    if (!form.slug || form.slug.length < 3) return 'Slug must be at least 3 characters';
+    if (!form.slug || form.slug.length < 3) return 'Store URL slug must be at least 3 characters';
     if (slugStatus === 'taken') return 'This slug is already taken';
     if (!agreedTerms) return 'Please agree to the Terms & Conditions and Privacy Policy';
     return null;

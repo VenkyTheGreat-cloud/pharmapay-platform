@@ -25,12 +25,23 @@ const LoginScreen = ({ navigation }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!email.trim()) {
+    const trimmed = email.trim();
+    if (!trimmed) {
       newErrors.email = role === 'partner' ? 'Phone number is required' : 'Email or phone is required';
-    } else if (role === 'partner' && !/^\+?\d[\d\s-]{7,}$/.test(email.trim())) {
-      newErrors.email = 'Please enter a valid phone number';
+    } else if (role === 'partner') {
+      const digits = trimmed.replace(/[\s\-\+]/g, '');
+      if (!/^\d{10,13}$/.test(digits)) newErrors.email = 'Enter a valid 10-digit phone number';
+    } else {
+      // For owner, validate email format if it contains @, or phone format otherwise
+      if (trimmed.includes('@')) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) newErrors.email = 'Enter a valid email address';
+      } else {
+        const digits = trimmed.replace(/[\s\-\+]/g, '');
+        if (!/^\d{10,13}$/.test(digits)) newErrors.email = 'Enter a valid email or 10-digit phone number';
+      }
     }
     if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };

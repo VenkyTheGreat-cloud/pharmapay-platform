@@ -35,15 +35,19 @@ const HowItWorksScreen = ({ navigation }) => (
   <ScrollView style={styles.container} contentContainerStyle={styles.content}>
     <TopNavBar activeScreen="HowItWorks" />
 
-    <View style={styles.bodyWrap}>
-    <View style={styles.header}>
-      <Text style={styles.title}>
-        How Pharma<Text style={{ color: '#10B981' }}>Gig</Text> works
-      </Text>
-      <Text style={styles.subtitle}>
-        A simple, seamless process to get you started in minutes, no matter your role.
-      </Text>
+    {/* Hero Header */}
+    <View style={styles.heroSection}>
+      <View style={styles.heroContent}>
+        <Text style={styles.heroTitle}>
+          How PharmaGig <Text style={styles.heroTitleGreen}>works</Text>
+        </Text>
+        <Text style={styles.heroSubtitle}>
+          A simple, seamless process to get you started in minutes, no matter your role.
+        </Text>
+      </View>
     </View>
+
+    <View style={styles.bodyWrap}>
 
     {STEPS.map((step, i) => (
       <View key={step.number} style={styles.stepContainer}>
@@ -141,11 +145,14 @@ const HowItWorksScreen = ({ navigation }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   content: { paddingBottom: 40 },
-  bodyWrap: { maxWidth: 1100, width: '100%', alignSelf: 'center' },
 
-  header: { marginBottom: 32, paddingHorizontal: 20, paddingTop: 40, paddingBottom: 16, alignItems: 'center' },
-  title: { fontSize: 32, fontWeight: '800', color: '#0F172A', marginBottom: 8, lineHeight: 42, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: '#64748B', lineHeight: 22, textAlign: 'center', maxWidth: 600 },
+  heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
+  heroTitle: { fontSize: 36, fontWeight: '800', fontStyle: 'italic', color: '#1E293B', textAlign: 'center', lineHeight: 48 },
+  heroTitleGreen: { color: '#10B981', fontStyle: 'italic' },
+  heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12, maxWidth: 600 },
+
+  bodyWrap: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingHorizontal: 24, paddingTop: 32 },
 
   stepContainer: { marginBottom: 40, paddingHorizontal: 20 },
 

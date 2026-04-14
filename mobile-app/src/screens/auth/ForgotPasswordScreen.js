@@ -47,7 +47,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   const handleSendCode = async () => {
-    if (!identifier.trim()) { setError('Please enter your email or phone number.'); return; }
+    const trimmed = identifier.trim();
+    if (!trimmed) { setError('Please enter your email or phone number.'); return; }
+    if (trimmed.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setError('Enter a valid email address.'); return; }
+    if (!trimmed.includes('@')) {
+      const digits = trimmed.replace(/[\s\-\+]/g, '');
+      if (!/^\d{10,13}$/.test(digits)) { setError('Enter a valid email or 10-digit phone number.'); return; }
+    }
     setLoading(true); setError('');
     try {
       const res = await apiAxios.post('/auth/forgot-password/send-code', { identifier: identifier.trim() });
