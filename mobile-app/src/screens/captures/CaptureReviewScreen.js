@@ -345,6 +345,23 @@ const CaptureReviewScreen = ({ navigation }) => {
               <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>Tap to grant missing permissions</Text>
             </TouchableOpacity>
           )}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  const result = await CaptureNativeModule.testRecording();
+                  Alert.alert('Test Recording', result + '\n\nSpeak into the mic for 5 seconds. Check server logs after.');
+                } catch (e) {
+                  Alert.alert('Test Failed', e.message || 'Recording test failed');
+                }
+              }}
+            >
+              <Text style={{ fontSize: 12, color: '#3B82F6', fontWeight: '600' }}>Test Record 5s</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => CaptureNativeModule?.openBatteryOptimizationSettings()}>
+              <Text style={{ fontSize: 12, color: '#F59E0B', fontWeight: '600' }}>Battery Settings</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 

@@ -118,4 +118,46 @@ class CaptureNativeModule(
         }
         reactContext.startActivity(intent)
     }
+
+    @ReactMethod
+    fun openBatteryOptimizationSettings() {
+        try {
+            val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            reactContext.startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback to general battery settings
+            val intent = Intent(android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            reactContext.startActivity(intent)
+        }
+    }
+
+    @ReactMethod
+    fun testRecording(promise: Promise) {
+        try {
+            val ctx = reactContext.applicationContext
+            ctx.startForegroundService(
+                Intent(ctx, CallRecorderService::class.java).apply {
+                    action = CallRecorderService.ACTION_START
+                    putExtra(CallRecorderService.EXTRA_NUMBER, "0000000000")
+                }
+            )
+            // Stop after 5 seconds
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                try {
+                    ctx.startService(
+                        Intent(ctx, CallRecorderService::class.java).apply {
+                            action = CallRecorderService.ACTION_STOP
+                        }
+                    )
+                } catch (_: Exception) {}
+            }, 5000)
+            promise.resolve("Recording test started — will record 5 seconds of audio")
+        } catch (e: Exception) {
+            promise.reject("TEST_RECORD_ERROR", e.message)
+        }
+    }
 }
