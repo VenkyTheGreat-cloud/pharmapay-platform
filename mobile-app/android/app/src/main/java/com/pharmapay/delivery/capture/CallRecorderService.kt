@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import java.io.File
@@ -16,6 +17,7 @@ import java.io.File
 class CallRecorderService : Service() {
 
     companion object {
+        private const val TAG = "PharmaCaptureRecorder"
         const val ACTION_START = "pharmagig.capture.START"
         const val ACTION_STOP  = "pharmagig.capture.STOP"
         const val EXTRA_NUMBER = "caller_number"
@@ -44,9 +46,12 @@ class CallRecorderService : Service() {
     }
 
     private fun startRecording() {
+        Log.d(TAG, "startRecording() called")
+
         // Check RECORD_AUDIO permission at runtime
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "RECORD_AUDIO not granted, aborting")
             stopSelf()
             return
         }
@@ -54,6 +59,7 @@ class CallRecorderService : Service() {
         val dir = getExternalFilesDir("call_recordings") ?: filesDir
         dir.mkdirs()
         outputFile = File(dir, "call_${System.currentTimeMillis()}.mp3")
+        Log.d(TAG, "Recording to: ${outputFile?.absolutePath}")
 
         try {
             @Suppress("DEPRECATION")
@@ -68,8 +74,9 @@ class CallRecorderService : Service() {
                 prepare()
                 start()
             }
+            Log.d(TAG, "Recording started successfully")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to start recording", e)
             stopSelf()
         }
     }

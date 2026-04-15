@@ -16,19 +16,36 @@ const HomeRouter = ({ navigation }) => {
     const [checking, setChecking] = useState(true);
 
     useEffect(() => {
-        route();
+        // Safety timeout — if routing takes too long, go to Main
+        const timeout = setTimeout(() => {
+            console.warn('HomeRouter: routing timeout, falling back to Main');
+            navigation.replace('Main');
+        }, 8000);
+
+        route().finally(() => clearTimeout(timeout));
     }, []);
 
     const route = async () => {
         try {
-            // Always check fresh pharmacy status for admin users
-            let status = 'none';
-            if (user?.role === 'admin') {
-                status = await checkPharmacyStatus();
+            // Non-admin users go straight to main app
+            if (user?.role !== 'admin') {
+                navigation.replace('Main');
+                return;
             }
 
-            if (user?.role === 'admin' && status && status !== 'none') {
-                // Pharmacy owner — route based on status
+            // Admin users — check pharmacy status with timeout
+            let status = 'none';
+            try {
+                const statusPromise = checkPharmacyStatus();
+                const timeoutPromise = new Promise((resolve) =>
+                    setTimeout(() => resolve('none'), 5000)
+                );
+                status = await Promise.race([statusPromise, timeoutPromise]);
+            } catch {
+                status = 'none';
+            }
+
+            if (status && status !== 'none') {
                 if (status === 'pending_approval' || status === 'rejected') {
                     navigation.replace('PharmacyConfigure');
                 } else if (status === 'submitted' || status === 'approved' || status === 'building') {
@@ -38,12 +55,8 @@ const HomeRouter = ({ navigation }) => {
                 } else {
                     navigation.replace('PharmacyConfigure');
                 }
-            } else if (user?.role === 'admin' && (!status || status === 'none')) {
-                // Platform admin with no pharmacy record — go to admin panel
-                navigation.replace('AdminPanel');
             } else {
-                // Delivery boy or other — go to main app
-                navigation.replace('Main');
+                navigation.replace('AdminPanel');
             }
         } catch {
             navigation.replace('Main');
