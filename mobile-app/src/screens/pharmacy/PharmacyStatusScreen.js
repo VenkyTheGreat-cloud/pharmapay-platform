@@ -110,10 +110,10 @@ const PharmacyStatusScreen = ({ navigation }) => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Navigation */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <TouchableOpacity onPress={() => { console.log('LOGOUT pressed'); logout(); }} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={() => { if (navigation.canGoBack()) navigation.goBack(); else logout(); }} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { console.log('LOGOUT pressed'); logout(); }} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={() => logout()} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={{ fontSize: 14, color: '#EF4444', fontWeight: '600' }}>Logout</Text>
         </TouchableOpacity>
       </View>

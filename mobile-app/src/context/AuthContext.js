@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { Platform } from 'react-native';
 import apiService from '../services/api';
 import storage from '../utils/storage';
 import { handleApiError } from '../utils/helpers';
@@ -155,8 +156,8 @@ export const AuthProvider = ({ children }) => {
     setPharmacyStatus(null);
     // Clear storage in background
     storage.clearAuth().catch((e) => console.error('Logout storage error:', e));
-    // On web, force URL reset to landing page
-    if (typeof window !== 'undefined' && window.location) {
+    // On web/PWA only, force URL reset to landing page
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location) {
       window.location.href = '/';
     }
   };
