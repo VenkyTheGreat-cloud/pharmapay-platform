@@ -35,12 +35,9 @@ const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const { isAuthenticated, loading, user, pharmacyStatus } = useAuth();
-  const isPharmacyOwner = user?.role === 'admin' && pharmacyStatus && pharmacyStatus !== 'none';
-
-  console.log('🧭 AppNavigator - loading:', loading, 'isAuthenticated:', isAuthenticated);
+  const isAdmin = user?.role === 'admin';
 
   if (loading) {
-    console.log('⏳ Showing loading screen...');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9FAFB' }}>
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -48,14 +45,17 @@ const AppNavigator = () => {
     );
   }
 
-  console.log('✅ Loading complete, rendering navigation');
-
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
         <Stack.Group>
-          <Stack.Screen name="HomeRouter" component={HomeRouter} />
-          <Stack.Screen name="Main" component={MainNavigator} />
+          {isAdmin ? (
+            <Stack.Screen name="HomeRouter" component={HomeRouter} />
+          ) : (
+            <Stack.Screen name="Main" component={MainNavigator} />
+          )}
+          {!isAdmin && <Stack.Screen name="HomeRouter" component={HomeRouter} />}
+          {isAdmin && <Stack.Screen name="Main" component={MainNavigator} />}
           <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
           <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
           <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />

@@ -12,7 +12,10 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  NativeModules,
 } from 'react-native';
+
+const { CaptureNativeModule } = NativeModules;
 import { Ionicons } from '@expo/vector-icons';
 import apiService from '../../services/api';
 import Button from '../../components/Button';
@@ -37,10 +40,25 @@ const CaptureReviewScreen = ({ navigation }) => {
   const [newCustomerAddress, setNewCustomerAddress] = useState('');
   const [converting, setConverting] = useState(false);
   const [dismissing, setDismissing] = useState(null);
+  const [permStatus, setPermStatus] = useState(null);
+  const [notifAccess, setNotifAccess] = useState(null);
 
   useEffect(() => {
     fetchCaptures();
+    checkPermissions();
   }, []);
+
+  const checkPermissions = async () => {
+    if (Platform.OS !== 'android' || !CaptureNativeModule) return;
+    try {
+      const [perms, notif] = await Promise.all([
+        CaptureNativeModule.checkCapturePermissions(),
+        CaptureNativeModule.isNotificationAccessEnabled(),
+      ]);
+      setPermStatus(perms);
+      setNotifAccess(notif);
+    } catch {}
+  };
 
   const fetchCaptures = async () => {
     try {
@@ -308,6 +326,28 @@ const CaptureReviewScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Permission Status */}
+      {Platform.OS === 'android' && permStatus && (
+        <View style={{ backgroundColor: '#F9FAFB', paddingHorizontal: 16, paddingVertical: 8 }}>
+          <Text style={{ fontSize: 11, color: '#6B7280', lineHeight: 16 }}>
+            Mic: {permStatus.recordAudio ? 'OK' : 'DENIED'} | Phone: {permStatus.readPhoneState ? 'OK' : 'DENIED'} | CallLog: {permStatus.readCallLog ? 'OK' : 'DENIED'} | Notif: {permStatus.postNotifications ? 'OK' : 'DENIED'} | WhatsApp: {notifAccess ? 'OK' : 'OFF'}
+          </Text>
+          {(!permStatus.recordAudio || !permStatus.readPhoneState) && (
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  await CaptureNativeModule.requestCapturePermissions();
+                  checkPermissions();
+                } catch {}
+              }}
+              style={{ marginTop: 4 }}
+            >
+              <Text style={{ fontSize: 12, color: '#EF4444', fontWeight: '600' }}>Tap to grant missing permissions</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Header badge */}
       {convertibleCount > 0 && (
         <View style={styles.headerBadge}>
