@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.IBinder
@@ -30,32 +31,38 @@ class CallRecorderService : Service() {
     private var callerNumber: String? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_START -> {
-                callerNumber = intent.getStringExtra(EXTRA_NUMBER)
-                showForegroundNotification()
-                startRecording()
+        try {
+            when (intent?.action) {
+                ACTION_START -> {
+                    // Check RECORD_AUDIO BEFORE anything else — on API 34+,
+                    // startForeground with microphone type crashes without it
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+                        Log.w(TAG, "RECORD_AUDIO not granted, cannot start recording")
+                        stopSelf()
+                        return START_NOT_STICKY
+                    }
+
+                    callerNumber = intent.getStringExtra(EXTRA_NUMBER)
+                    Log.d(TAG, "ACTION_START for caller: $callerNumber")
+                    showForegroundNotification()
+                    startRecording()
+                }
+                ACTION_STOP -> {
+                    Log.d(TAG, "ACTION_STOP")
+                    stopRecordingAndEnqueue()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
             }
-            ACTION_STOP -> {
-                stopRecordingAndEnqueue()
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-            }
+        } catch (e: Exception) {
+            Log.e(TAG, "onStartCommand crashed", e)
+            try { stopSelf() } catch (_: Exception) {}
         }
         return START_NOT_STICKY
     }
 
     private fun startRecording() {
-        Log.d(TAG, "startRecording() called")
-
-        // Check RECORD_AUDIO permission at runtime
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED) {
-            Log.w(TAG, "RECORD_AUDIO not granted, aborting")
-            stopSelf()
-            return
-        }
-
         val dir = getExternalFilesDir("call_recordings") ?: filesDir
         dir.mkdirs()
         outputFile = File(dir, "call_${System.currentTimeMillis()}.mp3")
@@ -86,6 +93,7 @@ class CallRecorderService : Service() {
             recorder?.stop()
             recorder?.release()
         } catch (e: Exception) {
+            Log.e(TAG, "Error stopping recorder", e)
             outputFile?.delete()
             return
         } finally {
@@ -93,11 +101,15 @@ class CallRecorderService : Service() {
         }
 
         val file = outputFile ?: return
-        val number = callerNumber ?: return
+        val number = callerNumber ?: "unknown"
 
-        // Discard recordings under ~1 second (accidental picks)
-        if (file.length() < 8_000L) { file.delete(); return }
+        if (file.length() < 8_000L) {
+            Log.d(TAG, "Recording too short (${file.length()} bytes), discarding")
+            file.delete()
+            return
+        }
 
+        Log.d(TAG, "Enqueuing upload: ${file.name} for caller $number")
         CaptureUploadWorker.enqueue(
             context      = this,
             audioPath    = file.absolutePath,
@@ -117,15 +129,21 @@ class CallRecorderService : Service() {
                 )
             )
         }
-        startForeground(
-            NOTIF_ID,
-            NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Pharmagig")
-                .setContentText("Recording call for order capture")
-                .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .build()
-        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("PharmaGig")
+            .setContentText("Recording call for order capture")
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        // On API 34+, explicitly pass FOREGROUND_SERVICE_TYPE_MICROPHONE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
+        Log.d(TAG, "Foreground notification shown")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
