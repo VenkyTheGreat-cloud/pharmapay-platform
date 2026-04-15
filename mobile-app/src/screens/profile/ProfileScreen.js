@@ -18,22 +18,30 @@ const { CaptureNativeModule } = NativeModules;
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
   const [notifAccessEnabled, setNotifAccessEnabled] = useState(true);
+  const [capturePerms, setCapturePerms] = useState(null);
 
-  const checkNotifAccess = useCallback(async () => {
+  const checkCaptureStatus = useCallback(async () => {
     if (Platform.OS !== 'android' || !CaptureNativeModule) return;
     try {
-      const enabled = await CaptureNativeModule.isNotificationAccessEnabled();
-      setNotifAccessEnabled(enabled);
+      const [notifEnabled, perms] = await Promise.all([
+        CaptureNativeModule.isNotificationAccessEnabled(),
+        CaptureNativeModule.checkCapturePermissions(),
+      ]);
+      setNotifAccessEnabled(notifEnabled);
+      setCapturePerms(perms);
     } catch {
-      // Native module not available (e.g. iOS or dev build)
+      // Native module not available
     }
   }, []);
 
-  // Re-check every time the screen comes into focus (user may return from settings)
   useFocusEffect(
     useCallback(() => {
-      checkNotifAccess();
-    }, [checkNotifAccess])
+      checkCaptureStatus();
+    }, [checkCaptureStatus])
+  );
+
+  const capturePermsMissing = capturePerms && (
+    !capturePerms.recordAudio || !capturePerms.readPhoneState || !capturePerms.readCallLog
   );
 
   const handleLogout = () => {
@@ -81,6 +89,32 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.badgeText}>Delivery Boy</Text>
         </View>
       </View>
+
+      {/* Capture Permissions Banner */}
+      {Platform.OS === 'android' && capturePermsMissing && (
+        <TouchableOpacity
+          style={[styles.notifBanner, { borderColor: '#FECACA', backgroundColor: '#FEF2F2' }]}
+          onPress={async () => {
+            try {
+              const granted = await CaptureNativeModule.requestCapturePermissions();
+              if (!granted) CaptureNativeModule.openAppSettings();
+              else checkCaptureStatus();
+            } catch {}
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.notifBannerIcon, { backgroundColor: '#FEE2E2' }]}>
+            <Ionicons name="mic-off-outline" size={24} color="#EF4444" />
+          </View>
+          <View style={styles.notifBannerContent}>
+            <Text style={[styles.notifBannerTitle, { color: '#991B1B' }]}>Enable Voice Capture</Text>
+            <Text style={[styles.notifBannerDesc, { color: '#B91C1C' }]}>
+              Tap to grant microphone, phone state, and call log permissions for voice order capture.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      )}
 
       {/* Notification Access Banner */}
       {Platform.OS === 'android' && !notifAccessEnabled && (

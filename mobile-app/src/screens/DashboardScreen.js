@@ -7,10 +7,15 @@ import {
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  NativeModules,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/api';
+
+const { CaptureNativeModule } = NativeModules;
 
 const ACCENT = '#3B82F6';
 
@@ -164,7 +169,30 @@ const DashboardScreen = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => navigation.navigate('Orders', { screen: 'CaptureReview' })}
+            onPress={async () => {
+              if (Platform.OS === 'android' && CaptureNativeModule) {
+                try {
+                  const perms = await CaptureNativeModule.checkCapturePermissions();
+                  if (!perms.recordAudio || !perms.readPhoneState || !perms.readCallLog) {
+                    const granted = await CaptureNativeModule.requestCapturePermissions();
+                    if (!granted) {
+                      Alert.alert(
+                        'Permissions Required',
+                        'Voice capture needs microphone, phone state, and call log permissions. Please grant them in app settings.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Open Settings', onPress: () => CaptureNativeModule.openAppSettings() },
+                        ]
+                      );
+                      return;
+                    }
+                  }
+                } catch (e) {
+                  console.log('Permission check error:', e);
+                }
+              }
+              navigation.navigate('Orders', { screen: 'CaptureReview' });
+            }}
           >
             <View style={[styles.actionIcon, { backgroundColor: '#FEF3C7' }]}>
               <Ionicons name="mic-outline" size={22} color="#F59E0B" />
