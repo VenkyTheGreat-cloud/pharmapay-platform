@@ -22,7 +22,7 @@ export default {
 
     // Orders
     ORDERS: '/orders',
-    MY_ORDERS: '/orders/my-orders',
+    MY_ORDERS: '/orders',
     ORDER_BY_ID: (id) => `/orders/${id}`,
     UPDATE_ORDER_STATUS: (id) => `/orders/${id}/status`,
     ORDER_HISTORY: (id) => `/orders/${id}/history`,

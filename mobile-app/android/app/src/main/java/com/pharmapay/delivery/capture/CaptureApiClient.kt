@@ -37,7 +37,7 @@ class CaptureApiClient(private val context: Context) {
                     .build()
                 http.newCall(
                     Request.Builder()
-                        .url("$baseUrl/api/inbound/voice")
+                        .url("$baseUrl/inbound/voice")
                         .header("Authorization", "Bearer $token")
                         .post(body).build()
                 ).execute().use { it.isSuccessful }
@@ -56,7 +56,7 @@ class CaptureApiClient(private val context: Context) {
             }.toString()
             http.newCall(
                 Request.Builder()
-                    .url("$baseUrl/api/inbound/whatsapp")
+                    .url("$baseUrl/inbound/whatsapp")
                     .header("Authorization", "Bearer $token")
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()

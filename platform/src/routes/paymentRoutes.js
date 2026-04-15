@@ -21,8 +21,8 @@ router.get('/', authorizeRoles('admin', 'store_staff'), paymentController.getAll
 // Get my payments (delivery boy only)
 router.get('/my-payments', authorizeRoles('delivery_boy'), paymentController.getMyPayments);
 
-// Get payment statistics (admin and store staff only)
-router.get('/statistics', authorizeRoles('admin', 'store_staff'), paymentController.getPaymentStatistics);
+// Get payment statistics
+router.get('/statistics', authorizeRoles('admin', 'store_staff', 'store_manager'), paymentController.getPaymentStatistics);
 
 // Collect payment (delivery boys only) - MUST come before /order/:orderId to avoid route conflicts
 router.post(
