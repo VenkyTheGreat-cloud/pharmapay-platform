@@ -1,9 +1,12 @@
 package com.pharmapay.delivery.capture
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.telephony.TelephonyManager
+import androidx.core.content.ContextCompat
 
 class PhoneStateReceiver : BroadcastReceiver() {
 
@@ -22,14 +25,17 @@ class PhoneStateReceiver : BroadcastReceiver() {
 
         when (state) {
             TelephonyManager.EXTRA_STATE_RINGING -> {
-                // Store number now — some devices don't expose it again in OFFHOOK
                 CapturePrefs.savePendingCallerNumber(context, callerNumber)
             }
 
             TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                // Skip recording if RECORD_AUDIO permission not granted
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED) return
+
                 val number = callerNumber
                     ?: CapturePrefs.getPendingCallerNumber(context)
-                    ?: return  // outgoing call or unknown caller, skip
+                    ?: return
 
                 context.startForegroundService(
                     Intent(context, CallRecorderService::class.java).apply {

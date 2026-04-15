@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
 
   heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
-  heroTitle: { fontSize: 36, fontWeight: '800', fontStyle: 'italic', color: '#1E293B', textAlign: 'center', lineHeight: 48 },
-  heroTitleGreen: { color: '#10B981', fontStyle: 'italic' },
+  heroTitle: { fontSize: 36, fontWeight: '800', color: '#1E293B', textAlign: 'center', lineHeight: 48, letterSpacing: -0.5 },
+  heroTitleGreen: { color: '#10B981' },
   heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12, maxWidth: 600 },
 
   bodyWrap: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingHorizontal: 24, paddingTop: 32 },

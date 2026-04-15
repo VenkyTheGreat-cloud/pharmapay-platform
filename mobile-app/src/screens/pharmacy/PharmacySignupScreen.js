@@ -252,7 +252,7 @@ const PharmacySignupScreen = ({ navigation }) => {
           {agreedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
         </View>
         <Text style={styles.termsText}>
-          I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text> and <Text style={styles.termsLink}>Privacy Policy</Text>
+          I agree to the <Text style={styles.termsLink} onPress={() => navigation.navigate('Terms')}>Terms & Conditions</Text> and <Text style={styles.termsLink} onPress={() => navigation.navigate('PrivacyPolicy')}>Privacy Policy</Text>
         </Text>
       </TouchableOpacity>
 

@@ -9,11 +9,11 @@ const TermsScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <Text style={styles.title}>Terms & Conditions</Text>
-      <Text style={styles.subtitle}>SwinkPayPharma</Text>
+      <Text style={styles.subtitle}>PharmaGig</Text>
 
       <View style={styles.section}>
         <Text style={styles.body}>
-          These Terms and Conditions, along with privacy policy or other terms ("Terms") constitute a binding agreement by and between SWINKPAY PHARMA, ("Website Owner" or "we" or "us" or "our") and you ("you" or "your") and relate to your use of our website, goods (as applicable) or services (as applicable) (collectively, "Services").
+          These Terms and Conditions, along with privacy policy or other terms ("Terms") constitute a binding agreement by and between PHARMAGIG, ("Website Owner" or "we" or "us" or "our") and you ("you" or "your") and relate to your use of our website, goods (as applicable) or services (as applicable) (collectively, "Services").
         </Text>
         <Text style={styles.body}>
           By using our website, application and/or availing the Services, you agree that you have read and accepted these Terms (including the Privacy Policy). We reserve the right to modify these Terms at any time and without assigning any reason. It is your responsibility to periodically review these Terms to stay informed of updates.
@@ -86,11 +86,11 @@ const TermsScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.heading}>Deficient Services</Text>
         <Text style={styles.body}>
-          Any deficiency in service and/or performance is to be reported to SwinkPay Pharma. Service credit, if any:
+          Any deficiency in service and/or performance is to be reported to PharmaGig. Service credit, if any:
         </Text>
         <View style={styles.bulletItem}>
           <Text style={styles.bullet}>{'\u2022'}</Text>
-          <Text style={styles.bulletText}>Shall be at the sole discretion of SwinkPay Pharma.</Text>
+          <Text style={styles.bulletText}>Shall be at the sole discretion of PharmaGig.</Text>
         </View>
         <View style={styles.bulletItem}>
           <Text style={styles.bullet}>{'\u2022'}</Text>
@@ -98,7 +98,7 @@ const TermsScreen = ({ navigation }) => {
         </View>
         <View style={styles.bulletItem}>
           <Text style={styles.bullet}>{'\u2022'}</Text>
-          <Text style={styles.bulletText}>Can be used to access the platform for additional days as decided by SwinkPay Pharma.</Text>
+          <Text style={styles.bulletText}>Can be used to access the platform for additional days as decided by PharmaGig.</Text>
         </View>
         <View style={styles.bulletItem}>
           <Text style={styles.bullet}>{'\u2022'}</Text>
@@ -114,12 +114,12 @@ const TermsScreen = ({ navigation }) => {
         </View>
         <View style={styles.bulletItem}>
           <Text style={styles.bullet}>{'\u2022'}</Text>
-          <Text style={styles.bulletText}>Upgrade to a higher value package can be requested to SwinkPay Pharma and approval of such request is at the sole discretion of SwinkPay Pharma.</Text>
+          <Text style={styles.bulletText}>Upgrade to a higher value package can be requested to PharmaGig and approval of such request is at the sole discretion of PharmaGig.</Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Powered by SwinkPay Fintech Pvt Ltd</Text>
+        <Text style={styles.footerText}>Powered by PharmaGig</Text>
       </View>
     </ScrollView>
   );

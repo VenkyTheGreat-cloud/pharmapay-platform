@@ -1,12 +1,16 @@
 package com.pharmapay.delivery.capture
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaRecorder
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 
 class CallRecorderService : Service() {
@@ -40,14 +44,21 @@ class CallRecorderService : Service() {
     }
 
     private fun startRecording() {
+        // Check RECORD_AUDIO permission at runtime
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED) {
+            stopSelf()
+            return
+        }
+
         val dir = getExternalFilesDir("call_recordings") ?: filesDir
         dir.mkdirs()
         outputFile = File(dir, "call_${System.currentTimeMillis()}.mp3")
 
         try {
-            recorder = MediaRecorder(this).apply {
-                // MIC source picks up both sides when call is on speaker.
-                // Store policy: clerks always put calls on speaker.
+            @Suppress("DEPRECATION")
+            recorder = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                MediaRecorder(this) else MediaRecorder()).apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)

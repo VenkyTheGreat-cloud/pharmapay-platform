@@ -124,17 +124,17 @@ const LandingScreen = ({ navigation }) => {
                             <Ionicons name="shield-checkmark" size={16} color="#10B981" />
                         </View>
                         <View>
-                            <Text style={styles.floatingLabel}>Verified Delivery</Text>
-                            <Text style={styles.floatingValue}>100% Safe</Text>
+                            <Text style={styles.floatingLabel}>Trusted Pharmacies</Text>
+                            <Text style={styles.floatingValue}>Quality Guaranteed</Text>
                         </View>
                     </View>
                     <View style={[styles.floatingBadge, { right: -8, bottom: 10 }]}>
                         <View style={[styles.floatingIcon, { backgroundColor: '#EFF6FF' }]}>
-                            <Ionicons name="time" size={16} color="#3B82F6" />
+                            <Ionicons name="shield-checkmark" size={16} color="#3B82F6" />
                         </View>
                         <View>
-                            <Text style={styles.floatingLabel}>Avg. Delivery</Text>
-                            <Text style={styles.floatingValue}>18 Mins</Text>
+                            <Text style={styles.floatingLabel}>Verified Delivery</Text>
+                            <Text style={styles.floatingValue}>100% Safe</Text>
                         </View>
                     </View>
                 </View>
