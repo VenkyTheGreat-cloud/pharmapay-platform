@@ -80,7 +80,10 @@ class InboundCapture {
                AND c.store_id = ic.store_id
              WHERE ic.store_id = $1
                AND ic.status = 'completed'
-               AND ic.extracted_data->>'is_order' = 'true'
+               AND (
+                 ic.channel = 'voice'
+                 OR ic.extracted_data->>'is_order' = 'true'
+               )
              ORDER BY ic.created_at DESC
              LIMIT $2 OFFSET $3`,
             [storeId, limit, offset]
@@ -94,7 +97,10 @@ class InboundCapture {
              FROM inbound_captures
              WHERE store_id = $1
                AND status = 'completed'
-               AND extracted_data->>'is_order' = 'true'`,
+               AND (
+                 channel = 'voice'
+                 OR extracted_data->>'is_order' = 'true'
+               )`,
             [storeId]
         );
         return parseInt(result.rows[0].count);
