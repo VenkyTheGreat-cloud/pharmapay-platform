@@ -38,6 +38,8 @@ const CaptureReviewScreen = ({ navigation }) => {
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerMobile, setNewCustomerMobile] = useState('');
   const [newCustomerAddress, setNewCustomerAddress] = useState('');
+  const [medicines, setMedicines] = useState('');
+  const [area, setArea] = useState('');
   const [converting, setConverting] = useState(false);
   const [dismissing, setDismissing] = useState(null);
   const [permStatus, setPermStatus] = useState(null);
@@ -84,8 +86,9 @@ const CaptureReviewScreen = ({ navigation }) => {
     setOrderNumber('');
     setTotalAmount('');
 
-    // Pre-fill comments from extracted medicines
     const extracted = capture.extracted_data || {};
+
+    // Pre-fill medicines
     if (extracted.medicines && extracted.medicines.length > 0) {
       const medicineList = extracted.medicines.map((m) => {
         let desc = m.name;
@@ -93,22 +96,22 @@ const CaptureReviewScreen = ({ navigation }) => {
         if (m.form) desc += ` ${m.form}`;
         if (m.quantity) desc += ` x${m.quantity}`;
         return desc;
-      }).join(', ');
-      setCustomerComments(medicineList);
+      }).join('\n');
+      setMedicines(medicineList);
     } else {
-      setCustomerComments('');
+      setMedicines('');
     }
 
-    // Pre-fill new customer fields if no match
-    if (!capture.matched_customer_id) {
-      setNewCustomerName(capture.sender_name || '');
-      setNewCustomerMobile(capture.caller_number || '');
-      setNewCustomerAddress(extracted.area || '');
-    } else {
-      setNewCustomerName('');
-      setNewCustomerMobile('');
-      setNewCustomerAddress('');
-    }
+    // Pre-fill area
+    setArea(extracted.area || '');
+
+    // Pre-fill comments from transcript
+    setCustomerComments(capture.transcript || capture.message_text || '');
+
+    // Pre-fill customer fields — always editable
+    setNewCustomerName(capture.matched_customer_name || capture.sender_name || extracted.customer_name || '');
+    setNewCustomerMobile(capture.matched_customer_mobile || capture.caller_number || '');
+    setNewCustomerAddress(capture.matched_customer_address || extracted.area || '');
 
     setShowConvertModal(true);
   };
@@ -125,25 +128,32 @@ const CaptureReviewScreen = ({ navigation }) => {
 
     setConverting(true);
     try {
+      // Build comments: medicines + any additional notes
+      const fullComments = [medicines.trim(), customerComments.trim()]
+        .filter(Boolean)
+        .join('\n---\n');
+
       const body = {
         orderNumber: orderNumber.trim(),
         totalAmount: parseFloat(totalAmount),
-        customerComments: customerComments.trim() || undefined,
+        customerComments: fullComments || undefined,
       };
 
-      if (selectedCapture.matched_customer_id) {
+      if (!newCustomerMobile.trim()) {
+        Alert.alert('Required', 'Customer mobile number is required');
+        setConverting(false);
+        return;
+      }
+
+      // Always use editable customer fields (even for matched customers)
+      if (selectedCapture.matched_customer_id && newCustomerMobile.trim() === (selectedCapture.matched_customer_mobile || '')) {
         body.customerId = selectedCapture.matched_customer_id;
       } else {
-        if (!newCustomerMobile.trim()) {
-          Alert.alert('Required', 'Customer mobile number is required');
-          setConverting(false);
-          return;
-        }
         body.newCustomer = {
           name: newCustomerName.trim() || 'Unknown',
           mobile: newCustomerMobile.trim(),
-          address: newCustomerAddress.trim() || null,
-          area: selectedCapture.extracted_data?.area || null,
+          address: newCustomerAddress.trim() || area.trim() || null,
+          area: area.trim() || null,
         };
       }
 
@@ -234,19 +244,25 @@ const CaptureReviewScreen = ({ navigation }) => {
               </View>
             )}
           </View>
-          <Text style={styles.timeText}>{formatTime(item.created_at)}</Text>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.timeText}>{formatTime(item.created_at)}</Text>
+            <Text style={{ fontSize: 10, color: '#D1D5DB' }}>
+              {new Date(item.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+          </View>
         </View>
 
         {/* Caller info */}
         <View style={styles.infoRow}>
-          <Ionicons name="person-outline" size={16} color="#6B7280" />
-          <Text style={styles.infoText}>
-            {item.sender_name || item.caller_number || 'Unknown'}
-          </Text>
-          {item.caller_number && item.sender_name && (
-            <Text style={styles.phoneText}>{item.caller_number}</Text>
-          )}
+          <Ionicons name="call-outline" size={16} color="#6B7280" />
+          <Text style={styles.infoText}>{item.caller_number || 'Unknown'}</Text>
         </View>
+        {item.sender_name && (
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={16} color="#6B7280" />
+            <Text style={styles.infoText}>{item.sender_name}</Text>
+          </View>
+        )}
 
         {/* Customer match */}
         {item.matched_customer_id ? (
@@ -416,60 +432,69 @@ const CaptureReviewScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {/* Extracted medicines (read-only) */}
-              {selectedCapture?.extracted_data?.medicines?.length > 0 && (
-                <View style={styles.modalSection}>
-                  <Text style={styles.modalLabel}>Extracted Medicines</Text>
-                  {selectedCapture.extracted_data.medicines.map((med, idx) => (
-                    <View key={idx} style={styles.modalMedicineRow}>
-                      <Ionicons name="medical-outline" size={14} color="#3B82F6" />
-                      <Text style={styles.modalMedicineText}>
-                        {med.name}
-                        {med.strength ? ` ${med.strength}` : ''}
-                        {med.form ? ` ${med.form}` : ''}
-                        {med.quantity ? ` x${med.quantity}` : ''}
-                      </Text>
-                    </View>
-                  ))}
+              {/* Timestamp */}
+              {selectedCapture?.created_at && (
+                <View style={[styles.modalSection, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                  <Ionicons name="time-outline" size={16} color="#6B7280" />
+                  <Text style={{ fontSize: 13, color: '#6B7280' }}>
+                    {new Date(selectedCapture.created_at).toLocaleString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit',
+                    })}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: '#9CA3AF' }}>
+                    ({formatTime(selectedCapture.created_at)})
+                  </Text>
                 </View>
               )}
 
-              {/* Customer info */}
+              {/* Customer info — always editable */}
               <View style={styles.modalSection}>
-                <Text style={styles.modalLabel}>Customer</Text>
-                {selectedCapture?.matched_customer_id ? (
-                  <View style={styles.matchedCustomerBox}>
-                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                    <Text style={styles.matchedCustomerText}>
-                      {selectedCapture.matched_customer_name} ({selectedCapture.matched_customer_mobile})
-                    </Text>
-                  </View>
-                ) : (
-                  <View>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Customer name"
-                      placeholderTextColor="#9CA3AF"
-                      value={newCustomerName}
-                      onChangeText={setNewCustomerName}
-                    />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Mobile number *"
-                      placeholderTextColor="#9CA3AF"
-                      keyboardType="phone-pad"
-                      value={newCustomerMobile}
-                      onChangeText={setNewCustomerMobile}
-                    />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Address"
-                      placeholderTextColor="#9CA3AF"
-                      value={newCustomerAddress}
-                      onChangeText={setNewCustomerAddress}
-                    />
-                  </View>
-                )}
+                <Text style={styles.modalLabel}>Customer Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Customer name"
+                  placeholderTextColor="#9CA3AF"
+                  value={newCustomerName}
+                  onChangeText={setNewCustomerName}
+                />
+              </View>
+
+              <View style={styles.modalSection}>
+                <Text style={styles.modalLabel}>Phone Number *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="10-digit mobile number"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="phone-pad"
+                  value={newCustomerMobile}
+                  onChangeText={setNewCustomerMobile}
+                />
+              </View>
+
+              <View style={styles.modalSection}>
+                <Text style={styles.modalLabel}>Area / Address</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Delivery area or address"
+                  placeholderTextColor="#9CA3AF"
+                  value={area}
+                  onChangeText={setArea}
+                />
+              </View>
+
+              {/* Medicines — editable */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalLabel}>Medicines</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="e.g. Dolo 650 x2, Crocin syrup x1"
+                  placeholderTextColor="#9CA3AF"
+                  multiline
+                  numberOfLines={3}
+                  value={medicines}
+                  onChangeText={setMedicines}
+                />
               </View>
 
               {/* Order details */}
@@ -497,10 +522,10 @@ const CaptureReviewScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.modalSection}>
-                <Text style={styles.modalLabel}>Comments</Text>
+                <Text style={styles.modalLabel}>Notes</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder="Order notes..."
+                  placeholder="Additional notes (transcript shown here)..."
                   placeholderTextColor="#9CA3AF"
                   multiline
                   numberOfLines={3}
