@@ -160,4 +160,34 @@ class CaptureNativeModule(
             promise.reject("TEST_RECORD_ERROR", e.message)
         }
     }
+
+    @ReactMethod
+    fun startCaptureMonitor(promise: Promise) {
+        try {
+            val ctx = reactContext.applicationContext
+            ctx.startForegroundService(
+                Intent(ctx, CaptureMonitorService::class.java).apply {
+                    action = CaptureMonitorService.ACTION_START_MONITOR
+                }
+            )
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("MONITOR_START_ERROR", e.message)
+        }
+    }
+
+    @ReactMethod
+    fun stopCaptureMonitor(promise: Promise) {
+        try {
+            val ctx = reactContext.applicationContext
+            ctx.startService(
+                Intent(ctx, CaptureMonitorService::class.java).apply {
+                    action = CaptureMonitorService.ACTION_STOP_MONITOR
+                }
+            )
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("MONITOR_STOP_ERROR", e.message)
+        }
+    }
 }

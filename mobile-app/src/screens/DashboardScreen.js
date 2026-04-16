@@ -42,7 +42,13 @@ const DashboardScreen = ({ navigation }) => {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+    // Auto-start capture monitor service on Android
+    if (Platform.OS === 'android' && CaptureNativeModule) {
+      CaptureNativeModule.startCaptureMonitor().catch(() => {});
+    }
+  }, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
