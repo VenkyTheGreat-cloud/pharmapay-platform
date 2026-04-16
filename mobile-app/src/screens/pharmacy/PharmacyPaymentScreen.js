@@ -182,7 +182,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
         {paying ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.payBtnText}>Pay Now via SwinkPay</Text>
+          <Text style={styles.payBtnText}>Pay Now via PharmaGig</Text>
         )}
       </TouchableOpacity>
 
@@ -193,7 +193,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
       ) : null}
 
       <Text style={styles.secureText}>
-        Payment is processed securely through SwinkPay. You will be redirected to complete payment.
+        Payment is processed securely through PharmaGig. You will be redirected to complete payment.
       </Text>
     </ScrollView>
   );

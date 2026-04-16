@@ -142,6 +142,18 @@ const PharmacySignupScreen = ({ navigation }) => {
       <Text style={styles.title}>Create your account</Text>
       <Text style={styles.subtitle}>Start managing your pharmacy deliveries today.</Text>
 
+      {/* Role Toggle */}
+      <View style={styles.roleToggle}>
+        <View style={[styles.roleTab, styles.roleTabActive]}>
+          <Ionicons name="storefront-outline" size={15} color={ACCENT} />
+          <Text style={[styles.roleTabText, { color: ACCENT, fontWeight: '700' }]}>Pharmacy Owner</Text>
+        </View>
+        <TouchableOpacity style={styles.roleTab} onPress={() => navigation.navigate('Register')}>
+          <Ionicons name="bicycle-outline" size={15} color="#64748B" />
+          <Text style={styles.roleTabText}>Delivery Partner</Text>
+        </TouchableOpacity>
+      </View>
+
       {message.text ? (
         <View style={[styles.messageBox, message.type === 'error' ? styles.errorBox : styles.successBox]}>
           <Text style={[styles.messageText, message.type === 'error' ? styles.errorTextStyle : styles.successTextStyle]}>{message.text}</Text>
@@ -294,6 +306,11 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4, textAlign: 'center' },
   subtitle: { fontSize: 15, color: '#64748B', marginBottom: 20, textAlign: 'center' },
+
+  roleToggle: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 4, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' },
+  roleTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
+  roleTabActive: { backgroundColor: '#D1FAE5', borderWidth: 1, borderColor: '#10B981' },
+  roleTabText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
 
   messageBox: { padding: 12, borderRadius: 10, marginBottom: 16 },
   errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },

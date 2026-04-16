@@ -206,7 +206,7 @@ const LandingScreen = ({ navigation }) => {
                         <Text style={styles.footerLink}>Terms & Conditions</Text>
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.footerText}>Powered by SwinkPay Fintech Pvt Ltd</Text>
+                <Text style={styles.footerText}>Powered by PharmaGig</Text>
                 <Text style={styles.footerVersion}>Version 1.0.0</Text>
             </View>
         </ScrollView>

@@ -14,10 +14,10 @@ const PrivacyPolicyScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.heading}>Applicability</Text>
         <Text style={styles.body}>
-          This Policy is applicable to PharmaPay and its subscribers who have subscribed to PharmaPay service.
+          This Policy is applicable to PharmaGig and its subscribers who have subscribed to PharmaGig service.
         </Text>
         <Text style={styles.body}>
-          Consequently, to the extent of this Privacy Policy, the word "we", "us", "PharmaPay" represents PharmaPay and its subscribers as stated above.
+          Consequently, to the extent of this Privacy Policy, the word "we", "us", "PharmaGig" represents PharmaGig and its subscribers as stated above.
         </Text>
         <Text style={styles.body}>
           The word "you" means any individual and/or employees of entities which share their personal data as described in the section titled "Personal Information".
@@ -27,7 +27,7 @@ const PrivacyPolicyScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.heading}>Privacy Policy</Text>
         <Text style={styles.body}>
-          We, PharmaPay are located at BOOTSTART COWORKING, 3rd Floor, Sanjay Nagar Main Rd, MET Layout, Ashwath Nagar, R.M.V. 2nd Stage, Bengaluru, Karnataka 560094 are herein referred to as PharmaGig. At PharmaGig, we value your trust & respect your privacy. This Privacy Policy provides you with the details about the manner in which your data is collected, stored & used by us. You are advised to read this Privacy Policy carefully. By accessing SwinkPay Environment and/or downloading and using the PharmaGig application you willingly give us consent to use & disclose your personal information in accordance with this Privacy Policy. If you do not agree to the terms of the policy, please do not use or access PharmaGig.
+          We, PharmaGig are located at BOOTSTART COWORKING, 3rd Floor, Sanjay Nagar Main Rd, MET Layout, Ashwath Nagar, R.M.V. 2nd Stage, Bengaluru, Karnataka 560094 are herein referred to as PharmaGig. At PharmaGig, we value your trust & respect your privacy. This Privacy Policy provides you with the details about the manner in which your data is collected, stored & used by us. You are advised to read this Privacy Policy carefully. By accessing PharmaGig and/or downloading and using the PharmaGig application you willingly give us consent to use & disclose your personal information in accordance with this Privacy Policy. If you do not agree to the terms of the policy, please do not use or access PharmaGig.
         </Text>
         <Text style={styles.body}>
           Note: Our privacy policy may change at any time without prior notification. To make sure that you are aware of any changes, kindly review the policy periodically. This privacy policy shall apply uniformly to PharmaGig applications.
