@@ -50,10 +50,14 @@ async function transcribeAudio(audioFilePath, options = {}) {
             return null;
         }
 
-        // Determine encoding from file extension
-        // For M4A/MP4 (AAC), omit encoding and sampleRateHertz to let Google auto-detect
+        // Detect actual format from file header (not extension — Android saves AAC as .mp3)
         const ext = path.extname(file).toLowerCase();
-        const isAac = ['.m4a', '.mp4', '.aac'].includes(ext);
+        const header = audioBytes.slice(0, 12).toString('hex');
+        // ftyp signature at offset 4 = MP4/M4A container (AAC)
+        const isAac = header.includes('66747970') || ['.m4a', '.mp4', '.aac'].includes(ext);
+        if (isAac) {
+            logger.info('Detected AAC/M4A format from file header', { file: path.basename(audioFilePath), ext });
+        }
 
         const config = {
             // Enable auto language detection with Indian languages
