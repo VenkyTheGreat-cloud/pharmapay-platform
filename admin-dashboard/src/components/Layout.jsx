@@ -11,7 +11,8 @@ import {
     UserCircle,
     Clock,
     Phone,
-    FileSpreadsheet
+    FileSpreadsheet,
+    PhoneOff
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -38,6 +39,7 @@ export default function Layout({ children }) {
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileSpreadsheet },
+        { name: 'Dismissed Log', href: '/dismissed-captures', icon: PhoneOff },
     ];
 
     const isActive = (href) => location.pathname === href;

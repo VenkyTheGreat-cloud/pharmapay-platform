@@ -318,7 +318,9 @@ exports.dismissCapture = async (req, res, next) => {
             return res.status(400).json(errorResponse('INVALID_STATUS', 'Only completed captures can be dismissed'));
         }
 
-        await InboundCapture.updateStatus(captureId, 'dismissed');
+        // Save dismiss reason in extracted_data
+        const updatedData = { ...(capture.extracted_data || {}), dismiss_reason: reason || 'not specified' };
+        await InboundCapture.updateStatus(captureId, 'dismissed', { extracted_data: updatedData });
 
         logger.info('Capture dismissed', {
             captureId,
@@ -337,18 +339,27 @@ exports.dismissCapture = async (req, res, next) => {
     }
 };
 
-// GET /api/inbound/captures/dismissed — list dismissed captures
+// GET /api/inbound/captures/dismissed — list dismissed captures (store or admin)
 exports.listDismissedCaptures = async (req, res, next) => {
     try {
-        const { limit = 50, offset = 0 } = req.query;
-        const storeId = req.user.userId;
+        const { limit = 50, offset = 0, channel, date_from, date_to, store_id } = req.query;
+        const filters = { channel, dateFrom: date_from, dateTo: date_to };
+        let captures, dismissedCount;
 
-        const captures = await InboundCapture.findDismissedByStore(storeId, {
-            limit: parseInt(limit),
-            offset: parseInt(offset),
-        });
-
-        const dismissedCount = await InboundCapture.countDismissedByStore(storeId);
+        if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+            // Admin: can see all stores, optionally filter by store
+            filters.storeId = store_id || null;
+            captures = await InboundCapture.findAllDismissed({
+                limit: parseInt(limit), offset: parseInt(offset), ...filters,
+            });
+            dismissedCount = captures.length; // simplified for admin
+        } else {
+            // Store user: only their store
+            captures = await InboundCapture.findDismissedByStore(req.user.userId, {
+                limit: parseInt(limit), offset: parseInt(offset), ...filters,
+            });
+            dismissedCount = await InboundCapture.countDismissedByStore(req.user.userId, filters);
+        }
 
         res.json(successResponse({
             captures,

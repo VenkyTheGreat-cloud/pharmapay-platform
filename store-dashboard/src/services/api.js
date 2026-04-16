@@ -778,4 +778,10 @@ export const reportsAPI = {
     },
 };
 
+// Captures API (dismissed log)
+export const capturesAPI = {
+    getDismissed: (params = {}) => api.get('/inbound/captures/dismissed', { params }),
+    getConvertible: (params = {}) => api.get('/inbound/captures/convertible', { params }),
+};
+
 export default api;

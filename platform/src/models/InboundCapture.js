@@ -91,9 +91,8 @@ class InboundCapture {
         return result.rows;
     }
 
-    static async findDismissedByStore(storeId, { limit = 50, offset = 0 } = {}) {
-        const result = await query(
-            `SELECT ic.*,
+    static async findDismissedByStore(storeId, { limit = 50, offset = 0, channel, dateFrom, dateTo } = {}) {
+        let sql = `SELECT ic.*,
                     c.id as matched_customer_id,
                     c.name as matched_customer_name,
                     c.mobile as matched_customer_mobile
@@ -102,21 +101,92 @@ class InboundCapture {
                ON RIGHT(ic.caller_number, 10) = RIGHT(c.mobile, 10)
                AND c.store_id = ic.store_id
              WHERE ic.store_id = $1
-               AND ic.status = 'dismissed'
-             ORDER BY ic.processed_at DESC
-             LIMIT $2 OFFSET $3`,
-            [storeId, limit, offset]
-        );
+               AND ic.status = 'dismissed'`;
+        const params = [storeId];
+
+        if (channel) {
+            params.push(channel);
+            sql += ` AND ic.channel = $${params.length}`;
+        }
+        if (dateFrom) {
+            params.push(dateFrom);
+            sql += ` AND ic.created_at >= $${params.length}::date`;
+        }
+        if (dateTo) {
+            params.push(dateTo);
+            sql += ` AND ic.created_at < ($${params.length}::date + interval '1 day')`;
+        }
+
+        sql += ' ORDER BY ic.processed_at DESC';
+        params.push(limit);
+        sql += ` LIMIT $${params.length}`;
+        params.push(offset);
+        sql += ` OFFSET $${params.length}`;
+
+        const result = await query(sql, params);
         return result.rows;
     }
 
-    static async countDismissedByStore(storeId) {
-        const result = await query(
-            `SELECT COUNT(*) as count FROM inbound_captures
-             WHERE store_id = $1 AND status = 'dismissed'`,
-            [storeId]
-        );
+    static async countDismissedByStore(storeId, { channel, dateFrom, dateTo } = {}) {
+        let sql = `SELECT COUNT(*) as count FROM inbound_captures
+             WHERE store_id = $1 AND status = 'dismissed'`;
+        const params = [storeId];
+
+        if (channel) {
+            params.push(channel);
+            sql += ` AND channel = $${params.length}`;
+        }
+        if (dateFrom) {
+            params.push(dateFrom);
+            sql += ` AND created_at >= $${params.length}::date`;
+        }
+        if (dateTo) {
+            params.push(dateTo);
+            sql += ` AND created_at < ($${params.length}::date + interval '1 day')`;
+        }
+
+        const result = await query(sql, params);
         return parseInt(result.rows[0].count);
+    }
+
+    // For admin: get dismissed across all stores
+    static async findAllDismissed({ limit = 50, offset = 0, channel, dateFrom, dateTo, storeId } = {}) {
+        let sql = `SELECT ic.*,
+                    u.name as store_name, u.store_name as store_store_name,
+                    c.name as matched_customer_name, c.mobile as matched_customer_mobile
+             FROM inbound_captures ic
+             LEFT JOIN users u ON ic.store_id = u.id
+             LEFT JOIN customers c
+               ON RIGHT(ic.caller_number, 10) = RIGHT(c.mobile, 10)
+               AND c.store_id = ic.store_id
+             WHERE ic.status = 'dismissed'`;
+        const params = [];
+
+        if (storeId) {
+            params.push(storeId);
+            sql += ` AND ic.store_id = $${params.length}`;
+        }
+        if (channel) {
+            params.push(channel);
+            sql += ` AND ic.channel = $${params.length}`;
+        }
+        if (dateFrom) {
+            params.push(dateFrom);
+            sql += ` AND ic.created_at >= $${params.length}::date`;
+        }
+        if (dateTo) {
+            params.push(dateTo);
+            sql += ` AND ic.created_at < ($${params.length}::date + interval '1 day')`;
+        }
+
+        sql += ' ORDER BY ic.processed_at DESC';
+        params.push(limit);
+        sql += ` LIMIT $${params.length}`;
+        params.push(offset);
+        sql += ` OFFSET $${params.length}`;
+
+        const result = await query(sql, params);
+        return result.rows;
     }
 
     static async countConvertibleByStore(storeId) {

@@ -9,6 +9,7 @@ import StoreStaffPage from './pages/StoreStaffPage';
 import CustomersPage from './pages/CustomersPage';
 import ContactsPage from './pages/ContactsPage';
 import ReportsPage from './pages/ReportsPage';
+import DismissedCapturesPage from './pages/DismissedCapturesPage';
 
 
 // Protected Route wrapper
@@ -92,6 +93,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute>
                         <ReportsPage />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/dismissed-captures"
+                element={
+                    <ProtectedRoute>
+                        <DismissedCapturesPage />
                     </ProtectedRoute>
                 }
             />

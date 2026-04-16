@@ -12,7 +12,8 @@ import {
     Store,
     Phone,
     Clock,
-    FileDown
+    FileDown,
+    PhoneOff
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
@@ -39,6 +40,7 @@ export default function Layout({ children }) {
         { name: 'Customers', href: '/customers', icon: Users },
         { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileDown },
+        { name: 'Dismissed Log', href: '/dismissed-captures', icon: PhoneOff },
     ];
 
     const isActive = (href) => location.pathname === href;

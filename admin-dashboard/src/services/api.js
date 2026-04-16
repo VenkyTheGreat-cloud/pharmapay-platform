@@ -814,4 +814,9 @@ export const reportsAPI = USE_MOCK_API ? mockReportsAPI : realReportsAPI;
 export const pharmacyAPI = USE_MOCK_API ? mockPharmacyAPI : realPharmacyAPI;
 export const marketplaceAPI = USE_MOCK_API ? mockMarketplaceAPI : realMarketplaceAPI;
 
+// Captures API (dismissed log)
+export const capturesAPI = {
+    getDismissed: (params = {}) => api.get('/inbound/captures/dismissed', { params }),
+};
+
 export default api;
