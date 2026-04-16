@@ -109,9 +109,11 @@ const CaptureReviewScreen = ({ navigation }) => {
     setCustomerComments(capture.transcript || capture.message_text || '');
 
     // Pre-fill customer fields — always editable
-    // Priority: extracted from transcript > matched customer > capture metadata
+    // Phone: caller_number is most reliable (from caller ID), then extracted, then matched
+    setNewCustomerMobile(capture.caller_number || extracted.customer_phone || capture.matched_customer_mobile || '');
+    // Name: extracted from transcript > matched > sender
     setNewCustomerName(extracted.customer_name || capture.matched_customer_name || capture.sender_name || '');
-    setNewCustomerMobile(extracted.customer_phone || capture.matched_customer_mobile || capture.caller_number || '');
+    // Address: matched > extracted area
     setNewCustomerAddress(capture.matched_customer_address || extracted.area || '');
 
     setShowConvertModal(true);
@@ -324,6 +326,29 @@ const CaptureReviewScreen = ({ navigation }) => {
             <Text style={styles.dismissButtonText}>
               {dismissing === item.id ? 'Dismissing...' : 'Dismiss'}
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 10 }}
+            onPress={() => {
+              Alert.alert(
+                'Record Details',
+                `Speak order details for caller ${item.caller_number || 'unknown'}:\n\n"Customer name, Area, Medicines"`,
+                [{
+                  text: 'Record',
+                  onPress: async () => {
+                    try {
+                      await CaptureNativeModule.testRecording();
+                      Alert.alert('Recording', 'Speak now! Recording for 5 seconds.\nPull to refresh after.');
+                    } catch (e) {
+                      Alert.alert('Error', e.message || 'Failed');
+                    }
+                  },
+                }, { text: 'Cancel', style: 'cancel' }]
+              );
+            }}
+          >
+            <Ionicons name="mic-outline" size={18} color="#10B981" />
+            <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600' }}>Record</Text>
           </TouchableOpacity>
           <Button
             title="Convert to Order"
