@@ -13,6 +13,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const logger = require('../config/logger');
 
 const GOOGLE_STT_API_KEY = process.env.GOOGLE_STT_API_KEY;
@@ -53,14 +54,41 @@ async function transcribeAudio(audioFilePath, options = {}) {
         // Detect actual format from file header (not extension — Android saves AAC as .mp3)
         const ext = path.extname(file).toLowerCase();
         const header = audioBytes.slice(0, 12).toString('hex');
-        // ftyp signature at offset 4 = MP4/M4A container (AAC)
         const isAac = header.includes('66747970') || ['.m4a', '.mp4', '.aac'].includes(ext);
+
+        // Google STT sync API doesn't support AAC — convert to WAV first
+        let sttAudioContent = audioContent;
+        let sttEncoding = 'MP3';
+        let sttSampleRate = 16000;
+
         if (isAac) {
-            logger.info('Detected AAC/M4A format from file header', { file: path.basename(audioFilePath), ext });
+            logger.info('Converting AAC/M4A to WAV for STT', { file: path.basename(audioFilePath) });
+            const wavPath = file.replace(/\.[^.]+$/, '_stt.wav');
+            try {
+                execSync(`ffmpeg -y -i "${file}" -ar 16000 -ac 1 -f wav "${wavPath}"`, {
+                    timeout: 15000,
+                    stdio: 'pipe',
+                });
+                const wavBytes = fs.readFileSync(wavPath);
+                sttAudioContent = wavBytes.toString('base64');
+                sttEncoding = 'LINEAR16';
+                sttSampleRate = 16000;
+                // Clean up temp WAV
+                try { fs.unlinkSync(wavPath); } catch (_) {}
+                logger.info('AAC converted to WAV', { wavSize: wavBytes.length });
+            } catch (convErr) {
+                logger.error('FFmpeg conversion failed', { error: convErr.message });
+                return null;
+            }
+        } else if (ext === '.wav') {
+            sttEncoding = 'LINEAR16';
+        } else if (ext === '.ogg') {
+            sttEncoding = 'OGG_OPUS';
         }
 
         const config = {
-            // Enable auto language detection with Indian languages
+            encoding: sttEncoding,
+            sampleRateHertz: sttSampleRate,
             languageCode: options.language || 'en-IN',
             alternativeLanguageCodes: ['te-IN', 'ta-IN', 'hi-IN', 'en-IN'],
             model: 'default',
@@ -78,26 +106,12 @@ async function transcribeAudio(audioFilePath, options = {}) {
             }],
         };
 
-        if (isAac) {
-            // Let Google auto-detect AAC encoding from the content
-            logger.info('Using auto-detect for AAC/M4A file', { file: path.basename(audioFilePath) });
-        } else if (ext === '.wav') {
-            config.encoding = 'LINEAR16';
-            config.sampleRateHertz = 16000;
-        } else if (ext === '.ogg') {
-            config.encoding = 'OGG_OPUS';
-            config.sampleRateHertz = 16000;
-        } else {
-            config.encoding = 'MP3';
-            config.sampleRateHertz = 16000;
-        }
-
         const response = await axios.post(
             `${GOOGLE_STT_URL}?key=${GOOGLE_STT_API_KEY}`,
             {
                 config,
                 audio: {
-                    content: audioContent,
+                    content: sttAudioContent,
                 },
             },
             { timeout: 30000 }
