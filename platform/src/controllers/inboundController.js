@@ -308,6 +308,7 @@ exports.dismissCapture = async (req, res, next) => {
     try {
         const captureId = req.params.id;
         const storeId = req.user.userId;
+        const { reason } = req.body || {};
 
         const capture = await InboundCapture.findById(captureId);
         if (!capture || capture.store_id !== storeId) {
@@ -319,7 +320,41 @@ exports.dismissCapture = async (req, res, next) => {
 
         await InboundCapture.updateStatus(captureId, 'dismissed');
 
+        logger.info('Capture dismissed', {
+            captureId,
+            channel: capture.channel,
+            callerNumber: capture.caller_number,
+            senderName: capture.sender_name,
+            transcript: capture.transcript ? capture.transcript.substring(0, 100) : null,
+            medicines: capture.extracted_data?.medicines?.map(m => m.name) || [],
+            reason: reason || 'not specified',
+            dismissedBy: storeId,
+        });
+
         res.json(successResponse(null, 'Capture dismissed'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+// GET /api/inbound/captures/dismissed — list dismissed captures
+exports.listDismissedCaptures = async (req, res, next) => {
+    try {
+        const { limit = 50, offset = 0 } = req.query;
+        const storeId = req.user.userId;
+
+        const captures = await InboundCapture.findDismissedByStore(storeId, {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+        });
+
+        const dismissedCount = await InboundCapture.countDismissedByStore(storeId);
+
+        res.json(successResponse({
+            captures,
+            dismissed_count: dismissedCount,
+            count: captures.length,
+        }));
     } catch (error) {
         next(error);
     }

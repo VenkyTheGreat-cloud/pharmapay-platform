@@ -366,8 +366,11 @@ const realApiService = {
   convertCaptureToOrder: (captureId, data) =>
     api.post(`/inbound/captures/${captureId}/convert`, data),
 
-  dismissCapture: (captureId) =>
-    api.post(`/inbound/captures/${captureId}/dismiss`),
+  dismissCapture: (captureId, reason) =>
+    api.post(`/inbound/captures/${captureId}/dismiss`, { reason }),
+
+  getDismissedCaptures: (limit = 50, offset = 0) =>
+    api.get('/inbound/captures/dismissed', { params: { limit, offset } }),
 };
 
 // ============================================

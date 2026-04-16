@@ -28,6 +28,9 @@ const CaptureReviewScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [convertibleCount, setConvertibleCount] = useState(0);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'dismissed'
+  const [dismissedCaptures, setDismissedCaptures] = useState([]);
+  const [dismissedCount, setDismissedCount] = useState(0);
 
   // Convert modal state
   const [showConvertModal, setShowConvertModal] = useState(false);
@@ -64,10 +67,17 @@ const CaptureReviewScreen = ({ navigation }) => {
 
   const fetchCaptures = async () => {
     try {
-      const response = await apiService.getConvertibleCaptures();
-      const data = response.data?.data || response.data;
-      setCaptures(data.captures || []);
-      setConvertibleCount(data.convertible_count || 0);
+      const [activeRes, dismissedRes] = await Promise.all([
+        apiService.getConvertibleCaptures().catch(() => ({ data: { data: { captures: [], convertible_count: 0 } } })),
+        apiService.getDismissedCaptures().catch(() => ({ data: { data: { captures: [], dismissed_count: 0 } } })),
+      ]);
+      const activeData = activeRes.data?.data || activeRes.data;
+      setCaptures(activeData.captures || []);
+      setConvertibleCount(activeData.convertible_count || 0);
+
+      const dismissedData = dismissedRes.data?.data || dismissedRes.data;
+      setDismissedCaptures(dismissedData.captures || []);
+      setDismissedCount(dismissedData.dismissed_count || 0);
     } catch (error) {
       console.error('Error fetching captures:', error);
     } finally {
@@ -176,26 +186,26 @@ const CaptureReviewScreen = ({ navigation }) => {
   const handleDismiss = (capture) => {
     Alert.alert(
       'Dismiss Capture',
-      'This will remove the capture from the queue. Continue?',
+      'Select reason for dismissing:',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Dismiss',
-          style: 'destructive',
-          onPress: async () => {
-            setDismissing(capture.id);
-            try {
-              await apiService.dismissCapture(capture.id);
-              fetchCaptures();
-            } catch (error) {
-              Alert.alert('Error', handleApiError(error));
-            } finally {
-              setDismissing(null);
-            }
-          },
-        },
+        { text: 'Spam / Wrong call', onPress: () => doDismiss(capture, 'Spam or wrong call') },
+        { text: 'Not an order', onPress: () => doDismiss(capture, 'Not an order') },
+        { text: 'Duplicate', onPress: () => doDismiss(capture, 'Duplicate capture') },
       ]
     );
+  };
+
+  const doDismiss = async (capture, reason) => {
+    setDismissing(capture.id);
+    try {
+      await apiService.dismissCapture(capture.id, reason);
+      fetchCaptures();
+    } catch (error) {
+      Alert.alert('Error', handleApiError(error));
+    } finally {
+      setDismissing(null);
+    }
   };
 
   const formatTime = (dateStr) => {
@@ -437,8 +447,27 @@ const CaptureReviewScreen = ({ navigation }) => {
         <Ionicons name="chevron-forward" size={18} color="#D1FAE5" />
       </TouchableOpacity>
 
-      {/* Header badge */}
-      {convertibleCount > 0 && (
+      {/* Tabs: Active / Dismissed */}
+      <View style={{ flexDirection: 'row', marginHorizontal: 16, marginTop: 10, backgroundColor: '#fff', borderRadius: 10, padding: 3, borderWidth: 1, borderColor: '#E5E7EB' }}>
+        <TouchableOpacity
+          style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: activeTab === 'active' ? '#3B82F6' : 'transparent' }}
+          onPress={() => setActiveTab('active')}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: activeTab === 'active' ? '#fff' : '#6B7280' }}>
+            Active ({convertibleCount})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center', backgroundColor: activeTab === 'dismissed' ? '#6B7280' : 'transparent' }}
+          onPress={() => setActiveTab('dismissed')}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '600', color: activeTab === 'dismissed' ? '#fff' : '#6B7280' }}>
+            Dismissed ({dismissedCount})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'active' && convertibleCount > 0 && (
         <View style={styles.headerBadge}>
           <Ionicons name="notifications-outline" size={18} color="#3B82F6" />
           <Text style={styles.headerBadgeText}>
@@ -448,9 +477,47 @@ const CaptureReviewScreen = ({ navigation }) => {
       )}
 
       <FlatList
-        data={captures}
+        data={activeTab === 'active' ? captures : dismissedCaptures}
         keyExtractor={(item) => item.id}
-        renderItem={renderCaptureCard}
+        renderItem={activeTab === 'active' ? renderCaptureCard : ({ item }) => {
+          const extracted = item.extracted_data || {};
+          return (
+            <View style={[styles.card, { opacity: 0.7 }]}>
+              <View style={styles.cardHeader}>
+                <View style={styles.channelRow}>
+                  <Ionicons name={item.channel === 'voice' ? 'call-outline' : 'logo-whatsapp'} size={18} color="#9CA3AF" />
+                  <Text style={[styles.channelLabel, { color: '#9CA3AF' }]}>{item.channel === 'voice' ? 'Voice Call' : 'WhatsApp'}</Text>
+                  <View style={{ backgroundColor: '#F3F4F6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                    <Text style={{ fontSize: 10, color: '#6B7280', fontWeight: '600' }}>DISMISSED</Text>
+                  </View>
+                </View>
+                <Text style={styles.timeText}>{formatTime(item.created_at)}</Text>
+              </View>
+              {item.caller_number && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="call-outline" size={14} color="#9CA3AF" />
+                  <Text style={[styles.infoText, { color: '#9CA3AF' }]}>{item.caller_number}</Text>
+                </View>
+              )}
+              {item.sender_name && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="person-outline" size={14} color="#9CA3AF" />
+                  <Text style={[styles.infoText, { color: '#9CA3AF' }]}>{item.sender_name}</Text>
+                </View>
+              )}
+              {(item.transcript || item.message_text) && (
+                <Text style={[styles.previewText, { color: '#D1D5DB' }]} numberOfLines={2}>
+                  {item.transcript || item.message_text}
+                </Text>
+              )}
+              {extracted.medicines && extracted.medicines.length > 0 && (
+                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                  Medicines: {extracted.medicines.map(m => m.name).join(', ')}
+                </Text>
+              )}
+            </View>
+          );
+        }}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
@@ -461,8 +528,8 @@ const CaptureReviewScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <EmptyState
-            icon="mic-off-outline"
-            message="No captures ready for conversion"
+            icon={activeTab === 'active' ? 'mic-off-outline' : 'trash-outline'}
+            message={activeTab === 'active' ? 'No captures ready for conversion' : 'No dismissed captures'}
           />
         }
       />
