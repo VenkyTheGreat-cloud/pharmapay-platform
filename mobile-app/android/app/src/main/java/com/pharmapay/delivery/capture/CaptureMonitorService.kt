@@ -50,20 +50,34 @@ class CaptureMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_STOP_MONITOR -> {
-                Log.d(TAG, "Stopping monitor service")
-                unregisterCallListener()
-                stopForeground(STOP_FOREGROUND_REMOVE)
+        try {
+            when (intent?.action) {
+                ACTION_STOP_MONITOR -> {
+                    Log.d(TAG, "Stopping monitor service")
+                    unregisterCallListener()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    return START_NOT_STICKY
+                }
+            }
+
+            // Check READ_PHONE_STATE before starting (required for phoneCall foreground type on API 34+)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "READ_PHONE_STATE not granted, cannot start monitor")
                 stopSelf()
                 return START_NOT_STICKY
             }
-        }
 
-        Log.d(TAG, "Starting monitor service")
-        showMonitorNotification()
-        registerCallListener()
-        return START_STICKY  // Restart if killed by system
+            Log.d(TAG, "Starting monitor service")
+            showMonitorNotification()
+            registerCallListener()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start monitor service", e)
+            try { stopSelf() } catch (_: Exception) {}
+            return START_NOT_STICKY
+        }
+        return START_STICKY
     }
 
     private fun registerCallListener() {
@@ -227,7 +241,12 @@ class CaptureMonitorService : Service() {
             .setOngoing(true)
             .build()
 
-        startForeground(NOTIF_ID, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIF_ID, notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
         Log.d(TAG, "Monitor notification shown")
     }
 

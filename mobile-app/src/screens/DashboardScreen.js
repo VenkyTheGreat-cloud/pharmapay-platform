@@ -44,9 +44,15 @@ const DashboardScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadData();
-    // Auto-start capture monitor service on Android
+    // Auto-start capture monitor service on Android (after permissions are granted)
     if (Platform.OS === 'android' && CaptureNativeModule) {
-      CaptureNativeModule.startCaptureMonitor().catch(() => {});
+      CaptureNativeModule.checkCapturePermissions()
+        .then((perms) => {
+          if (perms.recordAudio && perms.readPhoneState) {
+            return CaptureNativeModule.startCaptureMonitor();
+          }
+        })
+        .catch(() => {});
     }
   }, [loadData]);
 
