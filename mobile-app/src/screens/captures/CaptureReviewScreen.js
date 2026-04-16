@@ -109,8 +109,9 @@ const CaptureReviewScreen = ({ navigation }) => {
     setCustomerComments(capture.transcript || capture.message_text || '');
 
     // Pre-fill customer fields — always editable
-    setNewCustomerName(capture.matched_customer_name || capture.sender_name || extracted.customer_name || '');
-    setNewCustomerMobile(capture.matched_customer_mobile || capture.caller_number || '');
+    // Priority: extracted from transcript > matched customer > capture metadata
+    setNewCustomerName(extracted.customer_name || capture.matched_customer_name || capture.sender_name || '');
+    setNewCustomerMobile(extracted.customer_phone || capture.matched_customer_mobile || capture.caller_number || '');
     setNewCustomerAddress(capture.matched_customer_address || extracted.area || '');
 
     setShowConvertModal(true);
@@ -380,6 +381,36 @@ const CaptureReviewScreen = ({ navigation }) => {
           </View>
         </View>
       )}
+
+      {/* Record Order Button */}
+      <TouchableOpacity
+        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', marginHorizontal: 16, marginTop: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, gap: 10 }}
+        onPress={() => {
+          Alert.alert(
+            'Record Order',
+            'After tapping OK, speak clearly for 10 seconds:\n\n"Customer name [NAME],\nPhone [NUMBER],\nArea [AREA],\nMedicines [LIST]"\n\nExample: "Customer name Ramesh, phone 9876543210, area Kukatpally, medicines Dolo 650 two strips, Crocin syrup one bottle"',
+            [{
+              text: 'Start Recording',
+              onPress: async () => {
+                try {
+                  const ctx = require('react-native').NativeModules.CaptureNativeModule;
+                  const result = await ctx.testRecording();
+                  Alert.alert('Recording', 'Speak the order now! Recording for 5 seconds...');
+                } catch (e) {
+                  Alert.alert('Error', e.message || 'Failed to start recording');
+                }
+              },
+            }, { text: 'Cancel', style: 'cancel' }]
+          );
+        }}
+      >
+        <Ionicons name="mic" size={22} color="#FFFFFF" />
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Record Order</Text>
+          <Text style={{ color: '#D1FAE5', fontSize: 11 }}>Speak: Name, Phone, Area, Medicines</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#D1FAE5" />
+      </TouchableOpacity>
 
       {/* Header badge */}
       {convertibleCount > 0 && (

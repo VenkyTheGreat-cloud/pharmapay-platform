@@ -119,6 +119,42 @@ function extractArea(text) {
 }
 
 /**
+ * Extract customer name from transcript text
+ * Looks for patterns like "name is X", "my name X", "customer name X", "I am X"
+ */
+function extractCustomerName(text) {
+    const patterns = [
+        /(?:customer\s*name|my\s*name|name\s*is|i\s*am|this\s*is|mera\s*naam|naa\s*peru|en\s*peyar)\s*[:\-]?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+        /(?:customer\s*name|my\s*name|name\s*is|i\s*am|this\s*is)\s+(\S+(?:\s+\S+)?)/i,
+    ];
+    for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+            // Clean up: remove trailing common words
+            const name = match[1].replace(/\b(i|want|need|send|give|please|tablets?|medicine)\b.*/i, '').trim();
+            if (name.length >= 2 && name.length <= 40) return name;
+        }
+    }
+    return null;
+}
+
+/**
+ * Extract phone number from transcript text
+ */
+function extractPhoneNumber(text) {
+    const match = text.match(/(?:number|phone|mobile|call)\s*[:\-]?\s*(\d[\d\s]{8,13}\d)/i);
+    if (match) {
+        const digits = match[1].replace(/\s/g, '');
+        if (digits.length === 10) return digits;
+        if (digits.length > 10) return digits.slice(-10);
+    }
+    // Also try standalone 10-digit number
+    const standalone = text.match(/\b(\d{10})\b/);
+    if (standalone) return standalone[1];
+    return null;
+}
+
+/**
  * Extract intent — is this an order request?
  */
 function detectOrderIntent(text) {
@@ -131,19 +167,21 @@ function detectOrderIntent(text) {
 }
 
 /**
- * Main parser — extracts structured data from WhatsApp message
+ * Main parser — extracts structured data from message or transcript
  */
 function parseWhatsAppMessage(message, senderName = null, callerNumber = null) {
     const language = detectLanguage(message);
     const medicines = extractMedicines(message);
     const area = extractArea(message);
     const isOrder = detectOrderIntent(message) || medicines.length > 0;
+    const extractedName = extractCustomerName(message);
+    const extractedPhone = extractPhoneNumber(message);
 
     return {
         language,
         is_order: isOrder,
-        customer_name: senderName || null,
-        customer_phone: callerNumber || null,
+        customer_name: extractedName || senderName || null,
+        customer_phone: extractedPhone || callerNumber || null,
         area,
         medicines,
         medicine_count: medicines.length,
