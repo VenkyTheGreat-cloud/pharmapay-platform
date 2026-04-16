@@ -33,7 +33,7 @@ class CaptureApiClient(private val context: Context) {
                     .addFormDataPart("channel", "voice")
                     .addFormDataPart("caller_number", callerNumber ?: "")
                     .addFormDataPart("audio", file.name,
-                        file.asRequestBody("audio/mpeg".toMediaType()))
+                        file.asRequestBody("audio/mp4".toMediaType()))
                     .build()
                 http.newCall(
                     Request.Builder()

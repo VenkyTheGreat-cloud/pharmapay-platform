@@ -51,35 +51,47 @@ async function transcribeAudio(audioFilePath, options = {}) {
         }
 
         // Determine encoding from file extension
+        // For M4A/MP4 (AAC), omit encoding and sampleRateHertz to let Google auto-detect
         const ext = path.extname(file).toLowerCase();
-        let encoding = 'MP3';
-        if (ext === '.wav') encoding = 'LINEAR16';
-        else if (ext === '.m4a' || ext === '.mp4') encoding = 'MP3'; // Google handles M4A as MP3
-        else if (ext === '.ogg') encoding = 'OGG_OPUS';
+        const isAac = ['.m4a', '.mp4', '.aac'].includes(ext);
+
+        const config = {
+            // Enable auto language detection with Indian languages
+            languageCode: options.language || 'en-IN',
+            alternativeLanguageCodes: ['te-IN', 'ta-IN', 'hi-IN', 'en-IN'],
+            model: 'default',
+            useEnhanced: true,
+            enableAutomaticPunctuation: true,
+            speechContexts: [{
+                phrases: [
+                    'tablet', 'capsule', 'syrup', 'medicine', 'pharmacy',
+                    'paracetamol', 'dolo', 'crocin', 'metformin', 'azithromycin',
+                    'amoxicillin', 'omeprazole', 'cetirizine', 'pan d', 'shelcal',
+                    'delivery', 'order', 'strips', 'bottles', 'send', 'need',
+                    'nagar', 'colony', 'road', 'street', 'area',
+                ],
+                boost: 15,
+            }],
+        };
+
+        if (isAac) {
+            // Let Google auto-detect AAC encoding from the content
+            logger.info('Using auto-detect for AAC/M4A file', { file: path.basename(audioFilePath) });
+        } else if (ext === '.wav') {
+            config.encoding = 'LINEAR16';
+            config.sampleRateHertz = 16000;
+        } else if (ext === '.ogg') {
+            config.encoding = 'OGG_OPUS';
+            config.sampleRateHertz = 16000;
+        } else {
+            config.encoding = 'MP3';
+            config.sampleRateHertz = 16000;
+        }
 
         const response = await axios.post(
             `${GOOGLE_STT_URL}?key=${GOOGLE_STT_API_KEY}`,
             {
-                config: {
-                    encoding,
-                    sampleRateHertz: 16000,
-                    // Enable auto language detection with Indian languages
-                    languageCode: options.language || 'te-IN',
-                    alternativeLanguageCodes: ['ta-IN', 'en-IN', 'hi-IN', 'te-IN'],
-                    // Boost accuracy for pharmacy context
-                    model: 'default',
-                    useEnhanced: true,
-                    enableAutomaticPunctuation: true,
-                    // Hint pharmacy-related words
-                    speechContexts: [{
-                        phrases: [
-                            'tablet', 'capsule', 'syrup', 'medicine', 'pharmacy',
-                            'paracetamol', 'dolo', 'crocin', 'metformin', 'azithromycin',
-                            'delivery', 'order', 'strips', 'bottles',
-                        ],
-                        boost: 10,
-                    }],
-                },
+                config,
                 audio: {
                     content: audioContent,
                 },

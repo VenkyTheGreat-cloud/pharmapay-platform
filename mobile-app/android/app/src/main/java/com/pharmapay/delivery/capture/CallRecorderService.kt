@@ -65,18 +65,26 @@ class CallRecorderService : Service() {
     private fun startRecording() {
         val dir = getExternalFilesDir("call_recordings") ?: filesDir
         dir.mkdirs()
-        outputFile = File(dir, "call_${System.currentTimeMillis()}.mp3")
+        outputFile = File(dir, "call_${System.currentTimeMillis()}.m4a")
         Log.d(TAG, "Recording to: ${outputFile?.absolutePath}")
 
         try {
             @Suppress("DEPRECATION")
             recorder = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 MediaRecorder(this) else MediaRecorder()).apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
+                // Try VOICE_COMMUNICATION first (better for call audio, captures both sides)
+                // Falls back to MIC if VOICE_COMMUNICATION fails
+                try {
+                    setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+                    Log.d(TAG, "Using VOICE_COMMUNICATION audio source")
+                } catch (e: Exception) {
+                    Log.w(TAG, "VOICE_COMMUNICATION failed, falling back to MIC", e)
+                    setAudioSource(MediaRecorder.AudioSource.MIC)
+                }
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
                 setAudioSamplingRate(16000)
-                setAudioEncodingBitRate(64000)
+                setAudioEncodingBitRate(128000)  // Higher bitrate for better STT accuracy
                 setOutputFile(outputFile!!.absolutePath)
                 prepare()
                 start()
