@@ -1,0 +1,11 @@
+/* Hide browser's native password reveal icon (Edge, Chrome) */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* Safari password icon */
+input::-webkit-textfield-decoration-container {
+  display: none !important;
+}
