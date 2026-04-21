@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+
+const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0;
 
 const TopNavBar = ({ activeScreen }) => {
   const navigation = useNavigation();
@@ -17,6 +19,7 @@ const TopNavBar = ({ activeScreen }) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
       {/* Top row: Logo + Links + Auth */}
       <View style={[styles.topRow, isWide && styles.topRowWide]}>
         <TouchableOpacity style={styles.logo} onPress={() => navigation.navigate('Landing')}>
@@ -69,6 +72,7 @@ const TopNavBar = ({ activeScreen }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
+    paddingTop: Platform.OS === 'web' ? 0 : STATUS_BAR_HEIGHT,
     ...(Platform.OS === 'web' ? { position: 'sticky', top: 0, zIndex: 50 } : {}),
   },
   topRow: {

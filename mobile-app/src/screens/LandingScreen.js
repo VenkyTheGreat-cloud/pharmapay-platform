@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -13,6 +13,7 @@ const LandingScreen = ({ navigation }) => {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             {/* Navbar — web only */}
             {isWeb && (
                 <View style={[styles.navbar, isWide && styles.navbarWide]}>
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
     heroWide: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 48, paddingTop: 80, paddingBottom: 60 },
 
     // Mobile compact header
-    mobileHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingTop: 48 },
+    mobileHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingTop: (StatusBar.currentHeight || 24) + 8 },
     mobileHeaderTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
     mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     mobileLogoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },

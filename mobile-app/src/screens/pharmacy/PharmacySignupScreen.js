@@ -298,14 +298,14 @@ const PharmacySignupScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F1F5F9' },
   content: { paddingBottom: 40 },
-  bodyWrap: { padding: 24, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  bodyWrap: { padding: 24, maxWidth: 480, width: '100%', alignSelf: 'center' },
 
-  header: { alignItems: 'center', marginBottom: 20 },
-  logoIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  brand: { fontSize: 22, fontWeight: '700', color: '#0F172A' },
+  header: { alignItems: 'center', marginBottom: 24, marginTop: 20 },
+  logoIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  brand: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
 
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4, textAlign: 'center' },
-  subtitle: { fontSize: 15, color: '#64748B', marginBottom: 20, textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#64748B', marginBottom: 20, textAlign: 'center' },
 
   roleToggle: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 4, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' },
   roleTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
@@ -320,10 +320,9 @@ const styles = StyleSheet.create({
   successTextStyle: { color: '#16A34A' },
 
   formCard: {
-    backgroundColor: '#fff', borderRadius: 20, padding: 24,
+    backgroundColor: '#fff', borderRadius: 16, padding: 20,
     borderWidth: 1, borderColor: '#E2E8F0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 12,
-    elevation: 3, marginBottom: 16,
+    marginBottom: 16,
   },
 
   field: { marginBottom: 18 },

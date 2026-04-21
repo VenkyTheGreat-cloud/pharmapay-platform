@@ -23,8 +23,8 @@ exports.register = async (req, res, next) => {
         const { name, mobile, email, password, address, store_id } = req.body;
 
         // Validation
-        if (!name || !mobile || !email || !password) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, email, and password are required'));
+        if (!name || !mobile || !password) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, and password are required'));
         }
 
         if (password.length < 6) {
