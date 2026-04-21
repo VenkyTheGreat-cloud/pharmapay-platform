@@ -1,0 +1,205 @@
+const { query } = require('../config/database');
+
+class Pharmacy {
+    // Create a new pharmacy
+    static async create(data) {
+        const { owner_id, slug, name, plan, status, primary_color, features, max_delivery_boys, max_outlets } = data;
+
+        const result = await query(
+            `INSERT INTO pharmacies (owner_id, slug, name, plan, status, primary_color, features, max_delivery_boys, max_outlets)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             RETURNING *`,
+            [owner_id, slug, name, plan || 'starter', status || 'pending_approval', primary_color || '#185FA5', features || null, max_delivery_boys || 10, max_outlets || 1]
+        );
+
+        return result.rows[0];
+    }
+
+    // Find pharmacy by ID
+    static async findById(id) {
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE id = $1',
+            [id]
+        );
+        return result.rows[0];
+    }
+
+    // Find pharmacy by owner ID
+    static async findByOwnerId(ownerId) {
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE owner_id = $1',
+            [ownerId]
+        );
+        return result.rows[0];
+    }
+
+    // Find pharmacy by slug
+    static async findBySlug(slug) {
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE slug = $1',
+            [slug]
+        );
+        return result.rows[0];
+    }
+
+    // Check if slug already exists
+    static async slugExists(slug) {
+        const result = await query(
+            'SELECT EXISTS(SELECT 1 FROM pharmacies WHERE slug = $1)',
+            [slug]
+        );
+        return result.rows[0].exists;
+    }
+
+    // Get all pharmacies with optional status filter
+    static async findAll(filters = {}) {
+        let sql = `SELECT p.*, u.name as owner_name, u.email as owner_email, u.mobile as owner_mobile
+             FROM pharmacies p
+             JOIN users u ON p.owner_id = u.id`;
+        const values = [];
+
+        if (filters.status) {
+            sql += ' WHERE p.status = $1';
+            values.push(filters.status);
+        }
+
+        sql += ' ORDER BY p.created_at DESC';
+
+        const result = await query(sql, values);
+        return result.rows;
+    }
+
+    // Update pharmacy config (plan, features, limits)
+    static async updateConfig(id, config) {
+        const { plan, features, max_delivery_boys, max_outlets, config_json } = config;
+
+        const result = await query(
+            `UPDATE pharmacies
+             SET plan = COALESCE($1, plan),
+                 features = COALESCE($2, features),
+                 max_delivery_boys = COALESCE($3, max_delivery_boys),
+                 max_outlets = COALESCE($4, max_outlets),
+                 config_json = COALESCE($5, config_json),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $6
+             RETURNING *`,
+            [
+                plan || null,
+                features ? JSON.stringify(features) : null,
+                max_delivery_boys || null,
+                max_outlets || null,
+                config_json ? JSON.stringify(config_json) : null,
+                id
+            ]
+        );
+
+        return result.rows[0];
+    }
+
+    // Update pharmacy branding (colors, logo)
+    static async updateBranding(id, branding) {
+        const { primary_color, logo_url } = branding;
+
+        const result = await query(
+            `UPDATE pharmacies
+             SET primary_color = COALESCE($1, primary_color),
+                 logo_url = COALESCE($2, logo_url),
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $3
+             RETURNING *`,
+            [primary_color || null, logo_url || null, id]
+        );
+
+        return result.rows[0];
+    }
+
+    // Update pharmacy status (approve, reject, submit)
+    static async updateStatus(id, status, extra = {}) {
+        const fields = ['status = $1'];
+        const values = [status];
+        let paramCount = 2;
+
+        if (extra.approved_at) {
+            fields.push(`approved_at = $${paramCount}`);
+            values.push(extra.approved_at);
+            paramCount++;
+        }
+
+        if (extra.rejection_reason) {
+            fields.push(`rejection_reason = $${paramCount}`);
+            values.push(extra.rejection_reason);
+            paramCount++;
+        }
+
+        if (extra.submitted_at) {
+            fields.push(`submitted_at = $${paramCount}`);
+            values.push(extra.submitted_at);
+            paramCount++;
+        }
+
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(id);
+
+        const result = await query(
+            `UPDATE pharmacies SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+            values
+        );
+
+        return result.rows[0];
+    }
+
+    // Update pharmacy app name
+    static async updateAppName(id, appName) {
+        const result = await query(
+            `UPDATE pharmacies SET app_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+            [appName, id]
+        );
+        return result.rows[0];
+    }
+
+    // Update pharmacy payment info
+    static async updatePayment(id, paymentData) {
+        const { payment_status, payment_reference, payment_invoice, payment_amount, payment_date } = paymentData;
+
+        const result = await query(
+            `UPDATE pharmacies
+             SET payment_status = $1,
+                 payment_reference = $2,
+                 payment_invoice = $3,
+                 payment_amount = $4,
+                 payment_date = $5,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE id = $6
+             RETURNING *`,
+            [payment_status, payment_reference, payment_invoice, payment_amount, payment_date, id]
+        );
+
+        return result.rows[0];
+    }
+
+    // Find pharmacy by payment invoice
+    static async findByPaymentInvoice(invoice) {
+        const result = await query(
+            'SELECT * FROM pharmacies WHERE payment_invoice = $1',
+            [invoice]
+        );
+        return result.rows[0];
+    }
+
+    // Update pharmacy build info
+    static async updateBuild(id, buildData) {
+        const { build_id, build_status, build_url } = buildData;
+
+        const result = await query(
+            `UPDATE pharmacies
+             SET build_id = $1, build_status = $2, build_url = $3, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $4
+             RETURNING *`,
+            [build_id, build_status, build_url, id]
+        );
+
+        return result.rows[0];
+    }
+}
+
+module.exports = Pharmacy;

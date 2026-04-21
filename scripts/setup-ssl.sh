@@ -2,23 +2,26 @@
 set -euo pipefail
 
 # ===========================================
-# SSL Setup for SBB Medicare Subdomains
+# SSL Setup — Wildcard cert for PharmaGig
 # ===========================================
 #
 # Prerequisites:
-#   - DNS A records pointing to this server:
-#     PharmaA.swinkpay-fintech.com → 13.205.170.117
-#     PharmaS.swinkpay-fintech.com → 13.205.170.117
-#   - Port 80 open (for Let's Encrypt verification)
-#   - Port 443 open in Lightsail firewall
+#   - AWS CLI configured with Route53 permissions:
+#     route53:ListHostedZones, route53:GetChange, route53:ChangeResourceRecordSets
+#   - DNS wildcard A record: *.pharmagig.swinkpay-fintech.com → 15.207.142.166
+#   - DNS A record: pharmagig.swinkpay-fintech.com → 15.207.142.166
 #
 # Usage:
 #   sudo ./scripts/setup-ssl.sh
 
-echo "=== SBB Medicare: SSL Setup ==="
+DOMAIN="pharmagig.swinkpay-fintech.com"
+EMAIL="admin@swinkpay-fintech.com"
 
-# Install certbot
-echo "Step 1: Installing certbot..."
+echo "=== PharmaGig: Wildcard SSL Setup ==="
+
+# Step 1: Install certbot + Route53 plugin
+echo ""
+echo "Step 1: Installing certbot and Route53 DNS plugin..."
 if command -v certbot &>/dev/null; then
   echo "  certbot already installed"
 else
@@ -26,37 +29,51 @@ else
   apt-get install -y certbot
 fi
 
-# Stop nginx temporarily for standalone verification
+# Install Route53 plugin
+if pip3 show certbot-dns-route53 &>/dev/null 2>&1; then
+  echo "  certbot-dns-route53 already installed"
+else
+  apt-get install -y python3-pip
+  pip3 install certbot-dns-route53
+fi
+
+# Step 2: Stop nginx temporarily
 echo ""
-echo "Step 2: Obtaining SSL certificates..."
-echo "  Stopping nginx for certificate verification..."
+echo "Step 2: Stopping nginx for certificate verification..."
+cd /opt/pharmapay
+docker compose stop platform-nginx 2>/dev/null || true
 
-cd /home/ubuntu/sbb-medicare
-docker compose stop nginx
+# Step 3: Obtain wildcard certificate via DNS challenge
+echo ""
+echo "Step 3: Obtaining wildcard SSL certificate..."
+echo "  Domains: ${DOMAIN}, *.${DOMAIN}"
+echo "  Method:  Route53 DNS-01 challenge"
 
-# Get certificates
-certbot certonly --standalone \
-  -d PharmaA.swinkpay-fintech.com \
-  -d PharmaS.swinkpay-fintech.com \
+certbot certonly \
+  --dns-route53 \
+  -d "${DOMAIN}" \
+  -d "*.${DOMAIN}" \
   --non-interactive \
   --agree-tos \
-  --email admin@swinkpay-fintech.com
+  --email "${EMAIL}"
+
+# Step 4: Restart nginx
+echo ""
+echo "Step 4: Restarting nginx..."
+docker compose start platform-nginx
 
 echo ""
-echo "Step 3: Restarting nginx..."
-docker compose start nginx
-
+echo "=== Wildcard SSL certificate obtained ==="
 echo ""
-echo "=== SSL certificates obtained ==="
+echo "Certificate covers:"
+echo "  ${DOMAIN}"
+echo "  *.${DOMAIN} (all tenant subdomains)"
 echo ""
-echo "Certificates are at:"
-echo "  /etc/letsencrypt/live/PharmaA.swinkpay-fintech.com/"
+echo "Certificates at:"
+echo "  /etc/letsencrypt/live/${DOMAIN}/"
 echo ""
-echo "Next steps:"
-echo "  1. Update docker-compose.yml to mount cert volumes"
-echo "  2. Update nginx.conf with SSL server blocks"
-echo "  3. Open port 443 in Lightsail firewall"
-echo "  4. Restart: docker compose restart nginx"
+echo "Auto-renewal is handled by certbot systemd timer."
+echo "  Test with: sudo certbot renew --dry-run"
 echo ""
-echo "Auto-renewal is set up via certbot systemd timer."
-echo "  Test with: certbot renew --dry-run"
+echo "To reload nginx after renewal, add a deploy hook:"
+echo "  certbot renew --deploy-hook 'cd /opt/pharmapay && docker compose exec platform-nginx nginx -s reload'"

@@ -1,0 +1,156 @@
+/**
+ * Speech-to-Text service using Google Cloud STT API
+ * Free tier: 60 minutes/month
+ *
+ * Supports: Telugu (te-IN), Tamil (ta-IN), English (en-IN), Hindi (hi-IN)
+ * Auto-detects language using alternative language codes
+ *
+ * Requires: GOOGLE_STT_API_KEY in .env
+ * Get free key: https://console.cloud.google.com/apis/credentials
+ * Enable: Cloud Speech-to-Text API
+ */
+
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+const logger = require('../config/logger');
+
+const GOOGLE_STT_API_KEY = process.env.GOOGLE_STT_API_KEY;
+const GOOGLE_STT_URL = 'https://speech.googleapis.com/v1/speech:recognize';
+
+/**
+ * Transcribe an audio file to text using Google Cloud Speech-to-Text
+ *
+ * @param {string} audioFilePath - path to MP3/M4A/WAV file
+ * @param {object} options
+ * @param {string} options.language - primary language hint: 'te-IN', 'ta-IN', 'en-IN', 'hi-IN'
+ * @returns {{ transcript: string, language: string, confidence: number } | null}
+ */
+async function transcribeAudio(audioFilePath, options = {}) {
+    if (!GOOGLE_STT_API_KEY) {
+        logger.warn('Google STT API key not configured — skipping transcription');
+        return null;
+    }
+
+    const file = path.resolve(audioFilePath);
+    if (!fs.existsSync(file)) {
+        logger.error('Audio file not found for transcription', { path: audioFilePath });
+        return null;
+    }
+
+    try {
+        // Read audio file and convert to base64
+        const audioBytes = fs.readFileSync(file);
+        const audioContent = audioBytes.toString('base64');
+
+        // File size check — Google STT sync API limit is ~10MB / 1 min audio
+        const fileSizeMB = audioBytes.length / (1024 * 1024);
+        if (fileSizeMB > 10) {
+            logger.warn('Audio file too large for sync STT, skipping', { sizeMB: fileSizeMB });
+            return null;
+        }
+
+        // Detect actual format from file header (not extension — Android saves AAC as .mp3)
+        const ext = path.extname(file).toLowerCase();
+        const header = audioBytes.slice(0, 12).toString('hex');
+        const isAac = header.includes('66747970') || ['.m4a', '.mp4', '.aac'].includes(ext);
+
+        // Google STT sync API doesn't support AAC — convert to WAV first
+        let sttAudioContent = audioContent;
+        let sttEncoding = 'MP3';
+        let sttSampleRate = 16000;
+
+        if (isAac) {
+            logger.info('Converting AAC/M4A to WAV for STT', { file: path.basename(audioFilePath) });
+            const wavPath = file.replace(/\.[^.]+$/, '_stt.wav');
+            try {
+                execSync(`ffmpeg -y -i "${file}" -ar 16000 -ac 1 -f wav "${wavPath}"`, {
+                    timeout: 15000,
+                    stdio: 'pipe',
+                });
+                const wavBytes = fs.readFileSync(wavPath);
+                sttAudioContent = wavBytes.toString('base64');
+                sttEncoding = 'LINEAR16';
+                sttSampleRate = 16000;
+                // Clean up temp WAV
+                try { fs.unlinkSync(wavPath); } catch (_) {}
+                logger.info('AAC converted to WAV', { wavSize: wavBytes.length });
+            } catch (convErr) {
+                logger.error('FFmpeg conversion failed', { error: convErr.message });
+                return null;
+            }
+        } else if (ext === '.wav') {
+            sttEncoding = 'LINEAR16';
+        } else if (ext === '.ogg') {
+            sttEncoding = 'OGG_OPUS';
+        }
+
+        const config = {
+            encoding: sttEncoding,
+            sampleRateHertz: sttSampleRate,
+            languageCode: options.language || 'en-IN',
+            alternativeLanguageCodes: ['te-IN', 'ta-IN', 'hi-IN', 'en-IN'],
+            model: 'default',
+            useEnhanced: true,
+            enableAutomaticPunctuation: true,
+            speechContexts: [{
+                phrases: [
+                    'tablet', 'capsule', 'syrup', 'medicine', 'pharmacy',
+                    'paracetamol', 'dolo', 'crocin', 'metformin', 'azithromycin',
+                    'amoxicillin', 'omeprazole', 'cetirizine', 'pan d', 'shelcal',
+                    'delivery', 'order', 'strips', 'bottles', 'send', 'need',
+                    'nagar', 'colony', 'road', 'street', 'area',
+                ],
+                boost: 15,
+            }],
+        };
+
+        const response = await axios.post(
+            `${GOOGLE_STT_URL}?key=${GOOGLE_STT_API_KEY}`,
+            {
+                config,
+                audio: {
+                    content: sttAudioContent,
+                },
+            },
+            { timeout: 30000 }
+        );
+
+        const results = response.data?.results;
+        if (!results || results.length === 0) {
+            logger.info('STT returned no results', { file: audioFilePath });
+            return { transcript: '', language: 'unknown', confidence: 0 };
+        }
+
+        // Combine all transcript segments
+        const transcript = results
+            .map(r => r.alternatives?.[0]?.transcript || '')
+            .join(' ')
+            .trim();
+
+        const confidence = results[0]?.alternatives?.[0]?.confidence || 0;
+        const detectedLang = results[0]?.languageCode || options.language || 'unknown';
+
+        logger.info('Audio transcribed successfully', {
+            file: path.basename(audioFilePath),
+            language: detectedLang,
+            confidence: confidence.toFixed(2),
+            transcriptLength: transcript.length,
+        });
+
+        return {
+            transcript,
+            language: detectedLang,
+            confidence,
+        };
+    } catch (error) {
+        logger.error('STT transcription failed', {
+            error: error.response?.data?.error?.message || error.message,
+            file: audioFilePath,
+        });
+        return null;
+    }
+}
+
+module.exports = { transcribeAudio };

@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "=== SBB Medicare Deploy ==="
+echo "=== PharmaPay Deploy ==="
 
 # Pre-flight checks
 echo "Running pre-flight checks..."
@@ -19,44 +19,33 @@ if ! docker compose version &>/dev/null; then
   exit 1
 fi
 
-if [ ! -f .env.production ]; then
-  echo "ERROR: .env.production not found."
+if [ ! -f .env ]; then
+  echo "ERROR: .env not found (Postgres credentials)."
+  echo "Create it with POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB."
+  exit 1
+fi
+
+if [ ! -f platform/.env.production ]; then
+  echo "ERROR: platform/.env.production not found."
   echo "Copy the template and fill in your values:"
-  echo "  cp .env.production.template .env.production"
+  echo "  cp .env.production.template platform/.env.production"
   exit 1
 fi
 
-# Ensure frontend directories exist
-if [ ! -d sbb-medicare-store ]; then
-  echo "ERROR: sbb-medicare-store directory not found."
-  exit 1
-fi
-
-if [ ! -d sbb-medicare-admin ]; then
-  echo "ERROR: sbb-medicare-admin directory not found."
-  exit 1
-fi
-
-# Build store frontend
+# Pull latest code
 echo ""
-echo "Building store frontend..."
-cd sbb-medicare-store
-npm install --production=false
-VITE_API_URL=/api npm run build
-cd "$SCRIPT_DIR"
+echo "Pulling latest code..."
+git pull origin "$(git branch --show-current)"
 
-# Build admin frontend
+# Build and start services
 echo ""
-echo "Building admin frontend..."
-cd sbb-medicare-admin
-npm install --production=false
-VITE_API_URL=/api npm run build
-cd "$SCRIPT_DIR"
+echo "Building and starting Docker services..."
+docker compose up -d --build
 
-# Start services
+# Restart nginx to pick up any new container IPs
 echo ""
-echo "Starting Docker services..."
-docker compose --env-file .env.production up -d --build
+echo "Restarting nginx to refresh upstream connections..."
+docker compose restart platform-nginx
 
 # Wait for health check
 echo ""
@@ -76,12 +65,15 @@ done
 
 echo ""
 echo "=== Deploy complete ==="
-echo "Store:  http://localhost/"
-echo "Admin:  http://localhost/admin/"
-echo "Health: http://localhost/health"
+echo ""
+echo "Services:"
+echo "  Store: https://{slug}.pharmapay.swinkpay-fintech.com"
+echo "  Admin: https://{slug}.pharmapay.swinkpay-fintech.com/admin"
+echo "  API:   https://{slug}.pharmapay.swinkpay-fintech.com/api"
 echo ""
 echo "Useful commands:"
-echo "  docker compose logs -f        # Follow logs"
-echo "  docker compose ps             # Check service status"
-echo "  docker compose down            # Stop services"
-echo "  docker compose restart backend # Restart backend only"
+echo "  docker compose logs -f              # Follow all logs"
+echo "  docker compose logs -f platform-api # Follow API logs"
+echo "  docker compose ps                   # Check service status"
+echo "  docker compose down                 # Stop services"
+echo "  docker compose up -d --build <svc>  # Rebuild one service"

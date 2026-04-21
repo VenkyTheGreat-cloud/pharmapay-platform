@@ -1,0 +1,31 @@
+{
+  "client_code": "SBBMED-BLR-01",
+  "slug": "pharmapay",
+  "app_name": "PharmaPay",
+  "plan": "growth",
+  "branding": {
+    "primary_color": "#185FA5"
+  },
+  "features": {
+    "orders": true,
+    "delivery_tracking": true,
+    "payment_collection": true,
+    "payment_upi": false,
+    "customer_registry": true,
+    "reports": true,
+    "push_notifications": true,
+    "multi_store": false,
+    "return_items": true,
+    "excel_export": true
+  },
+  "database": {
+    "url": "postgresql://pharmapay:CHANGE_ME_STRONG_PASSWORD@postgres:5432/pharmapay",
+    "ssl": false
+  },
+  "auth": {
+    "jwt_expires_in": "7d"
+  },
+  "uploads": {
+    "max_file_size": "5mb"
+  }
+}

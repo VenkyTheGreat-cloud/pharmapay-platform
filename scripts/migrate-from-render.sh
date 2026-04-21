@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ===========================================
-# Migrate SBB Medicare from Render to Lightsail
+# Migrate PharmaPay from Render to Lightsail
 # ===========================================
 #
 # Prerequisites:
@@ -46,7 +46,7 @@ fi
 
 source .env.production
 
-echo "=== SBB Medicare: Render → Lightsail Migration ==="
+echo "=== PharmaPay: Render → Lightsail Migration ==="
 echo ""
 
 # --- Step 1: Dump from Render ---
