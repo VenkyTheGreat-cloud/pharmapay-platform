@@ -105,7 +105,7 @@ const LandingScreen = ({ navigation }) => {
                             <Text style={styles.floatingValue}>Quality Guaranteed</Text>
                         </View>
                     </View>
-                    <View style={[styles.floatingBadge, { right: -8, bottom: -20 }]}>
+                    <View style={[styles.floatingBadge, styles.floatingBadgeRight]}>
                         <View style={[styles.floatingIcon, { backgroundColor: '#EFF6FF' }]}>
                             <Ionicons name="shield-checkmark" size={16} color="#3B82F6" />
                         </View>
@@ -259,7 +259,8 @@ const styles = StyleSheet.create({
     heroImg: { width: '100%', height: '100%', position: 'absolute' },
     heroImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingVertical: 10, paddingHorizontal: 8, backgroundColor: 'rgba(15,23,42,0.7)' },
     heroImageLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
-    floatingBadge: { position: 'absolute', backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: '#F1F5F9', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+    floatingBadge: { position: 'absolute', backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12, borderWidth: 0.5, borderColor: '#E2E8F0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 },
+    floatingBadgeRight: { right: 4, bottom: 44 },
     floatingIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     floatingLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '500' },
     floatingValue: { fontSize: 13, fontWeight: '700', color: '#0F172A' },

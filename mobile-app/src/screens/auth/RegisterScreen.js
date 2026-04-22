@@ -12,7 +12,7 @@ const ACCENT = '#3B82F6';
 
 const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ name: '', phone: '', password: '', confirmPassword: '' });
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +28,6 @@ const RegisterScreen = ({ navigation }) => {
     if (!form.name.trim() || form.name.trim().length < 2) e.name = 'Full name required (min 2 chars)';
     if (!form.phone.trim()) e.phone = 'Phone number is required';
     else if (!isValidPhone(form.phone)) e.phone = 'Enter a valid 10-digit mobile number starting with 6-9';
-    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = 'Enter a valid email address';
     if (!form.password) e.password = 'Password is required';
     else if (form.password.length < 6) e.password = 'Password must be at least 6 characters';
     if (!form.confirmPassword) e.confirmPassword = 'Confirm your password';
@@ -65,7 +64,6 @@ const RegisterScreen = ({ navigation }) => {
     if (!validateForm()) return;
     setLoading(true); setError('');
     const data = { name: form.name.trim(), mobile: form.phone.trim(), password: form.password };
-    if (form.email.trim()) data.email = form.email.trim().toLowerCase();
     if (photo) data.photo = photo.uri;
     const result = await register(data);
     setLoading(false);
@@ -159,8 +157,6 @@ const RegisterScreen = ({ navigation }) => {
                 <Text style={styles.errorHint}>Must be 10 digits ({form.phone.length}/10)</Text>
               ) : null,
             })}
-            {renderField('Email', 'email', 'e.g. rahul@email.com', { icon: 'mail-outline', keyboardType: 'email-address', optional: true })}
-
             {/* Password */}
             <View style={styles.field}>
               <Text style={styles.label}>Password <Text style={{ color: '#EF4444' }}>*</Text></Text>
