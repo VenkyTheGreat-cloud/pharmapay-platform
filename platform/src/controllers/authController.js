@@ -31,10 +31,12 @@ exports.register = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
         }
 
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
+        // Validate email format (only if provided)
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
+            }
         }
 
         // store_id is optional — delivery boys can register without a pharmacy
