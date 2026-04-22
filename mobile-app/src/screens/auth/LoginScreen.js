@@ -98,7 +98,7 @@ const LoginScreen = ({ navigation }) => {
             {error ? <Alert type="error" message={error} /> : null}
 
             <Input
-              label={role === 'partner' ? 'Phone Number' : 'Email or Phone'}
+              label={role === 'partner' ? 'Phone Number *' : 'Email or Phone *'}
               value={email}
               onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: '' }); }}
               placeholder={role === 'partner' ? '+91 98765 43210' : 'owner@pharmacy.com'}
@@ -108,7 +108,7 @@ const LoginScreen = ({ navigation }) => {
             />
 
             <View style={styles.passwordLabelRow}>
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text style={styles.inputLabel}>Password *</Text>
               <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
                 <Text style={[styles.forgotText, { color: activeRole.color }]}>Forgot password?</Text>
               </TouchableOpacity>

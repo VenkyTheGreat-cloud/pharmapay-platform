@@ -52,12 +52,19 @@ const LandingScreen = ({ navigation }) => {
                             </View>
                             <Text style={styles.mobileLogoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
                         </View>
-                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                            <Text style={styles.mobileLoginText}>Log in</Text>
-                        </TouchableOpacity>
+                        <View style={styles.mobileAuthRow}>
+                            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                                <Text style={styles.mobileLoginText}>Log in</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.mobileGetStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
+                                <Text style={styles.mobileGetStartedText}>Get Started</Text>
+                                <Ionicons name="arrow-forward" size={12} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mobilePillRow}>
                         {[
+                            { label: 'Home', screen: 'Landing' },
                             { label: 'Features', screen: 'Features' },
                             { label: 'How It Works', screen: 'HowItWorks' },
                             { label: 'Pricing', screen: 'Pricing' },
@@ -272,7 +279,10 @@ const styles = StyleSheet.create({
     mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     mobileLogoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
     mobileLogoText: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+    mobileAuthRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     mobileLoginText: { fontSize: 14, fontWeight: '600', color: '#10B981' },
+    mobileGetStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10B981', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18 },
+    mobileGetStartedText: { color: '#fff', fontSize: 12, fontWeight: '600' },
     mobilePillRow: { paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
     mobilePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9' },
     mobilePillText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
@@ -286,7 +296,7 @@ const styles = StyleSheet.create({
     heroDesc: { fontSize: 15, color: '#64748B', lineHeight: 22, marginBottom: 24 },
 
     // Hero Visual
-    heroVisual: { width: '100%', marginTop: 28, position: 'relative' },
+    heroVisual: { width: '100%', marginTop: 28, marginBottom: 24, position: 'relative' },
     heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 220, borderWidth: 1, borderColor: '#E2E8F0' },
     heroImageCard: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     heroImg: { width: '100%', height: '100%', position: 'absolute' },
