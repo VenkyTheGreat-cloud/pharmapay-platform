@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
-import Input from '../../components/Input';
 import Alert from '../../components/Alert';
 import TopNavBar from '../../components/TopNavBar';
 
@@ -20,6 +19,7 @@ const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const activeRole = ROLES[role];
 
@@ -32,7 +32,6 @@ const LoginScreen = ({ navigation }) => {
       const digits = trimmed.replace(/[\s\-\+]/g, '');
       if (!/^\d{10,13}$/.test(digits)) newErrors.email = 'Enter a valid 10-digit phone number';
     } else {
-      // For owner, validate email format if it contains @, or phone format otherwise
       if (trimmed.includes('@')) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) newErrors.email = 'Enter a valid email address';
       } else {
@@ -85,7 +84,7 @@ const LoginScreen = ({ navigation }) => {
               <TouchableOpacity
                 key={key}
                 style={[styles.roleTab, role === key && { backgroundColor: r.colorLight, borderWidth: 1, borderColor: r.color }]}
-                onPress={() => { setRole(key); setError(''); }}
+                onPress={() => { setRole(key); setError(''); setErrors({}); }}
               >
                 <Ionicons name={r.icon} size={15} color={role === key ? r.color : '#64748B'} />
                 <Text style={[styles.roleTabText, role === key && { color: r.color, fontWeight: '700' }]}>{r.label}</Text>
@@ -93,41 +92,75 @@ const LoginScreen = ({ navigation }) => {
             ))}
           </View>
 
+          {error ? (
+            <View style={[styles.messageBox, styles.errorBox]}>
+              <Text style={styles.errorTextStyle}>{error}</Text>
+            </View>
+          ) : null}
+
           {/* Form Card */}
           <View style={styles.formCard}>
-            {error ? <Alert type="error" message={error} /> : null}
-
-            <Input
-              label={role === 'partner' ? 'Phone Number *' : 'Email or Phone *'}
-              value={email}
-              onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: '' }); }}
-              placeholder={role === 'partner' ? '+91 98765 43210' : 'owner@pharmacy.com'}
-              keyboardType={role === 'partner' ? 'phone-pad' : 'email-address'}
-              autoCapitalize="none"
-              error={errors.email}
-            />
-
-            <View style={styles.passwordLabelRow}>
-              <Text style={styles.inputLabel}>Password *</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={[styles.forgotText, { color: activeRole.color }]}>Forgot password?</Text>
-              </TouchableOpacity>
+            {/* Email/Phone Field */}
+            <View style={styles.field}>
+              <Text style={styles.label}>
+                {role === 'partner' ? 'Phone Number' : 'Email or Phone'}
+                <Text style={{ color: '#EF4444' }}> *</Text>
+              </Text>
+              <View style={styles.inputRow}>
+                <Ionicons
+                  name={role === 'partner' ? 'call-outline' : 'mail-outline'}
+                  size={18}
+                  color="#94A3B8"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={[styles.input, { paddingLeft: 40 }]}
+                  placeholder={role === 'partner' ? '+91 98765 43210' : 'owner@pharmacy.com'}
+                  placeholderTextColor="#9CA3AF"
+                  value={email}
+                  onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: '' }); setError(''); }}
+                  keyboardType={role === 'partner' ? 'phone-pad' : 'email-address'}
+                  autoCapitalize="none"
+                  maxLength={role === 'partner' ? 10 : undefined}
+                />
+              </View>
+              {errors.email && <Text style={styles.errorHint}>{errors.email}</Text>}
             </View>
-            <Input
-              value={password}
-              onChangeText={(t) => { setPassword(t); setErrors({ ...errors, password: '' }); }}
-              placeholder="Enter your password"
-              secureTextEntry
-              error={errors.password}
-            />
+
+            {/* Password Field */}
+            <View style={styles.field}>
+              <View style={styles.passwordLabelRow}>
+                <Text style={styles.label}>
+                  Password<Text style={{ color: '#EF4444' }}> *</Text>
+                </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+                  <Text style={[styles.forgotText, { color: activeRole.color }]}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputRow}>
+                <Ionicons name="lock-closed-outline" size={18} color="#94A3B8" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { paddingLeft: 40, paddingRight: 44 }]}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#9CA3AF"
+                  value={password}
+                  onChangeText={(t) => { setPassword(t); setErrors({ ...errors, password: '' }); setError(''); }}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
+              {errors.password && <Text style={styles.errorHint}>{errors.password}</Text>}
+            </View>
 
             <TouchableOpacity
-              style={[styles.loginButton, { backgroundColor: activeRole.color }]}
+              style={[styles.submitBtn, { backgroundColor: activeRole.color }, loading && { opacity: 0.6 }]}
               onPress={handleLogin}
               disabled={loading}
               activeOpacity={0.8}
             >
-              <Text style={styles.loginButtonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+              <Text style={styles.submitText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
               {!loading && <Ionicons name="arrow-forward" size={16} color="#fff" />}
             </TouchableOpacity>
           </View>
@@ -159,14 +192,28 @@ const styles = StyleSheet.create({
   roleTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
   roleTabText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
 
+  messageBox: { padding: 12, borderRadius: 10, marginBottom: 16 },
+  errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
+  errorTextStyle: { color: '#DC2626', fontSize: 14 },
+
   formCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
 
+  field: { marginBottom: 18 },
+  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  inputRow: { position: 'relative' },
+  inputIcon: { position: 'absolute', left: 14, top: 14, zIndex: 1 },
+  input: {
+    backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#0F172A', outlineStyle: 'none',
+  },
+  eyeBtn: { position: 'absolute', right: 12, top: 12, zIndex: 1 },
+  errorHint: { color: '#EF4444', fontSize: 12, marginTop: 4 },
+
   passwordLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: '#374151' },
   forgotText: { fontSize: 12, fontWeight: '600' },
 
-  loginButton: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8, flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  loginButtonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  submitBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   registerLink: { alignItems: 'center', marginTop: 4 },
   registerText: { fontSize: 14, color: '#64748B' },
