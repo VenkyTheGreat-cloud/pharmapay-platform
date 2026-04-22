@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TopNavBar from '../components/TopNavBar';
 
 const PHARMACY_IMG = 'https://images.unsplash.com/photo-1681418290255-a5355089dc6d?w=600&q=80';
 const DELIVERY_IMG = 'https://images.unsplash.com/photo-1750635409988-a913186eecf4?w=600&q=80';
@@ -42,40 +43,8 @@ const LandingScreen = ({ navigation }) => {
                 </View>
             )}
 
-            {/* Mobile-only compact header */}
-            {!isWeb && (
-                <View style={styles.mobileHeader}>
-                    <View style={styles.mobileHeaderTop}>
-                        <View style={styles.mobileLogoRow}>
-                            <View style={styles.mobileLogoIcon}>
-                                <Ionicons name="storefront" size={16} color="#fff" />
-                            </View>
-                            <Text style={styles.mobileLogoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
-                        </View>
-                        <View style={styles.mobileAuthRow}>
-                            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                <Text style={styles.mobileLoginText}>Log in</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.mobileGetStartedBtn} onPress={() => navigation.navigate('PharmacySignup')}>
-                                <Text style={styles.mobileGetStartedText}>Get Started</Text>
-                                <Ionicons name="arrow-forward" size={12} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mobilePillRow}>
-                        {[
-                            { label: 'Home', screen: 'Landing' },
-                            { label: 'Features', screen: 'Features' },
-                            { label: 'How It Works', screen: 'HowItWorks' },
-                            { label: 'Pricing', screen: 'Pricing' },
-                        ].map((item) => (
-                            <TouchableOpacity key={item.screen} style={styles.mobilePill} onPress={() => navigation.navigate(item.screen)}>
-                                <Text style={styles.mobilePillText}>{item.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
+            {/* Mobile-only: reuse TopNavBar for consistency */}
+            {!isWeb && <TopNavBar activeScreen="Landing" />}
 
             {/* Hero Section */}
             <View style={[styles.hero, isWide && styles.heroWide]}>
@@ -136,7 +105,7 @@ const LandingScreen = ({ navigation }) => {
                             <Text style={styles.floatingValue}>Quality Guaranteed</Text>
                         </View>
                     </View>
-                    <View style={[styles.floatingBadge, { right: -8, bottom: 10 }]}>
+                    <View style={[styles.floatingBadge, { right: -8, bottom: -20 }]}>
                         <View style={[styles.floatingIcon, { backgroundColor: '#EFF6FF' }]}>
                             <Ionicons name="shield-checkmark" size={16} color="#3B82F6" />
                         </View>
@@ -273,19 +242,7 @@ const styles = StyleSheet.create({
     hero: { backgroundColor: '#F1F5F9', paddingTop: 24, paddingBottom: 36, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
     heroWide: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 48, paddingTop: 80, paddingBottom: 60 },
 
-    // Mobile compact header
-    mobileHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingTop: (StatusBar.currentHeight || 24) + 8 },
-    mobileHeaderTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 10 },
-    mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    mobileLogoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-    mobileLogoText: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-    mobileAuthRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    mobileLoginText: { fontSize: 14, fontWeight: '600', color: '#10B981' },
-    mobileGetStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#10B981', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 18 },
-    mobileGetStartedText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-    mobilePillRow: { paddingHorizontal: 12, paddingBottom: 10, gap: 6 },
-    mobilePill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9' },
-    mobilePillText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
+    // (mobile header now uses TopNavBar component)
 
     badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16, gap: 6, alignSelf: 'flex-start' },
     badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
@@ -296,12 +253,12 @@ const styles = StyleSheet.create({
     heroDesc: { fontSize: 15, color: '#64748B', lineHeight: 22, marginBottom: 24 },
 
     // Hero Visual
-    heroVisual: { width: '100%', marginTop: 28, marginBottom: 24, position: 'relative' },
-    heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 220, borderWidth: 1, borderColor: '#E2E8F0' },
+    heroVisual: { width: '100%', marginTop: 28, marginBottom: 40, position: 'relative' },
+    heroImageRow: { flexDirection: 'row', borderRadius: 20, overflow: 'hidden', height: 240, borderWidth: 1, borderColor: '#E2E8F0' },
     heroImageCard: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     heroImg: { width: '100%', height: '100%', position: 'absolute' },
-    heroImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(15,23,42,0.6)' },
-    heroImageLabel: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    heroImageOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingVertical: 10, paddingHorizontal: 8, backgroundColor: 'rgba(15,23,42,0.7)' },
+    heroImageLabel: { color: '#fff', fontWeight: '700', fontSize: 12 },
     floatingBadge: { position: 'absolute', backgroundColor: '#fff', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: '#F1F5F9', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
     floatingIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     floatingLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '500' },
