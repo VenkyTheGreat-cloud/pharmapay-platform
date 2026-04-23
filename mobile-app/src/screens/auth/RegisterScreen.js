@@ -20,6 +20,7 @@ const RegisterScreen = ({ navigation }) => {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   const updateField = (f, v) => { setForm({ ...form, [f]: v }); setErrors({ ...errors, [f]: '' }); setError(''); };
 
@@ -68,7 +69,13 @@ const RegisterScreen = ({ navigation }) => {
     const result = await register(data);
     setLoading(false);
     if (result.success && result.pending) {
-      RNAlert.alert('Registration Successful!', result.message || 'Your account is pending admin approval.', [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
+      const msg = result.message || 'Your account is pending admin approval.';
+      if (Platform.OS === 'web') {
+        setSuccessMsg(msg);
+        setTimeout(() => navigation.navigate('Login'), 3000);
+      } else {
+        RNAlert.alert('Registration Successful!', msg, [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
+      }
     } else if (!result.success) setError(result.message);
   };
 
@@ -126,6 +133,11 @@ const RegisterScreen = ({ navigation }) => {
             </View>
           </View>
 
+          {successMsg ? (
+            <View style={[styles.messageBox, styles.successBox]}>
+              <Text style={styles.successTextStyle}>{successMsg}</Text>
+            </View>
+          ) : null}
           {error ? (
             <View style={[styles.messageBox, styles.errorBox]}>
               <Text style={styles.errorTextStyle}>{error}</Text>
@@ -262,6 +274,8 @@ const styles = StyleSheet.create({
   messageBox: { padding: 12, borderRadius: 10, marginBottom: 16 },
   errorBox: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
   errorTextStyle: { color: '#DC2626', fontSize: 14 },
+  successBox: { backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' },
+  successTextStyle: { color: '#16A34A', fontSize: 14 },
 
   formCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
 
