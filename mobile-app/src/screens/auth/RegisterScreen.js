@@ -8,6 +8,7 @@ import PasswordStrength from '../../components/PasswordStrength';
 import TopNavBar from '../../components/TopNavBar';
 import { isValidPhone } from '../../utils/helpers';
 
+const LOGO = require('../../../assets/logo.png');
 const ACCENT = '#3B82F6';
 
 const RegisterScreen = ({ navigation }) => {
@@ -114,8 +115,7 @@ const RegisterScreen = ({ navigation }) => {
         <View style={styles.body}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.logoIcon}><Ionicons name="storefront" size={22} color="#fff" /></View>
-            <Text style={styles.brand}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+            <Image source={LOGO} style={styles.logoImg} resizeMode="contain" />
           </View>
 
           <Text style={styles.title}>Create your account</Text>
@@ -260,8 +260,7 @@ const styles = StyleSheet.create({
   body: { padding: 24, maxWidth: 480, width: '100%', alignSelf: 'center' },
 
   header: { alignItems: 'center', marginTop: 20, marginBottom: 24 },
-  logoIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  brand: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
+  logoImg: { width: 160, height: 60, marginBottom: 12 },
 
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4, textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#64748B', marginBottom: 20, textAlign: 'center' },

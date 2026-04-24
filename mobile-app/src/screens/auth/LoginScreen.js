@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Image, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
 import Alert from '../../components/Alert';
 import TopNavBar from '../../components/TopNavBar';
+
+const LOGO = require('../../../assets/logo.png');
 
 const ROLES = {
   owner: { label: 'Pharmacy Owner', icon: 'storefront-outline', color: '#10B981', colorLight: '#D1FAE5' },
@@ -70,10 +72,7 @@ const LoginScreen = ({ navigation }) => {
         <View style={styles.body}>
           {/* Logo */}
           <View style={styles.header}>
-            <View style={styles.logoIcon}>
-              <Ionicons name="storefront" size={22} color="#fff" />
-            </View>
-            <Text style={styles.brand}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+            <Image source={LOGO} style={styles.logoImg} resizeMode="contain" />
             <Text style={styles.heading}>Welcome back</Text>
             <Text style={styles.subheading}>Enter your details to access your dashboard.</Text>
           </View>
@@ -183,8 +182,7 @@ const styles = StyleSheet.create({
   body: { padding: 24, maxWidth: 480, width: '100%', alignSelf: 'center' },
 
   header: { alignItems: 'center', marginBottom: 24, marginTop: 20 },
-  logoIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  brand: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
+  logoImg: { width: 160, height: 60, marginBottom: 12 },
   heading: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   subheading: { fontSize: 14, color: '#64748B' },
 

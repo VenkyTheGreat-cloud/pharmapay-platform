@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TextInput,
+  Image,
   TouchableOpacity,
   ScrollView,
   Alert,
@@ -15,6 +16,7 @@ import { pharmacyAPI } from '../../services/api';
 import PasswordStrength from '../../components/PasswordStrength';
 import TopNavBar from '../../components/TopNavBar';
 
+const LOGO = require('../../../assets/logo.png');
 const ACCENT = '#10B981';
 
 const PharmacySignupScreen = ({ navigation }) => {
@@ -133,10 +135,7 @@ const PharmacySignupScreen = ({ navigation }) => {
       <View style={styles.bodyWrap}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.logoIcon}>
-          <Ionicons name="storefront" size={22} color="#fff" />
-        </View>
-        <Text style={styles.brand}>Pharma<Text style={{ color: ACCENT }}>Gig</Text></Text>
+        <Image source={LOGO} style={styles.logoImg} resizeMode="contain" />
       </View>
 
       <Text style={styles.title}>Create your account</Text>
@@ -301,8 +300,7 @@ const styles = StyleSheet.create({
   bodyWrap: { padding: 24, maxWidth: 480, width: '100%', alignSelf: 'center' },
 
   header: { alignItems: 'center', marginBottom: 24, marginTop: 20 },
-  logoIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  brand: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
+  logoImg: { width: 160, height: 60, marginBottom: 12 },
 
   title: { fontSize: 26, fontWeight: '800', color: '#0F172A', marginBottom: 4, textAlign: 'center' },
   subtitle: { fontSize: 14, color: '#64748B', marginBottom: 20, textAlign: 'center' },

@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, ScrollView, StatusBar } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Platform, useWindowDimensions, ScrollView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+
+const LOGO = require('../../assets/logo.png');
 
 const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0;
 
@@ -23,10 +25,7 @@ const TopNavBar = ({ activeScreen }) => {
       {/* Top row: Logo + Links + Auth */}
       <View style={[styles.topRow, isWide && styles.topRowWide]}>
         <TouchableOpacity style={styles.logo} onPress={() => navigation.navigate('Landing')}>
-          <View style={styles.logoIcon}>
-            <Ionicons name="storefront" size={18} color="#fff" />
-          </View>
-          <Text style={styles.logoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+          <Image source={LOGO} style={styles.logoImg} resizeMode="contain" />
         </TouchableOpacity>
 
         {/* Wide: inline links */}
@@ -81,9 +80,8 @@ const styles = StyleSheet.create({
   },
   topRowWide: { paddingHorizontal: 48 },
 
-  logo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
+  logo: { flexDirection: 'row', alignItems: 'center' },
+  logoImg: { width: 120, height: 40 },
 
   inlineLinks: { flexDirection: 'row', gap: 28 },
   inlineLinkText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
