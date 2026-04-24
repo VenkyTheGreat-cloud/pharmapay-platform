@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TopNavBar from '../components/TopNavBar';
 
+const LOGO = require('../../assets/logo.png');
 const PHARMACY_IMG = 'https://images.unsplash.com/photo-1681418290255-a5355089dc6d?w=600&q=80';
 const DELIVERY_IMG = 'https://images.unsplash.com/photo-1750635409988-a913186eecf4?w=600&q=80';
 const isWeb = Platform.OS === 'web';
@@ -19,10 +20,7 @@ const LandingScreen = ({ navigation }) => {
             {isWeb && (
                 <View style={[styles.navbar, isWide && styles.navbarWide]}>
                     <TouchableOpacity style={styles.navLogo}>
-                        <View style={styles.navLogoIcon}>
-                            <Ionicons name="storefront" size={18} color="#fff" />
-                        </View>
-                        <Text style={styles.navLogoText}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+                        <Image source={LOGO} style={styles.navLogoImg} resizeMode="contain" />
                     </TouchableOpacity>
                     <View style={styles.navLinks}>
                         {[{ screen: 'Landing', label: 'Home' }, { screen: 'Features', label: 'Features' }, { screen: 'HowItWorks', label: 'How It Works' }, { screen: 'Pricing', label: 'Pricing' }].map((s) => (
@@ -228,9 +226,8 @@ const styles = StyleSheet.create({
     // Web Navbar
     navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 12, backgroundColor: 'rgba(255,255,255,0.9)', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', ...(isWeb ? { position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(12px)' } : {}) },
     navbarWide: { paddingHorizontal: 48 },
-    navLogo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    navLogoIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-    navLogoText: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
+    navLogo: { flexDirection: 'row', alignItems: 'center' },
+    navLogoImg: { width: 140, height: 45 },
     navLinks: { flexDirection: 'row', gap: 28 },
     navLinkText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
     navAuth: { flexDirection: 'row', alignItems: 'center', gap: 16 },
