@@ -15,17 +15,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { pharmacyAPI } from '../../services/api';
 
 const PRESET_COLORS = [
-  '#20b1aa', '#3B82F6', '#8B5CF6', '#EC4899',
-  '#EF4444', '#F59E0B', '#10B981', '#1F2937',
+  '#139900', '#3B82F6', '#8B5CF6', '#EC4899',
+  '#EF4444', '#F59E0B', '#139900', '#1F2937',
   '#6366F1', '#14B8A6', '#F97316', '#84CC16',
   '#06B6D4', '#A855F7', '#E11D48', '#0EA5E9',
-  '#D946EF', '#059669', '#DC2626', '#7C3AED',
+  '#D946EF', '#118500', '#DC2626', '#7C3AED',
   '#2563EB', '#CA8A04', '#BE185D', '#4F46E5',
 ];
 
 const PharmacyBrandingScreen = ({ navigation }) => {
-  const [primaryColor, setPrimaryColor] = useState('#20b1aa');
-  const [hexInput, setHexInput] = useState('#20b1aa');
+  const [primaryColor, setPrimaryColor] = useState('#139900');
+  const [hexInput, setHexInput] = useState('#139900');
   const [logoUri, setLogoUri] = useState(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -133,7 +133,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#20b1aa" />
+        <ActivityIndicator size="large" color="#139900" />
       </View>
     );
   }
@@ -143,7 +143,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => navigation.navigate('PharmacyConfigure')} style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+          <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Brand Your Pharmacy</Text>
@@ -171,7 +171,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
           style={styles.hexInput}
           value={hexInput}
           onChangeText={handleHexChange}
-          placeholder="#20b1aa"
+          placeholder="#139900"
           placeholderTextColor="#9CA3AF"
           autoCapitalize="none"
           maxLength={7}
@@ -195,7 +195,7 @@ const PharmacyBrandingScreen = ({ navigation }) => {
       <Text style={[styles.sectionTitle, { marginTop: 28 }]}>Logo</Text>
       <TouchableOpacity style={styles.logoUploadArea} onPress={pickLogo} disabled={uploadingLogo}>
         {uploadingLogo ? (
-          <ActivityIndicator size="large" color="#20b1aa" />
+          <ActivityIndicator size="large" color="#139900" />
         ) : displayLogo ? (
           <Image source={{ uri: displayLogo }} style={styles.logoImage} />
         ) : (
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   changeLogoText: {
-    color: '#20b1aa',
+    color: '#139900',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   nextBtn: {
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

@@ -24,7 +24,7 @@ const STEPS = [
   {
     number: '3',
     icon: 'rocket',
-    color: '#10B981',
+    color: '#139900',
     title: 'Go Live & Thrive',
     desc: 'Pharmacy owners get a live storefront, admin dashboard, and delivery tracking. Delivery partners start receiving orders and earning immediately.',
     visual: 'live',
@@ -56,8 +56,8 @@ const HowItWorksScreen = ({ navigation }) => (
           {step.visual === 'roles' && (
             <View style={styles.rolesVisual}>
               <View style={styles.roleCircle}>
-                <View style={[styles.roleIconBg, { backgroundColor: '#ECFDF5' }]}>
-                  <Ionicons name="storefront" size={28} color="#10B981" />
+                <View style={[styles.roleIconBg, { backgroundColor: '#F0F9EC' }]}>
+                  <Ionicons name="storefront" size={28} color="#139900" />
                 </View>
                 <Text style={styles.roleLabel}>Owner</Text>
               </View>
@@ -88,7 +88,7 @@ const HowItWorksScreen = ({ navigation }) => (
             <View style={styles.liveVisual}>
               <View style={styles.phoneFrame}>
                 <View style={styles.phoneScreen}>
-                  <Ionicons name="map" size={32} color="#10B981" style={{ opacity: 0.5 }} />
+                  <Ionicons name="map" size={32} color="#139900" style={{ opacity: 0.5 }} />
                 </View>
                 <View style={styles.phoneFooter}>
                   <View>
@@ -123,7 +123,7 @@ const HowItWorksScreen = ({ navigation }) => (
     <View style={styles.ctaSection}>
       <Text style={styles.ctaTitle}>Ready to take the next step?</Text>
       <TouchableOpacity
-        style={[styles.ctaBtn, { backgroundColor: '#10B981' }]}
+        style={[styles.ctaBtn, { backgroundColor: '#139900' }]}
         onPress={() => navigation.navigate('PharmacySignup')}
       >
         <Text style={styles.ctaBtnText}>Create Pharmacy Account</Text>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
   heroTitle: { fontSize: 36, fontWeight: '800', color: '#1E293B', textAlign: 'center', lineHeight: 48, letterSpacing: -0.5 },
-  heroTitleGreen: { color: '#10B981' },
+  heroTitleGreen: { color: '#139900' },
   heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12, maxWidth: 600 },
 
   bodyWrap: { maxWidth: 1100, width: '100%', alignSelf: 'center', paddingHorizontal: 24, paddingTop: 32 },
@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
   earningLabel: { fontSize: 10, color: '#94A3B8' },
   earningAmount: { fontSize: 18, fontWeight: '700', color: '#fff' },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(16,185,129,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
-  liveText: { fontSize: 11, color: '#10B981', fontWeight: '600' },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#139900' },
+  liveText: { fontSize: 11, color: '#139900', fontWeight: '600' },
 
   stepContent: {},
   stepIconCircle: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },

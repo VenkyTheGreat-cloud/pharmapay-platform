@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeActive: {
-    backgroundColor: '#059669',
+    backgroundColor: '#118500',
   },
   badgeExpired: {
     backgroundColor: '#EF4444',

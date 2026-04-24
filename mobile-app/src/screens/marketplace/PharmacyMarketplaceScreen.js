@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusAccepting: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#E6F5E0',
   },
   statusNotAccepting: {
     backgroundColor: '#F3F4F6',
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#059669',
+    color: '#118500',
   },
   badge: {
     flexDirection: 'row',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   badgeApproved: {
-    backgroundColor: '#059669',
+    backgroundColor: '#118500',
   },
   badgePending: {
     backgroundColor: '#F59E0B',

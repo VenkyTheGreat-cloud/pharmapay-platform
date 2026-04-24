@@ -25,7 +25,7 @@ const LandingScreen = ({ navigation }) => {
                     <View style={styles.navLinks}>
                         {[{ screen: 'Landing', label: 'Home' }, { screen: 'Features', label: 'Features' }, { screen: 'HowItWorks', label: 'How It Works' }, { screen: 'Pricing', label: 'Pricing' }].map((s) => (
                             <TouchableOpacity key={s.screen} onPress={() => navigation.navigate(s.screen)}>
-                                <Text style={[styles.navLinkText, s.screen === 'Landing' && { color: '#10B981', fontWeight: '700' }]}>{s.label}</Text>
+                                <Text style={[styles.navLinkText, s.screen === 'Landing' && { color: '#139900', fontWeight: '700' }]}>{s.label}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -54,7 +54,7 @@ const LandingScreen = ({ navigation }) => {
                     </View>
 
                     <Text style={[styles.heroTitle, isWide && styles.heroTitleWide]}>
-                        Scale your <Text style={{ color: '#10B981' }}>pharmacy</Text>.
+                        Scale your <Text style={{ color: '#139900' }}>pharmacy</Text>.
                         {'\n'}Empower your <Text style={{ color: '#3B82F6' }}>deliveries</Text>.
                     </Text>
                     <Text style={[styles.heroDesc, isWide && { maxWidth: 500 }]}>
@@ -95,8 +95,8 @@ const LandingScreen = ({ navigation }) => {
                     </View>
                     {/* Floating Badges */}
                     <View style={[styles.floatingBadge, { left: -8, top: 10 }]}>
-                        <View style={[styles.floatingIcon, { backgroundColor: '#ECFDF5' }]}>
-                            <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                        <View style={[styles.floatingIcon, { backgroundColor: '#F0F9EC' }]}>
+                            <Ionicons name="shield-checkmark" size={16} color="#139900" />
                         </View>
                         <View>
                             <Text style={styles.floatingLabel}>Trusted Pharmacies</Text>
@@ -121,19 +121,19 @@ const LandingScreen = ({ navigation }) => {
                 <Text style={styles.sectionDesc}>Whether you own a pharmacy or deliver medicines, we've got you covered.</Text>
 
                 <View style={isWide ? styles.roleCardsRow : undefined}>
-                    <View style={[styles.roleCard, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }, isWide && { flex: 1 }]}>
-                        <View style={[styles.roleIcon, { backgroundColor: '#fff', borderColor: '#A7F3D0' }]}>
-                            <Ionicons name="storefront-outline" size={28} color="#10B981" />
+                    <View style={[styles.roleCard, { backgroundColor: '#F0F9EC', borderColor: '#B8E6A8' }, isWide && { flex: 1 }]}>
+                        <View style={[styles.roleIcon, { backgroundColor: '#fff', borderColor: '#B8E6A8' }]}>
+                            <Ionicons name="storefront-outline" size={28} color="#139900" />
                         </View>
                         <Text style={styles.roleTitle}>Pharmacy Owners</Text>
                         <View style={styles.featureList}>
-                            <FeatureItem icon="shield-checkmark" color="#10B981" text="Launch your own white-labeled delivery platform" />
-                            <FeatureItem icon="navigate" color="#10B981" text="Real-time GPS tracking of delivery partners" />
-                            <FeatureItem icon="receipt" color="#10B981" text="Automated settlements, invoicing & reporting" />
+                            <FeatureItem icon="shield-checkmark" color="#139900" text="Launch your own white-labeled delivery platform" />
+                            <FeatureItem icon="navigate" color="#139900" text="Real-time GPS tracking of delivery partners" />
+                            <FeatureItem icon="receipt" color="#139900" text="Automated settlements, invoicing & reporting" />
                         </View>
                         <TouchableOpacity style={styles.roleLink} onPress={() => navigation.navigate('PharmacySignup')}>
-                            <Text style={[styles.roleLinkText, { color: '#059669' }]}>Get Started</Text>
-                            <Ionicons name="arrow-forward" size={16} color="#059669" />
+                            <Text style={[styles.roleLinkText, { color: '#118500' }]}>Get Started</Text>
+                            <Ionicons name="arrow-forward" size={16} color="#118500" />
                         </TouchableOpacity>
                     </View>
 
@@ -165,7 +165,7 @@ const LandingScreen = ({ navigation }) => {
                     <Text style={styles.ctaSectionBtnText}>Get Started Now</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
-                    <Ionicons name="log-in-outline" size={18} color="#20b1aa" />
+                    <Ionicons name="log-in-outline" size={18} color="#139900" />
                     <Text style={styles.loginBtnText}>Already have an account? Login</Text>
                 </TouchableOpacity>
             </View>
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     navLinkText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
     navAuth: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     navLoginText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
-    navGetStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+    navGetStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#139900', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
     navGetStartedText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
     // Hero
@@ -241,9 +241,9 @@ const styles = StyleSheet.create({
 
     // (mobile header now uses TopNavBar component)
 
-    badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16, gap: 6, alignSelf: 'flex-start' },
-    badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10B981' },
-    badgeText: { fontSize: 12, fontWeight: '600', color: '#065F46' },
+    badge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E6F5E0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 16, gap: 6, alignSelf: 'flex-start' },
+    badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#139900' },
+    badgeText: { fontSize: 12, fontWeight: '600', color: '#0D6600' },
 
     heroTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A', lineHeight: 36, marginBottom: 12, letterSpacing: -0.5 },
     heroTitleWide: { fontSize: 42, lineHeight: 52 },
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     // CTA
     ctaContainer: { width: '100%', gap: 12 },
     ctaContainerWide: { flexDirection: 'row', gap: 16 },
-    primaryButton: { backgroundColor: '#10B981', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
+    primaryButton: { backgroundColor: '#139900', paddingVertical: 16, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     secondaryButton: { borderWidth: 2, borderColor: '#CBD5E1', backgroundColor: '#fff', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     secondaryButtonText: { color: '#334155', fontSize: 15, fontWeight: '600' },
@@ -299,23 +299,23 @@ const styles = StyleSheet.create({
     // Pricing
     pricingRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
     pricingCard: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-    pricingCardHighlight: { backgroundColor: '#10B981', borderColor: '#10B981', transform: [{ scale: 1.03 }] },
-    popularBadge: { fontSize: 9, fontWeight: '800', color: '#fff', backgroundColor: '#059669', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginBottom: 4, overflow: 'hidden' },
+    pricingCardHighlight: { backgroundColor: '#139900', borderColor: '#139900', transform: [{ scale: 1.03 }] },
+    popularBadge: { fontSize: 9, fontWeight: '800', color: '#fff', backgroundColor: '#118500', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginBottom: 4, overflow: 'hidden' },
     pricingTitle: { fontSize: 12, fontWeight: '600', color: '#64748B', marginBottom: 4 },
     pricingTitleHighlight: { color: 'rgba(255,255,255,0.8)' },
     pricingPrice: { fontSize: 20, fontWeight: '800', color: '#0F172A' },
     pricingPriceHighlight: { color: '#fff' },
     pricingPeriod: { fontSize: 11, color: '#94A3B8' },
     pricingPeriodHighlight: { color: 'rgba(255,255,255,0.7)' },
-    setupFeeBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, backgroundColor: '#ECFDF5', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, alignSelf: 'center', borderWidth: 1, borderColor: '#A7F3D0' },
-    setupFeeText: { fontSize: 13, color: '#065F46', fontWeight: '600' },
+    setupFeeBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, backgroundColor: '#F0F9EC', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, alignSelf: 'center', borderWidth: 1, borderColor: '#B8E6A8' },
+    setupFeeText: { fontSize: 13, color: '#0D6600', fontWeight: '600' },
     freeBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, backgroundColor: '#EFF6FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, alignSelf: 'center', borderWidth: 1, borderColor: '#BFDBFE' },
     freeText: { fontSize: 13, color: '#1E40AF', fontWeight: '600' },
 
     // CTA Section
     ctaSection: { backgroundColor: '#0F172A', paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center' },
     ctaSectionTitle: { fontSize: 22, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 20, lineHeight: 30 },
-    ctaSectionBtn: { backgroundColor: '#10B981', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 14, marginBottom: 16, width: '100%', maxWidth: 400, alignItems: 'center' },
+    ctaSectionBtn: { backgroundColor: '#139900', paddingVertical: 16, paddingHorizontal: 32, borderRadius: 14, marginBottom: 16, width: '100%', maxWidth: 400, alignItems: 'center' },
     ctaSectionBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
     loginBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 14, width: '100%', maxWidth: 400, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.05)' },
     loginBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     // Footer
     footer: { paddingVertical: 24, alignItems: 'center', gap: 8 },
     footerLinks: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
-    footerLink: { fontSize: 13, color: '#20b1aa', fontWeight: '600' },
+    footerLink: { fontSize: 13, color: '#139900', fontWeight: '600' },
     footerDivider: { fontSize: 13, color: '#D1D5DB' },
     footerText: { fontSize: 12, color: '#94A3B8' },
     footerVersion: { fontSize: 11, color: '#D1D5DB' },

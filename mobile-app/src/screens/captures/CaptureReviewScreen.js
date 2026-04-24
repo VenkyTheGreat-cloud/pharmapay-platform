@@ -224,7 +224,7 @@ const CaptureReviewScreen = ({ navigation }) => {
 
   const getConfidenceColor = (confidence) => {
     switch (confidence) {
-      case 'high': return '#10B981';
+      case 'high': return '#139900';
       case 'medium': return '#F59E0B';
       case 'low': return '#EF4444';
       default: return '#6B7280';
@@ -280,7 +280,7 @@ const CaptureReviewScreen = ({ navigation }) => {
         {/* Customer match */}
         {item.matched_customer_id ? (
           <View style={styles.matchBadge}>
-            <Ionicons name="checkmark-circle" size={14} color="#10B981" />
+            <Ionicons name="checkmark-circle" size={14} color="#139900" />
             <Text style={styles.matchText}>
               Matched: {item.matched_customer_name} ({item.matched_customer_mobile})
             </Text>
@@ -357,8 +357,8 @@ const CaptureReviewScreen = ({ navigation }) => {
               );
             }}
           >
-            <Ionicons name="mic-outline" size={18} color="#10B981" />
-            <Text style={{ fontSize: 13, color: '#10B981', fontWeight: '600' }}>Record</Text>
+            <Ionicons name="mic-outline" size={18} color="#139900" />
+            <Text style={{ fontSize: 13, color: '#139900', fontWeight: '600' }}>Record</Text>
           </TouchableOpacity>
           <Button
             title="Convert to Order"
@@ -419,7 +419,7 @@ const CaptureReviewScreen = ({ navigation }) => {
 
       {/* Record Order Button */}
       <TouchableOpacity
-        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#10B981', marginHorizontal: 16, marginTop: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, gap: 10 }}
+        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#139900', marginHorizontal: 16, marginTop: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12, gap: 10 }}
         onPress={() => {
           Alert.alert(
             'Record Order',
@@ -442,9 +442,9 @@ const CaptureReviewScreen = ({ navigation }) => {
         <Ionicons name="mic" size={22} color="#FFFFFF" />
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>Record Order</Text>
-          <Text style={{ color: '#D1FAE5', fontSize: 11 }}>Speak: Name, Phone, Area, Medicines</Text>
+          <Text style={{ color: '#E6F5E0', fontSize: 11 }}>Speak: Name, Phone, Area, Medicines</Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#D1FAE5" />
+        <Ionicons name="chevron-forward" size={18} color="#E6F5E0" />
       </TouchableOpacity>
 
       {/* Tabs: Active / Dismissed */}
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#E6F5E0',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
   matchText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#065F46',
+    color: '#0D6600',
   },
   medicinesContainer: {
     marginBottom: 8,
@@ -871,14 +871,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#E6F5E0',
     padding: 12,
     borderRadius: 8,
   },
   matchedCustomerText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#065F46',
+    color: '#0D6600',
   },
   input: {
     borderWidth: 1,

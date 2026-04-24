@@ -31,14 +31,14 @@ const STATUS_CONFIG = {
     icon: '\u2705',
     title: 'Approved!',
     message: 'Your pharmacy has been approved. We are setting everything up for you.',
-    color: '#10B981',
-    bgColor: '#ECFDF5',
+    color: '#139900',
+    bgColor: '#F0F9EC',
   },
   live: {
     icon: '\uD83D\uDE80',
     title: 'Your Pharmacy is Live!',
     message: 'Congratulations! Your pharmacy is up and running.',
-    color: '#20b1aa',
+    color: '#139900',
     bgColor: '#F0FDFA',
   },
   rejected: {
@@ -91,7 +91,7 @@ const PharmacyStatusScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#20b1aa" />
+        <ActivityIndicator size="large" color="#139900" />
         <Text style={styles.loadingText}>Loading status...</Text>
       </View>
     );
@@ -111,7 +111,7 @@ const PharmacyStatusScreen = ({ navigation }) => {
       {/* Navigation */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <TouchableOpacity onPress={() => { if (navigation.canGoBack()) navigation.goBack(); else logout(); }} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
+          <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back to Home</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => logout()} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={{ fontSize: 14, color: '#EF4444', fontWeight: '600' }}>Logout</Text>
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   urlValue: {
     fontSize: 15,
-    color: '#20b1aa',
+    color: '#139900',
     fontWeight: '600',
   },
   clientCode: {
@@ -284,13 +284,13 @@ const styles = StyleSheet.create({
   },
   refreshBtn: {
     borderWidth: 2,
-    borderColor: '#20b1aa',
+    borderColor: '#139900',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   refreshBtnText: {
-    color: '#20b1aa',
+    color: '#139900',
     fontSize: 16,
     fontWeight: '700',
   },

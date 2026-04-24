@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   amountValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#10B981',
+    color: '#139900',
   },
   modeContainer: {
     flexDirection: 'row',

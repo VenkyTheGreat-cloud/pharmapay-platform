@@ -17,11 +17,11 @@ const RoleSelectScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => navigation.navigate('Landing')} style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back to Home</Text>
+          <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back to Home</Text>
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Pharma<Text style={{ color: '#10B981' }}>Gig</Text></Text>
+        <Text style={styles.title}>Pharma<Text style={{ color: '#139900' }}>Gig</Text></Text>
         <Text style={styles.subtitle}>Choose how you'd like to get started</Text>
       </View>
 

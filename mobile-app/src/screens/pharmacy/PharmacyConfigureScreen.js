@@ -92,7 +92,7 @@ const PharmacyConfigureScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#20b1aa" />
+        <ActivityIndicator size="large" color="#139900" />
       </View>
     );
   }
@@ -100,7 +100,7 @@ const PharmacyConfigureScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+          <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Choose Your Plan</Text>
@@ -148,7 +148,7 @@ const PharmacyConfigureScreen = ({ navigation }) => {
             value={features[feat.key]}
             onValueChange={() => toggleFeature(feat.key)}
             trackColor={{ false: '#D1D5DB', true: '#99e0dc' }}
-            thumbColor={features[feat.key] ? '#20b1aa' : '#f4f3f4'}
+            thumbColor={features[feat.key] ? '#139900' : '#f4f3f4'}
           />
         </View>
       ))}
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   planCardSelected: {
-    borderColor: '#20b1aa',
+    borderColor: '#139900',
     backgroundColor: '#F0FDFA',
   },
   planHeader: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   planNameSelected: {
-    color: '#20b1aa',
+    color: '#139900',
   },
   radioOuter: {
     width: 22,
@@ -231,13 +231,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   radioOuterSelected: {
-    borderColor: '#20b1aa',
+    borderColor: '#139900',
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
   },
   planPrice: {
     fontSize: 22,
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   saveBtn: {
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

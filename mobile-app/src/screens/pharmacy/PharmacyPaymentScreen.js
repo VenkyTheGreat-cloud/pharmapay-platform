@@ -103,7 +103,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#20b1aa" />
+        <ActivityIndicator size="large" color="#139900" />
       </View>
     );
   }
@@ -113,7 +113,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => navigation.navigate('PharmacyBranding')} style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, color: '#20b1aa', fontWeight: '600' }}>← Back</Text>
+          <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Payment</Text>
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   saveNameBtn: {
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
     borderRadius: 10,
     paddingHorizontal: 18,
     paddingVertical: 12,
@@ -302,10 +302,10 @@ const styles = StyleSheet.create({
   summaryTotalValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#20b1aa',
+    color: '#139900',
   },
   payBtn: {
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',

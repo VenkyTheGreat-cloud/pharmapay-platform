@@ -168,7 +168,7 @@ const ProfileScreen = ({ navigation }) => {
                   styles.infoValue,
                   {
                     color:
-                      user.status === 'active' ? '#10B981' : '#F59E0B',
+                      user.status === 'active' ? '#139900' : '#F59E0B',
                   },
                 ]}
               >

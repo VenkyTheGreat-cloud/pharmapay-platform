@@ -16,7 +16,7 @@ import PasswordStrength from '../../components/PasswordStrength';
 import TopNavBar from '../../components/TopNavBar';
 import { apiAxios } from '../../services/api';
 
-const ACCENT = '#10B981';
+const ACCENT = '#139900';
 const STEPS = { ENTER_IDENTIFIER: 1, VERIFY_CODE: 2, NEW_PASSWORD: 3, SUCCESS: 4 };
 
 const ForgotPasswordScreen = ({ navigation }) => {
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
 
   successCircle: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: '#D1FAE5', alignItems: 'center', justifyContent: 'center', marginBottom: 16, alignSelf: 'center',
+    backgroundColor: '#E6F5E0', alignItems: 'center', justifyContent: 'center', marginBottom: 16, alignSelf: 'center',
   },
 });
 

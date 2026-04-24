@@ -17,7 +17,7 @@ import PasswordStrength from '../../components/PasswordStrength';
 import TopNavBar from '../../components/TopNavBar';
 
 const LOGO = require('../../../assets/logo.png');
-const ACCENT = '#10B981';
+const ACCENT = '#139900';
 
 const PharmacySignupScreen = ({ navigation }) => {
   const [form, setForm] = useState({
@@ -99,7 +99,7 @@ const PharmacySignupScreen = ({ navigation }) => {
     } finally { setSubmitting(false); }
   };
 
-  const slugColor = slugStatus === 'available' ? '#10B981' : slugStatus === 'taken' ? '#EF4444' : '#6B7280';
+  const slugColor = slugStatus === 'available' ? '#139900' : slugStatus === 'taken' ? '#EF4444' : '#6B7280';
 
   const renderField = (label, key, placeholder, opts = {}) => (
     <View style={styles.field}>
@@ -244,8 +244,8 @@ const PharmacySignupScreen = ({ navigation }) => {
           {slugStatus === 'checking' && <ActivityIndicator size="small" color={ACCENT} />}
           {slugStatus === 'available' && (
             <View style={styles.matchRow}>
-              <Ionicons name="checkmark-circle" size={14} color="#10B981" />
-              <Text style={{ fontSize: 12, color: '#10B981' }}>Available</Text>
+              <Ionicons name="checkmark-circle" size={14} color="#139900" />
+              <Text style={{ fontSize: 12, color: '#139900' }}>Available</Text>
             </View>
           )}
           {slugStatus === 'taken' && (
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
 
   roleToggle: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 4, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' },
   roleTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
-  roleTabActive: { backgroundColor: '#D1FAE5', borderWidth: 1, borderColor: '#10B981' },
+  roleTabActive: { backgroundColor: '#E6F5E0', borderWidth: 1, borderColor: '#139900' },
   roleTabText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
 
   messageBox: { padding: 12, borderRadius: 10, marginBottom: 16 },
@@ -340,11 +340,11 @@ const styles = StyleSheet.create({
 
   termsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 16, marginTop: 4 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  checkboxChecked: { backgroundColor: '#10B981', borderColor: '#10B981' },
+  checkboxChecked: { backgroundColor: '#139900', borderColor: '#139900' },
   termsText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 20 },
-  termsLink: { color: '#10B981', fontWeight: '600', textDecorationLine: 'underline' },
+  termsLink: { color: '#139900', fontWeight: '600', textDecorationLine: 'underline' },
 
-  submitBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  submitBtn: { backgroundColor: '#139900', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 

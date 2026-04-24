@@ -5,10 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 const Alert = ({ type = 'info', message }) => {
   const config = {
     success: {
-      backgroundColor: '#D1FAE5',
-      borderColor: '#10B981',
-      iconColor: '#10B981',
-      textColor: '#065F46',
+      backgroundColor: '#E6F5E0',
+      borderColor: '#139900',
+      iconColor: '#139900',
+      textColor: '#0D6600',
       icon: 'checkmark-circle',
     },
     error: {
