@@ -20,7 +20,7 @@ import { pharmacyAPI } from '../services/api';
 const STATUS_COLORS = {
   pending_approval: '#F59E0B',
   submitted: '#3B82F6',
-  approved: '#10B981',
+  approved: '#139900',
   rejected: '#EF4444',
   live: '#8B5CF6',
 };
@@ -208,7 +208,7 @@ const AdminPanelScreen = ({ navigation }) => {
     const isLoading = actionLoading === pharmacy.id;
 
     if (isLoading) {
-      return <ActivityIndicator size="small" color="#20b1aa" style={{ marginTop: 8 }} />;
+      return <ActivityIndicator size="small" color="#139900" style={{ marginTop: 8 }} />;
     }
 
     if (pharmacy.status === 'submitted') {
@@ -457,7 +457,7 @@ const AdminPanelScreen = ({ navigation }) => {
     if (revenueLoading) {
       return (
         <View style={styles.centeredTab}>
-          <ActivityIndicator size="large" color="#20b1aa" />
+          <ActivityIndicator size="large" color="#139900" />
           <Text style={styles.loadingText}>Loading revenue data...</Text>
         </View>
       );
@@ -474,7 +474,7 @@ const AdminPanelScreen = ({ navigation }) => {
         style={styles.tabContent}
         contentContainerStyle={styles.tabContentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#139900" colors={['#139900']} />
         }
       >
         <Text style={styles.sectionTitle}>Summary</Text>
@@ -517,7 +517,7 @@ const AdminPanelScreen = ({ navigation }) => {
                 <Text style={styles.listCardDate}>{formatDate(tx.date || tx.payment_date || tx.created_at)}</Text>
                 <View style={[
                   styles.statusDot,
-                  { backgroundColor: (tx.status || tx.payment_status) === 'success' || (tx.status || tx.payment_status) === 'completed' || (tx.status || tx.payment_status) === 'paid' ? '#10B981' : (tx.status || tx.payment_status) === 'pending' ? '#F59E0B' : '#EF4444' },
+                  { backgroundColor: (tx.status || tx.payment_status) === 'success' || (tx.status || tx.payment_status) === 'completed' || (tx.status || tx.payment_status) === 'paid' ? '#139900' : (tx.status || tx.payment_status) === 'pending' ? '#F59E0B' : '#EF4444' },
                 ]} />
                 <Text style={styles.listCardStatus}>{tx.status || tx.payment_status || '--'}</Text>
               </View>
@@ -537,7 +537,7 @@ const AdminPanelScreen = ({ navigation }) => {
     if (analyticsLoading) {
       return (
         <View style={styles.centeredTab}>
-          <ActivityIndicator size="large" color="#20b1aa" />
+          <ActivityIndicator size="large" color="#139900" />
           <Text style={styles.loadingText}>Loading analytics...</Text>
         </View>
       );
@@ -561,7 +561,7 @@ const AdminPanelScreen = ({ navigation }) => {
         style={styles.tabContent}
         contentContainerStyle={styles.tabContentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#139900" colors={['#139900']} />
         }
       >
         <Text style={styles.sectionTitle}>Onboarding Funnel</Text>
@@ -621,7 +621,7 @@ const AdminPanelScreen = ({ navigation }) => {
     if (deliveryBoysLoading) {
       return (
         <View style={styles.centeredTab}>
-          <ActivityIndicator size="large" color="#20b1aa" />
+          <ActivityIndicator size="large" color="#139900" />
           <Text style={styles.loadingText}>Loading delivery boy data...</Text>
         </View>
       );
@@ -636,7 +636,7 @@ const AdminPanelScreen = ({ navigation }) => {
         style={styles.tabContent}
         contentContainerStyle={styles.tabContentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#139900" colors={['#139900']} />
         }
       >
         <Text style={styles.sectionTitle}>Summary</Text>
@@ -674,10 +674,10 @@ const AdminPanelScreen = ({ navigation }) => {
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{boy.name || 'Unnamed'}</Text>
                   <View style={[styles.badge, {
-                    backgroundColor: isApproved ? '#10B98120' : '#F59E0B20',
-                    borderColor: isApproved ? '#10B981' : '#F59E0B',
+                    backgroundColor: isApproved ? '#13990020' : '#F59E0B20',
+                    borderColor: isApproved ? '#139900' : '#F59E0B',
                   }]}>
-                    <Text style={[styles.badgeText, { color: isApproved ? '#10B981' : '#F59E0B' }]}>
+                    <Text style={[styles.badgeText, { color: isApproved ? '#139900' : '#F59E0B' }]}>
                       {isApproved ? 'Approved' : 'Pending'}
                     </Text>
                   </View>
@@ -700,7 +700,7 @@ const AdminPanelScreen = ({ navigation }) => {
                 </View>
                 {isPending && (
                   isLoading ? (
-                    <ActivityIndicator size="small" color="#20b1aa" style={{ marginTop: 8 }} />
+                    <ActivityIndicator size="small" color="#139900" style={{ marginTop: 8 }} />
                   ) : (
                     <View style={styles.actionRow}>
                       <TouchableOpacity
@@ -743,7 +743,7 @@ const AdminPanelScreen = ({ navigation }) => {
     if (paymentsLoading) {
       return (
         <View style={styles.centeredTab}>
-          <ActivityIndicator size="large" color="#20b1aa" />
+          <ActivityIndicator size="large" color="#139900" />
           <Text style={styles.loadingText}>Loading payments data...</Text>
         </View>
       );
@@ -760,13 +760,13 @@ const AdminPanelScreen = ({ navigation }) => {
         style={styles.tabContent}
         contentContainerStyle={styles.tabContentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#20b1aa" colors={['#20b1aa']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#139900" colors={['#139900']} />
         }
       >
         <Text style={styles.sectionTitle}>Summary</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <Text style={[styles.summaryNumber, { color: '#10B981' }]}>{formatCurrency(summary.totalCollected ?? summary.total_collected)}</Text>
+            <Text style={[styles.summaryNumber, { color: '#139900' }]}>{formatCurrency(summary.totalCollected ?? summary.total_collected)}</Text>
             <Text style={styles.summaryLabel}>Total Collected</Text>
           </View>
           <View style={styles.summaryCard}>
@@ -796,7 +796,7 @@ const AdminPanelScreen = ({ navigation }) => {
           paymentHistory.map((payment, index) => {
             const pStatus = payment.status || payment.payment_status || '--';
             const statusColor = pStatus === 'success' || pStatus === 'completed' || pStatus === 'paid'
-              ? '#10B981'
+              ? '#139900'
               : pStatus === 'pending'
                 ? '#F59E0B'
                 : '#EF4444';
@@ -845,8 +845,8 @@ const AdminPanelScreen = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#20b1aa"
-            colors={['#20b1aa']}
+            tintColor="#139900"
+            colors={['#139900']}
           />
         }
         ListEmptyComponent={
@@ -882,7 +882,7 @@ const AdminPanelScreen = ({ navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color="#20b1aa" />
+        <ActivityIndicator size="large" color="#139900" />
         <Text style={styles.loadingText}>Loading pharmacies...</Text>
       </SafeAreaView>
     );
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 48) + 12 : Platform.OS === 'web' ? 16 : 8,
     paddingBottom: 16,
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
   },
   headerTitle: {
     fontSize: 20,
@@ -1014,7 +1014,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#20b1aa',
+    borderBottomColor: '#139900',
   },
   tabText: {
     fontSize: 14,
@@ -1022,7 +1022,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   tabTextActive: {
-    color: '#20b1aa',
+    color: '#139900',
     fontWeight: '700',
   },
 
@@ -1065,13 +1065,13 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#20b1aa',
+    color: '#139900',
     marginBottom: 4,
   },
   summaryNumberSmall: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#20b1aa',
+    color: '#139900',
   },
   summaryLabel: {
     fontSize: 11,
@@ -1108,7 +1108,7 @@ const styles = StyleSheet.create({
   listCardAmount: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#20b1aa',
+    color: '#139900',
   },
   listCardDate: {
     fontSize: 12,
@@ -1153,7 +1153,7 @@ const styles = StyleSheet.create({
   },
   funnelBar: {
     height: '100%',
-    backgroundColor: '#20b1aa',
+    backgroundColor: '#139900',
     borderRadius: 6,
   },
   funnelCount: {
@@ -1287,7 +1287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   approveBtn: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#139900',
   },
   rejectBtn: {
     backgroundColor: '#EF4444',

@@ -13,7 +13,7 @@ const Button = ({
   const backgroundColor = {
     primary: '#3B82F6',
     secondary: '#6B7280',
-    success: '#10B981',
+    success: '#139900',
     danger: '#EF4444',
     warning: '#F59E0B',
   }[variant];

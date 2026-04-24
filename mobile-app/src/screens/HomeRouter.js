@@ -67,7 +67,7 @@ const HomeRouter = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <ActivityIndicator size="large" color="#20b1aa" />
+            <ActivityIndicator size="large" color="#139900" />
         </View>
     );
 };

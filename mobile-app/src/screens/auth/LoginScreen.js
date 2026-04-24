@@ -9,7 +9,7 @@ import TopNavBar from '../../components/TopNavBar';
 const LOGO = require('../../../assets/logo.png');
 
 const ROLES = {
-  owner: { label: 'Pharmacy Owner', icon: 'storefront-outline', color: '#10B981', colorLight: '#D1FAE5' },
+  owner: { label: 'Pharmacy Owner', icon: 'storefront-outline', color: '#139900', colorLight: '#E6F5E0' },
   partner: { label: 'Delivery Partner', icon: 'bicycle-outline', color: '#3B82F6', colorLight: '#DBEAFE' },
 };
 

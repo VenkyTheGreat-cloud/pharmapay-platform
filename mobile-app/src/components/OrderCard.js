@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#10B981',
+    color: '#139900',
   },
 });
 

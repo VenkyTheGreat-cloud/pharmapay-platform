@@ -35,8 +35,8 @@ export const getOrderStatusColor = (status) => {
     [CONFIG.ORDER_STATUS.NEW]: '#3B82F6', // blue
     [CONFIG.ORDER_STATUS.ASSIGNED]: '#8B5CF6', // purple
     [CONFIG.ORDER_STATUS.PICKED_UP]: '#F59E0B', // orange
-    [CONFIG.ORDER_STATUS.IN_TRANSIT]: '#10B981', // green
-    [CONFIG.ORDER_STATUS.DELIVERED]: '#059669', // dark green
+    [CONFIG.ORDER_STATUS.IN_TRANSIT]: '#139900', // green
+    [CONFIG.ORDER_STATUS.DELIVERED]: '#118500', // dark green
     [CONFIG.ORDER_STATUS.CANCELLED]: '#EF4444', // red
   };
   return colors[status] || '#6B7280';

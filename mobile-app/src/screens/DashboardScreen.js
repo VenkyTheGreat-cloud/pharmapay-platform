@@ -101,7 +101,7 @@ const DashboardScreen = ({ navigation }) => {
           title="Today's Earnings"
           value={`Rs ${totalEarnings.toLocaleString('en-IN')}`}
           icon="wallet-outline"
-          color="#10B981"
+          color="#139900"
         />
         <StatCard
           title="Deliveries Done"
@@ -134,7 +134,7 @@ const DashboardScreen = ({ navigation }) => {
 
         {activeOrders.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="checkmark-done-circle" size={40} color="#10B981" />
+            <Ionicons name="checkmark-done-circle" size={40} color="#139900" />
             <Text style={styles.emptyTitle}>All caught up!</Text>
             <Text style={styles.emptyDesc}>No active deliveries right now.</Text>
           </View>
@@ -174,8 +174,8 @@ const DashboardScreen = ({ navigation }) => {
             style={styles.actionBtn}
             onPress={() => navigation.navigate('Marketplace')}
           >
-            <View style={[styles.actionIcon, { backgroundColor: '#ECFDF5' }]}>
-              <Ionicons name="storefront-outline" size={22} color="#10B981" />
+            <View style={[styles.actionIcon, { backgroundColor: '#F0F9EC' }]}>
+              <Ionicons name="storefront-outline" size={22} color="#139900" />
             </View>
             <Text style={styles.actionLabel}>Browse Pharmacies</Text>
           </TouchableOpacity>
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   orderAddress: { fontSize: 12, color: '#64748B', marginTop: 2 },
   orderRight: { alignItems: 'flex-end' },
   orderAmount: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  orderStatus: { fontSize: 11, color: '#10B981', fontWeight: '600', marginTop: 2 },
+  orderStatus: { fontSize: 11, color: '#139900', fontWeight: '600', marginTop: 2 },
 
   actionsRow: { flexDirection: 'row', gap: 12 },
   actionBtn: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },

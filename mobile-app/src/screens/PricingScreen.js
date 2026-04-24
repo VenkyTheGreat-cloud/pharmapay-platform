@@ -52,9 +52,9 @@ const PricingScreen = ({ navigation }) => {
             <Ionicons name="checkmark-circle" size={14} color="#2563EB" />
             <Text style={[styles.badgeText, { color: '#1E40AF' }]}>Always 100% Free for Delivery Partners</Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }]}>
-            <Ionicons name="pricetag" size={14} color="#059669" />
-            <Text style={[styles.badgeText, { color: '#065F46' }]}>One-time Setup Fee Applies</Text>
+          <View style={[styles.badge, { backgroundColor: '#F0F9EC', borderColor: '#B8E6A8' }]}>
+            <Ionicons name="pricetag" size={14} color="#118500" />
+            <Text style={[styles.badgeText, { color: '#0D6600' }]}>One-time Setup Fee Applies</Text>
           </View>
         </View>
 
@@ -65,17 +65,17 @@ const PricingScreen = ({ navigation }) => {
               {plan.popular && (
                 <View style={styles.popularBadge}><Text style={styles.popularText}>MOST POPULAR</Text></View>
               )}
-              <Text style={[styles.planName, plan.popular && { color: '#10B981' }]}>{plan.name}</Text>
+              <Text style={[styles.planName, plan.popular && { color: '#139900' }]}>{plan.name}</Text>
               <Text style={styles.planDesc}>{plan.desc}</Text>
               <View style={styles.priceRow}>
-                <Text style={[styles.priceAmount, plan.popular && { color: '#10B981' }]}>Rs {plan.price}</Text>
+                <Text style={[styles.priceAmount, plan.popular && { color: '#139900' }]}>Rs {plan.price}</Text>
                 <Text style={styles.pricePeriod}>/month</Text>
               </View>
               <Text style={styles.setupNote}>+ one-time setup fee</Text>
               <View style={styles.featuresList}>
                 {plan.features.map((f) => (
                   <View key={f} style={styles.featureRow}>
-                    <Ionicons name="checkmark" size={16} color="#10B981" />
+                    <Ionicons name="checkmark" size={16} color="#139900" />
                     <Text style={styles.featureText}>{f}</Text>
                   </View>
                 ))}
@@ -93,7 +93,7 @@ const PricingScreen = ({ navigation }) => {
         {/* FAQ */}
         <View style={styles.faqSection}>
           <View style={styles.faqHeader}>
-            <Ionicons name="help-circle" size={22} color="#10B981" />
+            <Ionicons name="help-circle" size={22} color="#139900" />
             <Text style={styles.faqTitle}>Frequently Asked Questions</Text>
           </View>
           {FAQ.map((item) => (
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
   heroTitle: { fontSize: 36, fontWeight: '800', color: '#1E293B', textAlign: 'center', lineHeight: 48, letterSpacing: -0.5 },
-  heroTitleGreen: { color: '#10B981' },
+  heroTitleGreen: { color: '#139900' },
   heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12 },
 
   body: { padding: 24, maxWidth: 1100, width: '100%', alignSelf: 'center' },
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
 
   plansRow: { flexDirection: 'row', gap: 16 },
   planCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  planCardPopular: { borderColor: '#10B981', borderWidth: 2 },
-  popularBadge: { backgroundColor: '#10B981', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, marginBottom: 12 },
+  planCardPopular: { borderColor: '#139900', borderWidth: 2 },
+  popularBadge: { backgroundColor: '#139900', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10, marginBottom: 12 },
   popularText: { color: '#fff', fontSize: 10, fontWeight: '800' },
 
   planName: { fontSize: 20, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   featureText: { fontSize: 14, color: '#334155' },
 
   planBtn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', backgroundColor: '#F1F5F9' },
-  planBtnPopular: { backgroundColor: '#10B981' },
+  planBtnPopular: { backgroundColor: '#139900' },
   planBtnText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
 
   faqSection: { marginTop: 32 },

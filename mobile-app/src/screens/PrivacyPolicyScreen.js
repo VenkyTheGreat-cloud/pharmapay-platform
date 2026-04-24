@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   content: { padding: 24, paddingTop: 56, paddingBottom: 40 },
   backBtn: { marginBottom: 16 },
-  backText: { fontSize: 16, color: '#20b1aa', fontWeight: '600' },
+  backText: { fontSize: 16, color: '#139900', fontWeight: '600' },
   title: { fontSize: 26, fontWeight: '800', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#6B7280', marginBottom: 24 },
   section: { marginBottom: 24 },

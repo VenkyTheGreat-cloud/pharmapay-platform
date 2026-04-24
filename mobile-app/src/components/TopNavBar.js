@@ -85,19 +85,19 @@ const styles = StyleSheet.create({
 
   inlineLinks: { flexDirection: 'row', gap: 28 },
   inlineLinkText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
-  inlineLinkActive: { color: '#10B981', fontWeight: '700' },
+  inlineLinkActive: { color: '#139900', fontWeight: '700' },
 
   authRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   loginText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
-  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  getStartedBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#139900', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
   getStartedText: { color: '#fff', fontSize: 13, fontWeight: '600' },
 
   pillRow: { paddingBottom: 8 },
   pillRowContent: { paddingHorizontal: 12, gap: 6 },
   pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9' },
-  pillActive: { backgroundColor: '#D1FAE5' },
+  pillActive: { backgroundColor: '#E6F5E0' },
   pillText: { fontSize: 12, fontWeight: '500', color: '#64748B' },
-  pillTextActive: { color: '#065F46', fontWeight: '700' },
+  pillTextActive: { color: '#0D6600', fontWeight: '700' },
 });
 
 export default TopNavBar;

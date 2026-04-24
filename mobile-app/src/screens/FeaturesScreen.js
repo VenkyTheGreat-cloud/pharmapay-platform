@@ -51,8 +51,8 @@ const FeaturesScreen = ({ navigation }) => {
         <View style={isWide ? styles.gridRow : undefined}>
           {OWNER_FEATURES.map((f) => (
             <View key={f.title} style={[styles.featureCard, isWide && styles.featureCardWide]}>
-              <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
-                <Ionicons name={f.icon} size={22} color="#10B981" />
+              <View style={[styles.iconCircle, { backgroundColor: '#F0F9EC' }]}>
+                <Ionicons name={f.icon} size={22} color="#139900" />
               </View>
               <Text style={styles.featureTitle}>{f.title}</Text>
               <Text style={styles.featureDesc}>{f.desc}</Text>
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   heroSection: { backgroundColor: '#F1F5F9', paddingTop: 48, paddingBottom: 40, paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   heroContent: { maxWidth: 700, alignSelf: 'center', alignItems: 'center' },
   heroTitle: { fontSize: 36, fontWeight: '800', color: '#1E293B', textAlign: 'center', lineHeight: 48, letterSpacing: -0.5 },
-  heroTitleGreen: { color: '#10B981' },
+  heroTitleGreen: { color: '#139900' },
   heroSubtitle: { fontSize: 15, color: '#64748B', lineHeight: 24, textAlign: 'center', marginTop: 12, maxWidth: 600 },
 
   // Body
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   sectionTitle: { fontSize: 22, fontWeight: '700', color: '#1E293B' },
-  proBadge: { backgroundColor: '#ECFDF5', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 14 },
-  proBadgeText: { fontSize: 12, fontWeight: '700', color: '#065F46' },
+  proBadge: { backgroundColor: '#F0F9EC', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 14 },
+  proBadgeText: { fontSize: 12, fontWeight: '700', color: '#0D6600' },
 
   gridRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   featureCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   featureDesc: { fontSize: 14, color: '#64748B', lineHeight: 22 },
 
   cta: { marginTop: 40, alignItems: 'center' },
-  ctaBtn: { backgroundColor: '#10B981', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 48 },
+  ctaBtn: { backgroundColor: '#139900', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 48 },
   ctaBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 

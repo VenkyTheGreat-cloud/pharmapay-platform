@@ -15,7 +15,7 @@ const getStrength = (password) => {
   return { level: 3, label: 'Strong', color: '#22C55E' };
 };
 
-const PasswordStrength = ({ password, accentColor = '#10B981' }) => {
+const PasswordStrength = ({ password, accentColor = '#139900' }) => {
   if (!password) return null;
 
   const { level, label, color } = getStrength(password);
