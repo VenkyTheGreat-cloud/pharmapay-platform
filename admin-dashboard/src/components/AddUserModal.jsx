@@ -34,6 +34,13 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        // Validate mobile number
+        if (!/^\d{10}$/.test(formData.mobile.trim())) {
+            setError('Mobile number must be exactly 10 digits');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -153,10 +160,18 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                             <input
                                 type="tel"
                                 value={formData.mobile}
-                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                                onChange={(e) => {
+                                    const numericOnly = e.target.value.replace(/[^0-9]/g, '');
+                                    setFormData({ ...formData, mobile: numericOnly });
+                                }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                maxLength={10}
+                                placeholder="10-digit mobile number"
                                 required
                             />
+                            {formData.mobile && formData.mobile.length !== 10 && (
+                                <p className="text-xs text-amber-600 mt-1">{formData.mobile.length}/10 digits</p>
+                            )}
                         </div>
 
                         {userType === 'store_staff' && (

@@ -7,34 +7,39 @@ const { successResponse, errorResponse } = require('../utils/apiResponse');
 exports.getAllDeliveryBoys = async (req, res, next) => {
     try {
         const { status, is_active } = req.query;
-        
-        const filters = {};
-        if (status) filters.status = status;
-        if (is_active !== undefined) filters.isActive = is_active === 'true';
-        
-        // Restrict by store_id based on user role
+
+        // Base filter: restrict by store_id based on user role
+        const baseFilters = {};
         if (req.user.role === 'admin') {
-            // Admin: see delivery boys linked to any store in their group (admin + its stores)
-            // Delivery boys table uses store_id referencing users.id (store/admin)
-            filters.store_id = req.user.userId; // anchor at admin; public registration uses admin's ID
+            baseFilters.store_id = req.user.userId;
         } else if (req.user.role === 'store_manager') {
-            // Store manager: use adminId from token to see all delivery boys under that admin
             const anchorAdminId = req.user.adminId || req.user.userId;
-            filters.store_id = anchorAdminId;
+            baseFilters.store_id = anchorAdminId;
         } else if (req.user.role === 'delivery_boy') {
-            // Delivery boys don't see other delivery boys
             return res.status(403).json(errorResponse('FORBIDDEN', 'Access denied'));
         }
 
-        const deliveryBoys = await DeliveryBoy.findAll(filters);
+        // Always fetch ALL delivery boys for this store to get accurate tab counts
+        const allDeliveryBoys = await DeliveryBoy.findAll(baseFilters);
 
-        // Count active and inactive for UI tabs
-        const activeCount = deliveryBoys.filter(db => db.is_active === true).length;
-        const inactiveCount = deliveryBoys.filter(db => db.is_active === false).length;
+        // Calculate counts from the full unfiltered set
+        const totalCount = allDeliveryBoys.length;
+        const activeCount = allDeliveryBoys.filter(db => db.is_active === true).length;
+        const inactiveCount = allDeliveryBoys.filter(db => db.is_active === false).length;
+
+        // Apply status/is_active filters for the displayed list
+        let filteredList = allDeliveryBoys;
+        if (status) {
+            filteredList = filteredList.filter(db => db.status === status);
+        }
+        if (is_active !== undefined) {
+            const isActiveBool = is_active === 'true';
+            filteredList = filteredList.filter(db => db.is_active === isActiveBool);
+        }
 
         res.json(successResponse({
-            delivery_boys: deliveryBoys,
-            count: deliveryBoys.length,
+            delivery_boys: filteredList,
+            count: totalCount,
             active_count: activeCount,
             inactive_count: inactiveCount
         }));
@@ -98,6 +103,11 @@ exports.createDeliveryBoy = async (req, res, next) => {
 
         if (!name || !mobile) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name and mobile are required'));
+        }
+
+        // Validate mobile number: exactly 10 digits
+        if (!/^\d{10}$/.test(mobile.trim())) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Mobile number must be exactly 10 digits'));
         }
 
         // Password is required for delivery boys to login
