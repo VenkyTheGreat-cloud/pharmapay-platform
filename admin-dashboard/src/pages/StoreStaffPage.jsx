@@ -140,15 +140,15 @@ export default function StoreStaffPage() {
             )}
             <div className="mb-6 flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Store Staff</h1>
-                    <p className="text-gray-600 mt-1">Manage store staff members</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Stores</h1>
+                    <p className="text-gray-600 mt-1">Manage your stores and store managers</p>
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
                     className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-2 rounded-lg hover:from-primary-600 hover:to-primary-700 flex items-center gap-2 shadow-md"
                 >
                     <Plus className="w-5 h-5" />
-                    Add New Store Staff
+                    Add New Store
                 </button>
             </div>
 

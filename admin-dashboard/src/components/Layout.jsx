@@ -35,7 +35,7 @@ export default function Layout({ children }) {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
         { name: 'Customers', href: '/customers', icon: Users },
-        { name: 'Store Staff', href: '/store-staff', icon: UserCog },
+        { name: 'Stores', href: '/store-staff', icon: UserCog },
         { name: 'Delivery Boys', href: '/delivery-boys', icon: Truck },
         { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileSpreadsheet },
