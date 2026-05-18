@@ -9,8 +9,7 @@ config.resolver.blockList = [
   /android\/app\/build\/.*/,
   /android\/build\/.*/,
   /android\/\.gradle\/.*/,
+  /android\/app\/\.cxx\/.*/,
 ];
 
 module.exports = config;
-
-

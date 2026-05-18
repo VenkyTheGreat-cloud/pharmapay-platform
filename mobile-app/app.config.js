@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: 'SwinkPayPharma',
+    name: 'PharmaGig',
     slug: 'swinkpaypharma',
     version: '1.0.0',
     orientation: 'portrait',

@@ -1,0 +1,43 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+  <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL"/>
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <application>
+    <receiver
+        android:name=".capture.PhoneStateReceiver"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.PHONE_STATE"/>
+        </intent-filter>
+    </receiver>
+    <receiver
+        android:name=".capture.BootReceiver"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        </intent-filter>
+    </receiver>
+    <service
+        android:name=".capture.CaptureMonitorService"
+        android:foregroundServiceType="phoneCall"
+        android:exported="false"/>
+    <service
+        android:name=".capture.CallRecorderService"
+        android:foregroundServiceType="microphone"
+        android:exported="false"/>
+    <service
+        android:name=".capture.WhatsAppNotificationListener"
+        android:label="Pharmagig Capture"
+        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.service.notification.NotificationListenerService"/>
+        </intent-filter>
+    </service>
+  </application>
+</manifest>

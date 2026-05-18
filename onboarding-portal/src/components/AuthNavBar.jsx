@@ -14,10 +14,10 @@ export default function AuthNavBar() {
             </Link>
 
             <div className="hidden md:flex items-center gap-6">
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">Home</a>
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">Features</a>
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">How It Works</a>
-                <a href="#" className="text-sm text-gray-600 hover:text-gray-900">Pricing</a>
+                <Link to="/signup" className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Home</Link>
+                <Link to="/signup" className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Features</Link>
+                <Link to="/signup" className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">How It Works</Link>
+                <Link to="/signup" className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Pricing</Link>
             </div>
 
             <div className="flex items-center gap-3">
