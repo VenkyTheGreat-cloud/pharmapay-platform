@@ -93,7 +93,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-2xl font-bold text-gray-900">
-                            Add {userType === 'store_staff' ? 'Store Staff' : 'Delivery Boy'}
+                            Add {userType === 'store_staff' ? 'New Store' : 'Delivery Boy'}
                         </h2>
                         <button
                             onClick={onClose}

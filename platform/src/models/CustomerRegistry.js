@@ -227,12 +227,8 @@ class CustomerRegistry {
                 AND c.store_id = lr.store_id
             LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone
                 AND DATE(o.created_at) = $1::date
+                AND (o.store_id IS NULL OR o.store_id = lr.store_id)
         `;
-
-        // Also filter orders by store_id if provided (for consistency)
-        if (storeIds && Array.isArray(storeIds) && storeIds.length > 0) {
-            queryText += ` AND (o.store_id IS NULL OR o.store_id = ANY($2))`;
-        }
 
         queryText += ' ORDER BY lr.registry_date DESC, o.created_at DESC';
 
