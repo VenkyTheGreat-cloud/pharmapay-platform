@@ -27,6 +27,11 @@ exports.register = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, and password are required'));
         }
 
+        // Validate mobile number: exactly 10 digits
+        if (!/^\d{10}$/.test(mobile.trim())) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Mobile number must be exactly 10 digits'));
+        }
+
         if (password.length < 6) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
         }

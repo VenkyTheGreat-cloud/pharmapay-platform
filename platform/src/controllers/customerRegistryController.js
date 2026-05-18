@@ -297,6 +297,7 @@ exports.getRegisteredCustomersWithOrders = async (req, res, next) => {
         // Format response
         const formattedResults = results.map(row => ({
             registry_id: row.registry_id,
+            customer_id: row.customer_id || null,
             customer_name: row.customer_name,
             customer_mobile: row.customer_mobile,
             registry_date: row.registry_date,

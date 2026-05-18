@@ -157,10 +157,14 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
                                 Mobile Number <span className="text-red-500">*</span>
                             </label>
                             <input
-                                type="text"
+                                type="tel"
                                 name="mobile"
                                 value={formData.mobile}
-                                onChange={handleChange}
+                                onChange={(e) => {
+                                    const numericOnly = e.target.value.replace(/[^0-9]/g, '');
+                                    setFormData(prev => ({ ...prev, mobile: numericOnly }));
+                                    if (errors.mobile) setErrors(prev => ({ ...prev, mobile: '' }));
+                                }}
                                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                                     errors.mobile ? 'border-red-500' : 'border-gray-300'
                                 }`}

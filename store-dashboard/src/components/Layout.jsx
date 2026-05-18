@@ -64,8 +64,8 @@ export default function Layout({ children }) {
                     {/* Logo */}
                     <div className="flex items-center justify-between p-6 border-b">
                         <div className="flex items-center gap-3">
-                            <img src={logo} alt="PharmaPay Logo" className="w-12 h-auto max-h-12 rounded-md object-contain" />
-                            <h1 className="text-xl font-bold text-gray-900">PharmaPay</h1>
+                            <img src={logo} alt="Logo" className="w-12 h-auto max-h-12 rounded-md object-contain" />
+                            <h1 className="text-xl font-bold text-gray-900">{user?.storeName || 'PharmaPay'}</h1>
                         </div>
 
                         <button
