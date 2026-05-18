@@ -41,6 +41,12 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
             return;
         }
 
+        // Validate store name for store type
+        if (userType === 'store_staff' && (!formData.store_name || !formData.store_name.trim())) {
+            setError('Store name is required');
+            return;
+        }
+
         setLoading(true);
 
         try {
