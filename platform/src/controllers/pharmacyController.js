@@ -432,11 +432,24 @@ exports.paymentCallback = async (req, res, next) => {
                 JSON.stringify(tenantConfig, null, 2)
             );
 
-            // Store config and set status to submitted (awaiting admin approval)
+            // Store config and auto-activate to live (no manual admin approval needed)
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
-            await Pharmacy.updateStatus(pharmacy.id, 'submitted');
+            await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
 
-            logger.info('Payment successful, pharmacy submitted for approval', { pharmacyId: pharmacy.id, slug });
+            // Auto-create pharmacy listing for marketplace
+            const { query: dbQuery } = require('../config/database');
+            try {
+                await dbQuery(
+                    `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)
+                     VALUES ($4, $1, $2, '', '', true, $3, NOW())
+                     ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
+                    [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id]
+                );
+            } catch (listingErr) {
+                logger.warn('Failed to create marketplace listing during auto-activation', { error: listingErr.message, pharmacyId: pharmacy.id });
+            }
+
+            logger.info('Payment successful, pharmacy auto-activated to live', { pharmacyId: pharmacy.id, slug });
 
             return res.redirect('https://pharmagig.swinkpay-fintech.com/build-status');
         } else {

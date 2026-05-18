@@ -14,7 +14,16 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            const parsed = JSON.parse(savedUser);
+            // Only allow admin role on the admin dashboard
+            if (parsed.role === 'admin') {
+                setUser(parsed);
+            } else {
+                // Wrong role for this dashboard — clear stale credentials
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+            }
         }
         setLoading(false);
     }, []);

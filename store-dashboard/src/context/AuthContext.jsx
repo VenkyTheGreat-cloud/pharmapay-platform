@@ -15,7 +15,16 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            const parsed = JSON.parse(savedUser);
+            // Only allow store_manager role on the store dashboard
+            if (parsed.role === 'store_manager') {
+                setUser(parsed);
+            } else {
+                // Wrong role for this dashboard — clear stale credentials
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+            }
         }
         setLoading(false);
     }, []);
