@@ -76,6 +76,25 @@ exports.createStoreManager = async (req, res, next) => {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Name, mobile, email, and password are required'));
         }
 
+        if (!store_name || !store_name.trim()) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Store name is required'));
+        }
+
+        // Validate mobile number: exactly 10 digits
+        if (!/^\d{10}$/.test(mobile.trim())) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Mobile number must be exactly 10 digits'));
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Invalid email format'));
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
+        }
+
         // Check if email already exists
         const existingUser = await User.findByEmail(email);
         if (existingUser) {

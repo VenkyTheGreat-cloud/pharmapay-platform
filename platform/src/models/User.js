@@ -89,7 +89,7 @@ class User {
     // Find user by ID
     static async findById(id) {
         const result = await query(
-            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, password_hash, created_at, updated_at FROM users WHERE id = $1',
+            'SELECT id, name, store_name, mobile, email, address, role, is_active, status, password_hash, admin_id, created_at, updated_at FROM users WHERE id = $1',
             [id]
         );
         return result.rows[0];
@@ -188,7 +188,7 @@ class User {
         values.push(id);
         const result = await query(
             `UPDATE users SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramCount}
-             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, created_at, updated_at`,
+             RETURNING id, name, store_name, mobile, email, address, role, is_active, status, admin_id, created_at, updated_at`,
             values
         );
         return result.rows[0];

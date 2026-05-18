@@ -15,7 +15,7 @@ export default function StoreStaffPage() {
 
     useEffect(() => {
         loadStoreStaff();
-    }, [activeTab]);
+    }, []);
 
     const loadStoreStaff = async () => {
         try {
