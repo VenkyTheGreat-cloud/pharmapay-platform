@@ -11,7 +11,7 @@ export default function PendingOrdersPage() {
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('PENDING');
 
     useEffect(() => {
         loadPendingOrders();
@@ -75,7 +75,12 @@ export default function PendingOrdersPage() {
 
     const filteredOrders = orders.filter((order) => {
         // Filter by status
-        if (statusFilter !== 'ALL' && order.status !== statusFilter) {
+        if (statusFilter === 'PENDING') {
+            // "Pending" shows all non-completed orders (excludes DELIVERED and CANCELLED)
+            if (order.status === 'DELIVERED' || order.status === 'CANCELLED') {
+                return false;
+            }
+        } else if (statusFilter !== 'ALL' && order.status !== statusFilter) {
             return false;
         }
 
@@ -126,7 +131,8 @@ export default function PendingOrdersPage() {
     };
 
     // Get unique statuses from orders for filter dropdown
-    const uniqueStatuses = ['ALL', ...new Set(orders.map(o => o.status).filter(Boolean))];
+    const orderStatuses = [...new Set(orders.map(o => o.status).filter(Boolean))];
+    const uniqueStatuses = ['PENDING', 'ALL', ...orderStatuses];
 
     // Format date for display
     const formatDate = (dateString) => {
@@ -174,7 +180,7 @@ export default function PendingOrdersPage() {
                                     >
                                         {uniqueStatuses.map((status) => (
                                             <option key={status} value={status}>
-                                                {status === 'ALL' ? 'All Status' : status}
+                                                {status === 'ALL' ? 'All Status' : status === 'PENDING' ? 'Pending Only' : status}
                                             </option>
                                         ))}
                                     </select>

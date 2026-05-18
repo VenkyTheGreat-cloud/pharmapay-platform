@@ -54,8 +54,6 @@ const AppNavigator = () => {
           ) : (
             <Stack.Screen name="Main" component={MainNavigator} />
           )}
-          {!isAdmin && <Stack.Screen name="HomeRouter" component={HomeRouter} />}
-          {isAdmin && <Stack.Screen name="Main" component={MainNavigator} />}
           <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
           <Stack.Screen name="PharmacyConfigure" component={PharmacyConfigureScreen} />
           <Stack.Screen name="PharmacyBranding" component={PharmacyBrandingScreen} />

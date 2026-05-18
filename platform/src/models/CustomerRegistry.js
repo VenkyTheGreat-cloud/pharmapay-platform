@@ -206,15 +206,16 @@ class CustomerRegistry {
         queryText += `
                 ORDER BY cr.mobile, cr.registry_date DESC, cr.created_at DESC
             )
-            SELECT 
+            SELECT
                 lr.registry_id,
                 lr.customer_name,
                 lr.customer_mobile,
                 lr.registry_date,
                 lr.registry_created_at,
-                CASE 
-                    WHEN o.id IS NOT NULL THEN true 
-                    ELSE false 
+                c.id as customer_id,
+                CASE
+                    WHEN o.id IS NOT NULL THEN true
+                    ELSE false
                 END as has_order,
                 o.id as order_id,
                 o.order_number,
@@ -222,7 +223,9 @@ class CustomerRegistry {
                 o.total_amount,
                 o.status as order_status
             FROM latest_registrations lr
-            LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone 
+            LEFT JOIN customers c ON lr.customer_mobile = c.mobile
+                AND c.store_id = lr.store_id
+            LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone
                 AND DATE(o.created_at) = $1::date
         `;
 

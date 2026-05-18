@@ -88,7 +88,12 @@ class DeliveryBoy {
         }
 
         if (filters.store_id) {
-            queryText += ` AND db.store_id = $${paramCount}`;
+            if (filters.includeUnassigned) {
+                // Include delivery boys assigned to this store OR unassigned (pending registration)
+                queryText += ` AND (db.store_id = $${paramCount} OR db.store_id IS NULL)`;
+            } else {
+                queryText += ` AND db.store_id = $${paramCount}`;
+            }
             params.push(filters.store_id);
             paramCount++;
         }

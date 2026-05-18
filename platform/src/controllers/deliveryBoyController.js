@@ -12,6 +12,8 @@ exports.getAllDeliveryBoys = async (req, res, next) => {
         const baseFilters = {};
         if (req.user.role === 'admin') {
             baseFilters.store_id = req.user.userId;
+            // Admin should also see unassigned delivery boys (registered without store_id)
+            baseFilters.includeUnassigned = true;
         } else if (req.user.role === 'store_manager') {
             const anchorAdminId = req.user.adminId || req.user.userId;
             baseFilters.store_id = anchorAdminId;
