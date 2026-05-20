@@ -174,16 +174,17 @@ export default function ContactsPage() {
             // Get current date and time in IST
             const registryDate = getCurrentISTDateTime();
             
-            // If it's a new customer (not selected from dropdown), create customer first
+            // If it's a new customer (not selected from dropdown), create customer entry
+            // Only create if mobile doesn't already exist — never overwrite existing customer data
             if (isNewCustomer || !selectedCustomer) {
                 try {
                     await customersAPI.create({
                         mobile: mobileNumber.trim(),
-                        name: customerName.trim() || null // Name is optional
+                        name: customerName.trim() || null
                     });
                 } catch (customerError) {
-                    // If customer already exists, that's okay - continue
-                    if (customerError.response?.status !== 400 && customerError.response?.status !== 409) {
+                    // 409 = duplicate mobile (customer already exists) — this is fine, skip silently
+                    if (customerError.response?.status !== 409) {
                         console.warn('Error creating customer entry:', customerError);
                     }
                 }
