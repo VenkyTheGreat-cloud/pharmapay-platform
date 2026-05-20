@@ -69,6 +69,24 @@ exports.createCustomerRegistry = async (req, res, next) => {
             storeId = userStores && userStores.length > 0 ? userStores[0] : null;
         }
 
+        // Check if this mobile already has a registry entry for the same date and store
+        const dateOnly = normalizedDateTime.slice(0, 10); // YYYY-MM-DD
+        const { query: dbQuery } = require('../config/database');
+        const existingResult = await dbQuery(
+            `SELECT id, mobile, name, registry_date FROM customer_registry
+             WHERE mobile = $1 AND DATE(registry_date) = $2::date
+             AND ($3::uuid IS NULL OR store_id = $3)
+             LIMIT 1`,
+            [mobile.trim(), dateOnly, storeId]
+        );
+
+        if (existingResult.rows.length > 0) {
+            return res.status(409).json(errorResponse(
+                'DUPLICATE_ENTRY',
+                `Contact with mobile ${mobile.trim()} already exists for today`
+            ));
+        }
+
         // Create registry entry - name is optional
         const registry = await CustomerRegistry.create({
             mobile: mobile.trim(),

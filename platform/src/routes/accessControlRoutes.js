@@ -3,9 +3,9 @@ const router = express.Router();
 const accessControlController = require('../controllers/accessControlController');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
-// All routes require authentication and admin role
+// All routes require authentication and admin or store_manager role
 router.use(authenticateToken);
-router.use(authorizeRoles('admin'));
+router.use(authorizeRoles('admin', 'store_manager'));
 
 // Get all store managers
 router.get(

@@ -391,8 +391,8 @@ exports.paymentCallback = async (req, res, next) => {
         }
 
         // SwinkPay statusCode: 0=Initiated, 1=Success, 2=Failed
-        // Also treat callback without statusCode as success (some gateways just redirect back)
-        const isSuccess = !statusCode || String(statusCode) === '1';
+        // Only treat explicit statusCode '1' as success — missing/undefined means unconfirmed
+        const isSuccess = String(statusCode) === '1';
 
         if (isSuccess) {
             // Payment successful
@@ -451,9 +451,9 @@ exports.paymentCallback = async (req, res, next) => {
 
             logger.info('Payment successful, pharmacy auto-activated to live', { pharmacyId: pharmacy.id, slug });
 
-            return res.redirect('https://pharmagig.swinkpay-fintech.com/build-status');
+            return res.redirect('https://pharmagig.swinkpay-fintech.com/build-status?payment=success');
         } else {
-            // Payment failed or initiated
+            // Payment failed, cancelled, or unconfirmed
             await Pharmacy.updatePayment(pharmacy.id, {
                 payment_status: 'failed',
                 payment_reference: transactionId || pharmacy.payment_reference,
@@ -462,12 +462,12 @@ exports.paymentCallback = async (req, res, next) => {
                 payment_date: new Date()
             });
 
-            logger.info('Payment failed', { pharmacyId: pharmacy.id, statusCode });
+            logger.info('Payment failed or unconfirmed', { pharmacyId: pharmacy.id, statusCode });
 
-            return res.redirect('https://pharmagig.swinkpay-fintech.com/payment?error=failed');
+            return res.redirect(`https://pharmagig.swinkpay-fintech.com/payment?error=failed&statusCode=${statusCode || 'none'}`);
         }
     } catch (error) {
-        logger.error('Payment callback error', { error: error.message });
+        logger.error('Payment callback error', { error: error.message, stack: error.stack });
         return res.redirect('https://pharmagig.swinkpay-fintech.com/payment?error=server_error');
     }
 };
