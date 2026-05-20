@@ -182,8 +182,8 @@ const AdminPanelScreen = ({ navigation }) => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
   };
 
   const getFeaturesCount = (pharmacy) => {
@@ -891,7 +891,12 @@ const AdminPanelScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Admin Panel</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity onPress={() => navigation.canGoBack() ? navigation.goBack() : handleLogout()}>
+            <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Admin Panel</Text>
+        </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity style={styles.logoutBtn} onPress={onRefresh}>
             <Text style={styles.logoutBtnText}>Refresh</Text>
