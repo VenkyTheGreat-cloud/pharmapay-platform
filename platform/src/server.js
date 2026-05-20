@@ -133,6 +133,10 @@ app.listen(PORT, () => {
     // Start background capture processor (processes inbound calls + WhatsApp)
     const { startCaptureProcessor } = require('./services/captureProcessor');
     startCaptureProcessor();
+
+    // Start daily subscription expiry checker
+    const SubscriptionService = require('./services/subscriptionService');
+    SubscriptionService.startDailyCheck();
 });
 
 // Graceful shutdown

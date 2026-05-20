@@ -436,8 +436,20 @@ exports.paymentCallback = async (req, res, next) => {
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
             await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
 
-            // Auto-create pharmacy listing for marketplace
+            // Set subscription dates (plan duration: starter=1mo, growth=3mo, enterprise=6mo)
             const { query: dbQuery } = require('../config/database');
+            const planMonths = { starter: 1, growth: 3, enterprise: 6 };
+            const months = planMonths[pharmacy.plan] || 1;
+            const subscriptionStart = new Date();
+            const subscriptionEnd = new Date();
+            subscriptionEnd.setMonth(subscriptionEnd.getMonth() + months);
+
+            await dbQuery(
+                `UPDATE pharmacies SET subscription_start_date = $1, subscription_end_date = $2 WHERE id = $3`,
+                [subscriptionStart, subscriptionEnd, pharmacy.id]
+            );
+
+            // Auto-create pharmacy listing for marketplace
             try {
                 await dbQuery(
                     `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)

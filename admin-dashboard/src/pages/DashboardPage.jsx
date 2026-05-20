@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ordersAPI } from '../services/api';
-import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw, Search } from 'lucide-react';
+import { ordersAPI, accessControlAPI } from '../services/api';
+import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw, Search, Store } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
 export default function DashboardPage() {
@@ -10,6 +10,8 @@ export default function DashboardPage() {
     const [showOrderDetails, setShowOrderDetails] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('ALL');
+    const [storeFilter, setStoreFilter] = useState('ALL');
+    const [availableStores, setAvailableStores] = useState([]);
     const [filters, setFilters] = useState(() => {
         // Get current date in IST (UTC+5:30)
         const getISTDate = () => {
@@ -28,9 +30,26 @@ export default function DashboardPage() {
         };
     });
 
+    // Load available stores on mount
+    useEffect(() => {
+        const loadStores = async () => {
+            try {
+                const res = await accessControlAPI.getAll();
+                const managers = res.data?.data?.store_managers || [];
+                setAvailableStores(managers.map(m => ({
+                    id: m.id,
+                    name: m.store_name || m.name
+                })));
+            } catch (err) {
+                console.error('Error loading stores:', err);
+            }
+        };
+        loadStores();
+    }, []);
+
     useEffect(() => {
         loadDashboardData();
-    }, [filters.selectedDate]); // Reload when date filter changes
+    }, [filters.selectedDate, storeFilter]); // Reload when date or store filter changes
 
     const loadDashboardData = async () => {
         try {
@@ -41,6 +60,7 @@ export default function DashboardPage() {
                 limit: 500,
                 date_from: filters.selectedDate,
                 date_to: filters.selectedDate,
+                ...(storeFilter !== 'ALL' && { store_id: storeFilter }),
             };
             const allRes = await ordersAPI.getAll(params);
             console.log('Dashboard Orders API Full Response:', allRes); // Debug log
@@ -172,8 +192,24 @@ export default function DashboardPage() {
                         <p className="text-xs text-gray-600">Orders and collections for the selected date</p>
                     </div>
 
-                    {/* Date filter for orders table - Compact */}
+                    {/* Filters - Date + Store */}
                     <div className="bg-white rounded-lg shadow-sm px-3 py-1.5 flex items-center gap-3 border border-primary-100">
+                        {/* Store Filter */}
+                        {availableStores.length > 0 && (
+                            <div>
+                                <label className="block text-xs font-medium text-gray-600 mb-0.5">Store:</label>
+                                <select
+                                    value={storeFilter}
+                                    onChange={(e) => setStoreFilter(e.target.value)}
+                                    className="border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                >
+                                    <option value="ALL">All Stores</option>
+                                    {availableStores.map(store => (
+                                        <option key={store.id} value={store.id}>{store.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         <div>
                             <label className="block text-xs font-medium text-gray-600 mb-0.5">Date:</label>
                             <input

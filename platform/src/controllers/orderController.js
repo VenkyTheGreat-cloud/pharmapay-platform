@@ -38,7 +38,7 @@ const normalizeDateParam = (rawDate) => {
 // Get all orders with pagination
 exports.getAllOrders = async (req, res, next) => {
     try {
-        const { status, date: rawDate, date_from, date_to, page = 1, limit = 20 } = req.query;
+        const { status, date: rawDate, date_from, date_to, page = 1, limit = 20, store_id: filterStoreId } = req.query;
         const date = normalizeDateParam(rawDate);
         const dateFrom = normalizeDateParam(date_from);
         const dateTo = normalizeDateParam(date_to);
@@ -86,6 +86,14 @@ exports.getAllOrders = async (req, res, next) => {
             filters.store_ids = storeIds;
             filters.include_unassigned_for_delivery_boy = true;
             filters.delivery_boy_id = req.user.userId;
+        }
+
+        // If a specific store_id filter is passed, narrow down to that single store
+        // (only if it's within the user's allowed store_ids)
+        if (filterStoreId && filters.store_ids) {
+            if (filters.store_ids.includes(filterStoreId)) {
+                filters.store_ids = [filterStoreId];
+            }
         }
 
         if (status) filters.status = status;
