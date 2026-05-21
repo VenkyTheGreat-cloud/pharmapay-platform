@@ -493,6 +493,19 @@ const AdminPanelScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Outstanding Balances */}
+        {(() => {
+          const pendingTxs = revenueTransactions.filter(tx => (tx.status || tx.payment_status) === 'pending');
+          const pendingTotal = pendingTxs.reduce((sum, tx) => sum + parseFloat(tx.amount || tx.payment_amount || 0), 0);
+          if (pendingTxs.length > 0) return (
+            <View style={[styles.summaryCard, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B', borderWidth: 1, marginBottom: 16, width: '100%' }]}>
+              <Text style={[styles.summaryNumber, { color: '#D97706' }]}>{formatCurrency(pendingTotal)}</Text>
+              <Text style={[styles.summaryLabel, { color: '#92400E' }]}>Outstanding Balances ({pendingTxs.length} pending)</Text>
+            </View>
+          );
+          return null;
+        })()}
+
         <Text style={styles.sectionTitle}>Plan Distribution</Text>
         <View style={styles.summaryRow}>
           {['starter', 'growth', 'enterprise'].map((plan) => (
@@ -515,11 +528,24 @@ const AdminPanelScreen = ({ navigation }) => {
               </View>
               <View style={styles.listCardRow}>
                 <Text style={styles.listCardDate}>{formatDate(tx.date || tx.payment_date || tx.created_at)}</Text>
-                <View style={[
-                  styles.statusDot,
-                  { backgroundColor: (tx.status || tx.payment_status) === 'success' || (tx.status || tx.payment_status) === 'completed' || (tx.status || tx.payment_status) === 'paid' ? '#139900' : (tx.status || tx.payment_status) === 'pending' ? '#F59E0B' : '#EF4444' },
-                ]} />
-                <Text style={styles.listCardStatus}>{tx.status || tx.payment_status || '--'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={[
+                    styles.statusDot,
+                    { backgroundColor: (tx.status || tx.payment_status) === 'success' || (tx.status || tx.payment_status) === 'completed' || (tx.status || tx.payment_status) === 'paid' ? '#139900' : (tx.status || tx.payment_status) === 'pending' ? '#F59E0B' : '#EF4444' },
+                  ]} />
+                  <Text style={styles.listCardStatus}>{tx.status || tx.payment_status || '--'}</Text>
+                  {((tx.status || tx.payment_status) === 'pending') && (
+                    <TouchableOpacity
+                      style={{ backgroundColor: '#139900', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 4 }}
+                      onPress={() => Alert.alert('Mark as Paid', `Mark ${tx.name || tx.pharmacy_name || 'this pharmacy'} as paid?`, [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Confirm', onPress: () => { /* TODO: API call to mark as paid */ Alert.alert('Success', 'Marked as paid'); onRefresh(); }}
+                      ])}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>Mark Paid</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             </View>
           ))
@@ -567,15 +593,26 @@ const AdminPanelScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Onboarding Funnel</Text>
         {FUNNEL_STEPS.map((step, i) => {
           const count = funnel[FUNNEL_KEYS[i]] ?? funnel[step.toLowerCase()] ?? '--';
+          const prevCount = i > 0 ? (funnel[FUNNEL_KEYS[i - 1]] ?? funnel[FUNNEL_STEPS[i - 1].toLowerCase()]) : null;
           const maxCount = funnel[FUNNEL_KEYS[0]] || 1;
           const barWidth = count !== '--' ? Math.max((count / maxCount) * 100, 8) : 8;
+          const dropOff = (prevCount && prevCount > 0 && count !== '--')
+            ? (((prevCount - count) / prevCount) * 100).toFixed(1)
+            : null;
           return (
-            <View key={step} style={styles.funnelRow}>
-              <Text style={styles.funnelLabel}>{step}</Text>
-              <View style={styles.funnelBarBg}>
-                <View style={[styles.funnelBar, { width: `${barWidth}%` }]} />
+            <View key={step}>
+              {dropOff && parseFloat(dropOff) > 0 && (
+                <Text style={{ fontSize: 10, color: '#EF4444', fontWeight: '600', textAlign: 'center', marginBottom: 2 }}>
+                  ↓ -{dropOff}% drop-off
+                </Text>
+              )}
+              <View style={styles.funnelRow}>
+                <Text style={styles.funnelLabel}>{step}</Text>
+                <View style={styles.funnelBarBg}>
+                  <View style={[styles.funnelBar, { width: `${barWidth}%` }]} />
+                </View>
+                <Text style={styles.funnelCount}>{count}</Text>
               </View>
-              <Text style={styles.funnelCount}>{count}</Text>
             </View>
           );
         })}

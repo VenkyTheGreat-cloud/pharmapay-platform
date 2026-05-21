@@ -68,7 +68,7 @@ const PricingScreen = ({ navigation }) => {
               <Text style={[styles.planName, plan.popular && { color: '#139900' }]}>{plan.name}</Text>
               <Text style={styles.planDesc}>{plan.desc}</Text>
               <View style={styles.priceRow}>
-                <Text style={[styles.priceAmount, plan.popular && { color: '#139900' }]}>Rs {plan.price}</Text>
+                <Text style={[styles.priceAmount, plan.popular && { color: '#139900' }]}>₹{plan.price}</Text>
                 <Text style={styles.pricePeriod}>/month</Text>
               </View>
               <Text style={styles.setupNote}>+ one-time setup fee</Text>
