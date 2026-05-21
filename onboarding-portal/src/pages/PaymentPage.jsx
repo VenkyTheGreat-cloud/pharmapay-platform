@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { pharmacyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StepIndicator from '../components/StepIndicator';
 import {
     Package, CreditCard, ArrowLeft, ArrowRight, AlertTriangle,
-    Loader2, ExternalLink,
+    Loader2, ExternalLink, CheckCircle, XCircle,
 } from 'lucide-react';
 
 const PLANS = {
@@ -43,6 +43,20 @@ export default function PaymentPage() {
     const [paying, setPaying] = useState(false);
     const [error, setError] = useState('');
     const [nameSuccess, setNameSuccess] = useState('');
+    const [paymentResult, setPaymentResult] = useState(null); // 'success', 'failed', null
+    const [searchParams] = useSearchParams();
+
+    // Detect payment callback result from URL query params
+    useEffect(() => {
+        const paymentError = searchParams.get('error');
+        const paymentSuccess = searchParams.get('payment');
+        if (paymentSuccess === 'success') {
+            setPaymentResult('success');
+        } else if (paymentError) {
+            setPaymentResult('failed');
+            setError(paymentError === 'failed' ? 'Payment was not completed. Please try again.' : `Payment error: ${paymentError}`);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         loadPharmacy();
@@ -133,7 +147,34 @@ export default function PaymentPage() {
                 </div>
                 <p className="text-gray-500 mb-8">Set your app name and complete payment to launch your pharmacy.</p>
 
-                {error && (
+                {/* Payment Result Banners */}
+                {paymentResult === 'success' && (
+                    <div className="mb-6 p-4 bg-green-50 border border-green-300 rounded-lg flex items-start gap-3">
+                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="text-green-800 font-semibold">Payment Successful!</h4>
+                            <p className="text-green-700 text-sm mt-1">Your pharmacy has been activated. You can now access your admin and store dashboards.</p>
+                            <button
+                                onClick={() => navigate('/build-status')}
+                                className="mt-3 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700"
+                            >
+                                Go to Dashboard →
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {paymentResult === 'failed' && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-300 rounded-lg flex items-start gap-3">
+                        <XCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h4 className="text-red-800 font-semibold">Payment Failed</h4>
+                            <p className="text-red-700 text-sm mt-1">Your payment was not completed. Please try again below.</p>
+                        </div>
+                    </div>
+                )}
+
+                {error && !paymentResult && (
                     <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                         {error}
                     </div>
@@ -190,11 +231,11 @@ export default function PaymentPage() {
                         </div>
                         <div className="flex items-center justify-between py-2">
                             <span className="text-sm text-gray-600">Monthly Fee</span>
-                            <span className="text-sm font-medium text-gray-900">Rs {plan.monthly.toLocaleString('en-IN')}/mo</span>
+                            <span className="text-sm font-medium text-gray-900">₹{plan.monthly.toLocaleString('en-IN')}/mo</span>
                         </div>
                         <div className="flex items-center justify-between py-2">
                             <span className="text-sm text-gray-600">Setup Fee (one-time)</span>
-                            <span className="text-sm font-medium text-gray-900">Rs {plan.setupFee.toLocaleString('en-IN')}</span>
+                            <span className="text-sm font-medium text-gray-900">₹{plan.setupFee.toLocaleString('en-IN')}</span>
                         </div>
 
                         <hr className="border-gray-200" />
@@ -212,7 +253,7 @@ export default function PaymentPage() {
 
                         <div className="flex items-center justify-between py-3 bg-primary-50 rounded-lg px-4 -mx-1">
                             <span className="text-sm font-semibold text-primary-800">Total to Pay Now</span>
-                            <span className="text-lg font-bold text-primary-700">Rs {plan.setupFee.toLocaleString('en-IN')}</span>
+                            <span className="text-lg font-bold text-primary-700">₹{plan.setupFee.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                 </div>
