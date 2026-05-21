@@ -51,6 +51,22 @@ const PharmacyPaymentScreen = ({ navigation }) => {
 
   const [payError, setPayError] = useState('');
   const [nameError, setNameError] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failed' | null
+
+  // On web, detect payment callback query params from URL
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get('error');
+      const payment = params.get('payment');
+      if (payment === 'success') {
+        setPaymentResult('success');
+      } else if (error) {
+        setPaymentResult('failed');
+        setPayError(error === 'failed' ? 'Payment was not completed. Please try again.' : `Payment error: ${error}`);
+      }
+    }
+  }, []);
 
   const handleSaveAppName = async () => {
     if (!appName.trim()) {
@@ -119,6 +135,27 @@ const PharmacyPaymentScreen = ({ navigation }) => {
       <Text style={styles.title}>Payment</Text>
       <Text style={styles.subtitle}>Review your plan and complete payment</Text>
 
+      {/* Payment Result Banners */}
+      {paymentResult === 'success' && (
+        <View style={{ backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#86EFAC', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <Text style={{ color: '#166534', fontWeight: '700', fontSize: 16 }}>Payment Successful!</Text>
+          <Text style={{ color: '#15803D', fontSize: 13, marginTop: 4 }}>Your pharmacy has been activated. You can now access your dashboards.</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('PharmacyStatus')}
+            style={{ backgroundColor: '#139900', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, marginTop: 12, alignSelf: 'flex-start' }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Go to Dashboard →</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {paymentResult === 'failed' && (
+        <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+          <Text style={{ color: '#991B1B', fontWeight: '700', fontSize: 16 }}>Payment Failed</Text>
+          <Text style={{ color: '#DC2626', fontSize: 13, marginTop: 4 }}>Your payment was not completed. Please try again below.</Text>
+        </View>
+      )}
+
       {/* App Name */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App Name</Text>
@@ -168,7 +205,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryTotalLabel}>Monthly Total</Text>
-            <Text style={styles.summaryTotalValue}>Rs {planInfo.price.toLocaleString()}</Text>
+            <Text style={styles.summaryTotalValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
           </View>
         </View>
       </View>
