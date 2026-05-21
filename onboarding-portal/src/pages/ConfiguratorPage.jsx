@@ -195,7 +195,7 @@ export default function ConfiguratorPage() {
                                 <Icon className={`w-8 h-8 mb-3 ${isSelected ? 'text-primary-500' : 'text-gray-400'}`} />
                                 <h4 className="text-lg font-semibold text-gray-900">{plan.name}</h4>
                                 <div className="mt-1 mb-2">
-                                    <span className="text-sm text-gray-500">Rs </span>
+                                    <span className="text-sm text-gray-500">₹</span>
                                     <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
                                     <span className="text-gray-500 text-sm">/mo</span>
                                 </div>
