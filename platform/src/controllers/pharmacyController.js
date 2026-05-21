@@ -391,8 +391,10 @@ exports.paymentCallback = async (req, res, next) => {
         }
 
         // SwinkPay statusCode: 0=Initiated, 1=Success, 2=Failed
-        // Only treat explicit statusCode '1' as success — missing/undefined means unconfirmed
-        const isSuccess = String(statusCode) === '1';
+        // SwinkPay UAT sends only transactionId without statusCode on success
+        // Treat as success if: statusCode is '1' OR statusCode is absent with a valid transactionId
+        const isExplicitFailure = statusCode && (String(statusCode) === '2' || String(statusCode) === '0');
+        const isSuccess = !isExplicitFailure && (String(statusCode) === '1' || (!statusCode && transactionId));
 
         if (isSuccess) {
             // Payment successful
