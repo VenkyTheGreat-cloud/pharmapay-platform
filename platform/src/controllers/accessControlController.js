@@ -191,7 +191,7 @@ exports.createStoreManager = async (req, res, next) => {
 // Update store manager (admin only)
 exports.updateStoreManager = async (req, res, next) => {
     try {
-        const { name, store_name, mobile, email, address } = req.body;
+        const { name, store_name, mobile, email, address, password } = req.body;
 
         // Get the store manager first
         const storeManager = await User.findById(req.params.id);
@@ -222,6 +222,14 @@ exports.updateStoreManager = async (req, res, next) => {
         if (mobile) updates.mobile = mobile;
         if (email) updates.email = email;
         if (address !== undefined) updates.address = address;
+
+        // Handle password update — hash before saving
+        if (password && password.trim()) {
+            if (password.length < 6) {
+                return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Password must be at least 6 characters'));
+            }
+            updates.password_hash = await bcrypt.hash(password, 10);
+        }
 
         const updatedStoreManager = await User.update(req.params.id, updates);
 
