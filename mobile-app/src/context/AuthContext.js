@@ -94,6 +94,14 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: 'Login failed. No token received.' };
       }
 
+      // Reject store_manager role — they should use the store dashboard, not the app
+      if (userData?.role === 'store_manager') {
+        return {
+          success: false,
+          message: 'Store manager accounts cannot log in here. Please use the Store Dashboard instead.',
+        };
+      }
+
       // Save token and user data
       await storage.saveToken(token);
       await storage.saveUser(userData);
