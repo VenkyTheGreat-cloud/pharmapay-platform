@@ -135,10 +135,17 @@ exports.createDeliveryBoy = async (req, res, next) => {
             password_hash
         });
 
+        // Auto-approve delivery boys created by admin/store_manager (they explicitly added them)
+        if (req.user?.role === 'admin' || req.user?.role === 'store_manager') {
+            await DeliveryBoy.approve(deliveryBoy.id);
+            deliveryBoy.status = 'approved';
+            deliveryBoy.is_active = true;
+        }
+
         // Don't return password_hash in response
         delete deliveryBoy.password_hash;
 
-        logger.info('Delivery boy created', { deliveryBoyId: deliveryBoy.id, createdBy: req.user?.userId });
+        logger.info('Delivery boy created', { deliveryBoyId: deliveryBoy.id, createdBy: req.user?.userId, autoApproved: true });
 
         res.status(201).json(successResponse(deliveryBoy, 'Delivery boy created successfully'));
     } catch (error) {

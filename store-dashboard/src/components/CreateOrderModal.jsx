@@ -339,11 +339,42 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 customerLng: customerToUpdate?.customerLng || customerToUpdate?.customer_lng || customerToUpdate?.longitude || null
             };
 
-            await customersAPI.update(customerToUpdate.id, updateData);
+            // If customer_id exists, update; otherwise create new customer
+            let finalCustomerId = customerToUpdate.customer_id;
+            let createdCustomer = null;
+
+            if (finalCustomerId) {
+                // Customer exists in DB — update their details
+                await customersAPI.update(finalCustomerId, updateData);
+            } else {
+                // Customer only in registry, not in customers table — create them
+                try {
+                    const createRes = await customersAPI.create(updateData);
+                    createdCustomer = createRes.data?.data?.customer || createRes.data?.data || createRes.data;
+                    finalCustomerId = createdCustomer?.id;
+                } catch (createErr) {
+                    // If duplicate mobile, fetch existing customer
+                    if (createErr.response?.status === 409) {
+                        const existingCustomer = createErr.response?.data?.data?.customer;
+                        if (existingCustomer) {
+                            finalCustomerId = existingCustomer.id;
+                        }
+                    } else {
+                        throw createErr;
+                    }
+                }
+            }
+
+            if (!finalCustomerId) {
+                alert('Failed to find or create customer. Please try again.');
+                return;
+            }
 
             // Create updated customer object
             const refreshedCustomer = {
                 ...customerToUpdate,
+                id: finalCustomerId,
+                customer_id: finalCustomerId,
                 name: updateData.name,
                 mobile: updateData.mobile,
                 area: updateData.area,
@@ -359,8 +390,8 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 )
             );
 
-            // Now proceed with customer selection
-            setFormData(prev => ({ ...prev, customerId: refreshedCustomer.id.toString() }));
+            // Now proceed with customer selection using the real customer ID
+            setFormData(prev => ({ ...prev, customerId: finalCustomerId.toString() }));
             setSelectedCustomerName(`${refreshedCustomer.name || refreshedCustomer.full_name} - ${refreshedCustomer.mobile || refreshedCustomer.mobile_number}`);
             setCustomerSearchQuery('');
             setShowCustomerUpdateModal(false);
