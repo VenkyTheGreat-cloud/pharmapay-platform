@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import ProfileModal from './ProfileModal';
-import logo from '../assets/logo.jpg';
+import defaultLogo from '../assets/logo.jpg';
 
 
 export default function Layout({ children }) {
@@ -63,8 +63,8 @@ export default function Layout({ children }) {
                     {/* Logo */}
                     <div className="flex items-center justify-between p-6 border-b">
                         <div className="flex items-center gap-3">
-                            <img src={logo} alt="Logo" className="w-12 h-auto max-h-12 rounded-md object-contain" />
-                            <h1 className="text-xl font-bold text-gray-900">{user?.storeName || 'PharmaPay'}</h1>
+                            <img src={user?.branding?.logo_url || defaultLogo} alt="Logo" className="w-12 h-auto max-h-12 rounded-md object-contain" />
+                            <h1 className="text-xl font-bold text-gray-900">{user?.branding?.pharmacy_name || user?.storeName || 'PharmaGig'}</h1>
                         </div>
 
                         <button
