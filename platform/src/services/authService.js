@@ -233,6 +233,29 @@ class AuthService {
             userData.photo_url = user.photo_url;
         }
 
+        // Add pharmacy branding for admin/store_manager
+        if (!isDeliveryBoy) {
+            try {
+                const { query: dbQuery } = require('../config/database');
+                const adminId = user.role === 'admin' ? user.id : user.admin_id;
+                if (adminId) {
+                    const pharmacyResult = await dbQuery(
+                        'SELECT logo_url, primary_color, name as pharmacy_name FROM pharmacies WHERE owner_id = $1 LIMIT 1',
+                        [adminId]
+                    );
+                    if (pharmacyResult.rows[0]) {
+                        userData.branding = {
+                            logo_url: pharmacyResult.rows[0].logo_url || null,
+                            primary_color: pharmacyResult.rows[0].primary_color || null,
+                            pharmacy_name: pharmacyResult.rows[0].pharmacy_name || null,
+                        };
+                    }
+                }
+            } catch (brandingErr) {
+                logger.warn('Failed to fetch branding during login', { error: brandingErr.message });
+            }
+        }
+
         return {
             token: accessToken,
             refreshToken,
