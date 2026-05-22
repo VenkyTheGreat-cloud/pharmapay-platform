@@ -465,7 +465,7 @@ exports.paymentCallback = async (req, res, next) => {
 
             logger.info('Payment successful, pharmacy auto-activated to live', { pharmacyId: pharmacy.id, slug });
 
-            return res.redirect('https://pharmagig.swinkpay-fintech.com/build-status?payment=success');
+            return res.redirect('https://pharmagig.swinkpay-fintech.com/status?payment=success');
         } else {
             // Payment failed, cancelled, or unconfirmed
             await Pharmacy.updatePayment(pharmacy.id, {

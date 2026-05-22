@@ -376,11 +376,15 @@ exports.changePassword = async (req, res, next) => {
             return res.status(401).json(errorResponse('INVALID_PASSWORD', 'Old password is incorrect'));
         }
 
-        // Hash new password
+        // Hash new password and save
         const password_hash = await AuthService.hashPassword(newPassword);
-        await User.update(req.user.userId, { password_hash });
+        const updatedUser = await User.update(req.user.userId, { password_hash });
 
-        logger.info('Password changed', { userId: req.user.userId });
+        logger.info('Password changed successfully', {
+            userId: req.user.userId,
+            email: user.email,
+            updated: !!updatedUser
+        });
 
         res.json(successResponse(null, 'Password changed successfully'));
     } catch (error) {
