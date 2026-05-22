@@ -47,6 +47,14 @@ export const AuthProvider = ({ children }) => {
 
             const { token, refreshToken, user } = response.data.data || {};
 
+            // Only allow store_manager role on the store dashboard
+            if (user?.role !== 'store_manager') {
+                return {
+                    success: false,
+                    error: 'Only store manager accounts can access this dashboard.',
+                };
+            }
+
             localStorage.setItem('token', token);
             if (refreshToken) {
                 localStorage.setItem('refreshToken', refreshToken);
