@@ -55,10 +55,13 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Unauthorized - token missing or invalid
-            localStorage.removeItem('token');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // Don't redirect if already on login page (let the login form show the error)
+            if (!window.location.pathname.includes('/login')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+            }
         } else if (error.response?.status === 403) {
             // Forbidden - token valid but insufficient permissions
             // Log the error but don't auto-redirect (let the component handle it)
