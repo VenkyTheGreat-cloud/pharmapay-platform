@@ -83,9 +83,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, selectedRole = 'owner') => {
     try {
-      const response = await apiService.login(email, password);
+      const response = await apiService.login(email, password, 'mobile');
       // API returns { success, data: { token, refreshToken, user } }
       const responseData = response.data?.data || response.data;
       const { token, user: userData } = responseData;
@@ -99,6 +99,20 @@ export const AuthProvider = ({ children }) => {
         return {
           success: false,
           message: 'Store manager accounts cannot log in here. Please use the Store Dashboard instead.',
+        };
+      }
+
+      // Validate role matches the selected login tab
+      if (selectedRole === 'partner' && userData?.role !== 'delivery_boy') {
+        return {
+          success: false,
+          message: 'This account is not a Delivery Partner. Please use the Pharmacy Owner tab to sign in.',
+        };
+      }
+      if (selectedRole === 'owner' && userData?.role === 'delivery_boy') {
+        return {
+          success: false,
+          message: 'Delivery Partner accounts cannot log in here. Please use the Delivery Partner tab to sign in.',
         };
       }
 

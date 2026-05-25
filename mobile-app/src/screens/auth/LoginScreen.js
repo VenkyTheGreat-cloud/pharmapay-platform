@@ -51,7 +51,7 @@ const LoginScreen = ({ navigation }) => {
     if (!validateForm()) return;
     setLoading(true);
     setError('');
-    const result = await login(email.trim(), password);
+    const result = await login(email.trim(), password, role);
     setLoading(false);
     if (!result.success) setError(result.message || 'Login failed.');
   };

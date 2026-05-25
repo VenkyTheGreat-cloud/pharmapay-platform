@@ -284,8 +284,8 @@ api.interceptors.response.use(
 );
 
 const realApiService = {
-  login: (mobileEmail, password) =>
-    api.post(CONFIG.ENDPOINTS.LOGIN, { mobileEmail, password }),
+  login: (mobileEmail, password, dashboardType = 'mobile') =>
+    api.post(CONFIG.ENDPOINTS.LOGIN, { mobileEmail, password, dashboardType }),
 
   register: (data) => api.post(CONFIG.ENDPOINTS.REGISTER, data),
 
