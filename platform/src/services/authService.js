@@ -237,12 +237,20 @@ class AuthService {
         if (!isDeliveryBoy) {
             try {
                 const { query: dbQuery } = require('../config/database');
-                const adminId = user.role === 'admin' ? user.id : user.admin_id;
+                const adminId = user.role === 'admin' ? user.id : (user.admin_id || user.id);
                 if (adminId) {
-                    const pharmacyResult = await dbQuery(
+                    // Try owner_id first, then fallback to checking if store's admin has a pharmacy
+                    let pharmacyResult = await dbQuery(
                         'SELECT logo_url, primary_color, name as pharmacy_name FROM pharmacies WHERE owner_id = $1 LIMIT 1',
                         [adminId]
                     );
+                    // If store_manager and no pharmacy found under admin_id, try own userId
+                    if (!pharmacyResult.rows[0] && user.role === 'store_manager' && user.admin_id) {
+                        pharmacyResult = await dbQuery(
+                            'SELECT logo_url, primary_color, name as pharmacy_name FROM pharmacies WHERE owner_id = $1 LIMIT 1',
+                            [user.id]
+                        );
+                    }
                     if (pharmacyResult.rows[0]) {
                         userData.branding = {
                             logo_url: pharmacyResult.rows[0].logo_url || null,

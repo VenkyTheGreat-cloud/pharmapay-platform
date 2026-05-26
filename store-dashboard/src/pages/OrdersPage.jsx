@@ -215,7 +215,7 @@ export default function OrdersPage() {
                     const total =
                         Number(selectedOrder.amount || selectedOrder.total_amount || 0);
                     const paid =
-                        Number(selectedOrder.paidAmount || selectedOrder.paid_amount || 0);
+                        Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount || 0);
                     remaining = total - paid;
                 }
 
@@ -777,13 +777,13 @@ export default function OrdersPage() {
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Paid Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                            ₹{(Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     {(selectedOrder.payment_status) && (
