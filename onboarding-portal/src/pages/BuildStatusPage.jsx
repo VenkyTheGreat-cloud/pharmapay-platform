@@ -18,6 +18,25 @@ export default function BuildStatusPage() {
     const pollRef = useRef(null);
 
     useEffect(() => {
+        // If redirected from payment, poll until status updates from pending
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('payment') === 'success') {
+            // Poll every 2s for up to 30s to wait for status update
+            let attempts = 0;
+            const paymentPoll = setInterval(async () => {
+                attempts++;
+                try {
+                    const response = await pharmacyAPI.getMyPharmacy();
+                    const data = response.data?.data;
+                    setPharmacy(data);
+                    setLoading(false);
+                    if (data?.status === 'live' || data?.status === 'approved' || attempts >= 15) {
+                        clearInterval(paymentPoll);
+                    }
+                } catch { /* ignore */ }
+            }, 2000);
+            return () => clearInterval(paymentPoll);
+        }
         loadStatus();
         return () => {
             if (pollRef.current) clearInterval(pollRef.current);

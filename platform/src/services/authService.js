@@ -157,6 +157,20 @@ class AuthService {
             throw new Error('INVALID_CREDENTIALS');
         }
 
+        // Delivery boys can only access mobile/PWA, not admin or store dashboards
+        if (isDeliveryBoy && dashboardType) {
+            const normalizedDashboardType = dashboardType.toLowerCase();
+            if (normalizedDashboardType === 'admin' || normalizedDashboardType === 'store') {
+                logger.warn('Login failed - delivery boy trying to access web dashboard', {
+                    userId: user.id,
+                    dashboardType: normalizedDashboardType
+                });
+                const error = new Error('DASHBOARD_ACCESS_DENIED');
+                error.details = 'Delivery partners cannot access this dashboard. Please use the PharmaGig app.';
+                throw error;
+            }
+        }
+
         // Validate dashboard access (only for admin and store_manager roles)
         if (!isDeliveryBoy && dashboardType) {
             const userRole = user.role;

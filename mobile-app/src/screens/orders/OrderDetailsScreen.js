@@ -43,7 +43,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       const response = await apiService.getOrderById(orderId);
-      setOrder(response.data);
+      setOrder(response.data?.data || response.data);
     } catch (error) {
       console.error('Error fetching order:', error);
       setError(handleApiError(error));
@@ -297,7 +297,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Amount:</Text>
-          <Text style={styles.detailValue}>{formatCurrency(order.amount)}</Text>
+          <Text style={styles.detailValue}>{formatCurrency(order.amount || order.total_amount)}</Text>
         </View>
 
         <View style={styles.detailRow}>

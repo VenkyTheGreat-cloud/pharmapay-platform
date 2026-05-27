@@ -26,7 +26,8 @@ export const formatDateTime = (dateString) => {
 
 // Format currency
 export const formatCurrency = (amount) => {
-  return `₹${parseFloat(amount).toFixed(2)}`;
+  const num = parseFloat(amount);
+  return `₹${isNaN(num) ? '0.00' : num.toFixed(2)}`;
 };
 
 // Get order status color

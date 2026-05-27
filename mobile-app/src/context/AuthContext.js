@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async (userData) => {
     try {
       const response = await apiService.updateProfile(userData);
-      const updatedUser = response.data;
+      const updatedUser = response.data?.data || response.data;
 
       await storage.saveUser(updatedUser);
       setUser(updatedUser);
