@@ -119,14 +119,21 @@ export default function ContactsPage() {
     };
 
     const handleAddNewCustomer = () => {
+        const searchText = customerSearchQuery.trim();
         setIsNewCustomer(true);
         setSelectedCustomer(null);
-        setCustomerSearchQuery('');
         setShowCustomerDropdown(false);
-        // Keep mobile number if user typed it, otherwise clear
-        if (!mobileNumber.trim()) {
-            setCustomerName('');
+        // Auto-fill the typed text into the appropriate field
+        if (searchText) {
+            if (/^\d+$/.test(searchText)) {
+                // User typed digits — treat as mobile number
+                setMobileNumber(searchText);
+            } else {
+                // User typed text — treat as customer name
+                setCustomerName(searchText);
+            }
         }
+        setCustomerSearchQuery('');
     };
 
     // Helper function to get current date and time in IST as ISO string

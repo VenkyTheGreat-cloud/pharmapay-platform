@@ -226,7 +226,7 @@ class CustomerRegistry {
             LEFT JOIN customers c ON lr.customer_mobile = c.mobile
                 AND c.store_id = lr.store_id
             LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone
-                AND DATE(o.created_at) = $1::date
+                AND DATE(o.created_at) >= lr.registry_date
                 AND (o.store_id IS NULL OR o.store_id = lr.store_id)
         `;
 
