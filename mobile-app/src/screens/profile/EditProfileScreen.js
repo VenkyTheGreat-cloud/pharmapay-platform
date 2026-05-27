@@ -18,7 +18,7 @@ const EditProfileScreen = ({ navigation }) => {
 
   const [formData, setFormData] = useState({
     name: user?.name || '',
-    phone: user?.phone || '',
+    phone: user?.mobile || user?.phone || '',
     address: user?.address || '',
   });
 
@@ -39,12 +39,6 @@ const EditProfileScreen = ({ navigation }) => {
       newErrors.name = 'Name is required';
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!isValidPhone(formData.phone)) {
-      newErrors.phone = 'Invalid phone number (10 digits, starting with 6-9)';
-    }
-
     if (!formData.address.trim()) {
       newErrors.address = 'Address is required';
     }
@@ -62,7 +56,6 @@ const EditProfileScreen = ({ navigation }) => {
 
     const result = await updateUser({
       name: formData.name.trim(),
-      phone: formData.phone.trim(),
       address: formData.address.trim(),
     });
 
@@ -109,11 +102,8 @@ const EditProfileScreen = ({ navigation }) => {
           <Input
             label="Phone Number"
             value={formData.phone}
-            onChangeText={(text) => updateField('phone', text)}
-            placeholder="Enter your 10-digit phone number"
-            keyboardType="phone-pad"
-            maxLength={10}
-            error={errors.phone}
+            editable={false}
+            style={styles.disabledInput}
           />
 
           <Input

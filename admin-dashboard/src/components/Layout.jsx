@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ProfileModal from './ProfileModal';
-import defaultLogo from '../assets/logo.jpg';
+import defaultLogo from '../assets/logo.png';
 
 function hexToHSL(hex) {
     hex = hex.replace('#', '');

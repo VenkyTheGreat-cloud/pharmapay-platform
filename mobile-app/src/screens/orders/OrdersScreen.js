@@ -41,7 +41,8 @@ const OrdersScreen = ({ navigation }) => {
   const fetchOrders = async () => {
     try {
       const response = await apiService.getMyOrders();
-      setOrders(response.data);
+      const orderData = response.data?.data?.orders || response.data?.data || response.data;
+      setOrders(Array.isArray(orderData) ? orderData : []);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {

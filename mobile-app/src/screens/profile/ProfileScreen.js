@@ -144,7 +144,7 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="call-outline" size={20} color="#6B7280" />
           <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>{user?.phone || 'Not provided'}</Text>
+            <Text style={styles.infoValue}>{user?.mobile || user?.phone || 'Not provided'}</Text>
           </View>
         </View>
 

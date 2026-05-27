@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ProfileModal from './ProfileModal';
-import defaultLogo from '../assets/logo.jpg';
+import defaultLogo from '../assets/logo.png';
 
 // Generate color shades from a hex color
 function hexToHSL(hex) {
