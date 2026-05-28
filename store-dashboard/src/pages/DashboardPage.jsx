@@ -179,15 +179,9 @@ export default function DashboardPage() {
 
         // Only consider DELIVERED orders for collected amount
         const totalCollectedAmount = inRange
-            .filter((o) => {
-                const status = (o.status || '').toUpperCase();
-                return status === 'DELIVERED';
-            })
             .reduce((sum, o) => {
-                // Use payment_summary.total_paid if available, otherwise use total_amount
-                const amount = o.payment_summary?.total_paid 
-                    ? Number(o.payment_summary.total_paid)
-                    : Number(o.amount || o.total_amount) || 0;
+                // Only count actual payments collected (not order total)
+                const amount = Number(o.payment_summary?.total_paid) || 0;
                 return sum + amount;
             }, 0);
 

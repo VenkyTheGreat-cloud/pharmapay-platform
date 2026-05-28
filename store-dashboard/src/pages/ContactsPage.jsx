@@ -97,7 +97,11 @@ export default function ContactsPage() {
     });
 
     const handleCustomerSearch = (e) => {
-        const query = e.target.value;
+        let query = e.target.value;
+        // If input is all digits, limit to 10 characters (mobile number)
+        if (/^\d+$/.test(query) && query.length > 10) {
+            query = query.slice(0, 10);
+        }
         setCustomerSearchQuery(query);
         setShowCustomerDropdown(true);
         setIsNewCustomer(false);
