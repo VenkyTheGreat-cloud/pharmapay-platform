@@ -5,14 +5,16 @@ class User {
     static async create(userData) {
         const { name, store_name, mobile, email, password_hash, address, role, is_active, admin_id } = userData;
         
-        // Ensure role is valid (must be exactly 'admin' or 'store_manager' for database constraint)
-        // Database constraint: CHECK (role IN ('admin', 'store_manager'))
+        // Ensure role is valid (must match database constraint)
+        // Database constraint: CHECK (role IN ('admin', 'store_manager', 'super_admin'))
         let validRole = 'store_manager'; // Default value
 
         if (role) {
             const normalizedRole = String(role).trim().toLowerCase();
             if (normalizedRole === 'admin') {
                 validRole = 'admin';
+            } else if (normalizedRole === 'super_admin') {
+                validRole = 'super_admin';
             } else if (normalizedRole === 'store_manager' || normalizedRole === 'store manager') {
                 validRole = 'store_manager';
             }

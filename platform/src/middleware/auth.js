@@ -31,6 +31,10 @@ const authenticateToken = async (req, res, next) => {
             }
 
             req.user = decoded;
+            // super_admin has all admin privileges
+            if (req.user.role === 'super_admin') {
+                req.user.isSuperAdmin = true;
+            }
             next();
         });
     } catch (error) {
@@ -58,7 +62,9 @@ const authorizeRoles = (...roles) => {
             });
         }
 
-        if (!roles.includes(req.user.role)) {
+        // super_admin can access any route that requires admin
+        const hasAccess = roles.includes(req.user.role) || (req.user.role === 'super_admin' && roles.includes('admin'));
+        if (!hasAccess) {
             logger.warn('Unauthorized access attempt', {
                 userId: req.user.userId,
                 role: req.user.role,
@@ -90,8 +96,8 @@ const checkStoreAccess = async (req, res, next) => {
             });
         }
 
-        // Admin has access to all stores
-        if (req.user.role === 'admin') {
+        // Admin and super_admin have access to all stores
+        if (req.user.role === 'admin' || req.user.role === 'super_admin') {
             return next();
         }
 

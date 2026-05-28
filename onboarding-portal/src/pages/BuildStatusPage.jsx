@@ -299,6 +299,16 @@ export default function BuildStatusPage() {
                                 </div>
                             </div>
                         </div>
+
+                        <div className="mt-8">
+                            <button
+                                onClick={logout}
+                                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
