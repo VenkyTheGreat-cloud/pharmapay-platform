@@ -434,36 +434,11 @@ exports.paymentCallback = async (req, res, next) => {
                 JSON.stringify(tenantConfig, null, 2)
             );
 
-            // Store config and auto-activate to live (no manual admin approval needed)
+            // Store config and set to pending approval (admin must approve before going live)
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
-            await Pharmacy.updateStatus(pharmacy.id, 'live', { approved_at: new Date() });
+            await Pharmacy.updateStatus(pharmacy.id, 'pending_approval');
 
-            // Set subscription dates (plan duration: starter=1mo, growth=3mo, enterprise=6mo)
-            const { query: dbQuery } = require('../config/database');
-            const planMonths = { starter: 1, growth: 3, enterprise: 6 };
-            const months = planMonths[pharmacy.plan] || 1;
-            const subscriptionStart = new Date();
-            const subscriptionEnd = new Date();
-            subscriptionEnd.setMonth(subscriptionEnd.getMonth() + months);
-
-            await dbQuery(
-                `UPDATE pharmacies SET subscription_start_date = $1, subscription_end_date = $2 WHERE id = $3`,
-                [subscriptionStart, subscriptionEnd, pharmacy.id]
-            );
-
-            // Auto-create pharmacy listing for marketplace
-            try {
-                await dbQuery(
-                    `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)
-                     VALUES ($4, $1, $2, '', '', true, $3, NOW())
-                     ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
-                    [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id]
-                );
-            } catch (listingErr) {
-                logger.warn('Failed to create marketplace listing during auto-activation', { error: listingErr.message, pharmacyId: pharmacy.id });
-            }
-
-            logger.info('Payment successful, pharmacy auto-activated to live', { pharmacyId: pharmacy.id, slug });
+            logger.info('Payment successful, pharmacy pending admin approval', { pharmacyId: pharmacy.id, slug });
 
             return res.redirect('https://pharmagig.swinkpay-fintech.com/status?payment=success');
         } else {
@@ -567,6 +542,19 @@ exports.approvePharmacy = async (req, res, next) => {
              ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
             [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id]
         );
+
+        // Set subscription dates if not already set
+        if (!pharmacy.subscription_start_date) {
+            const planMonths = { starter: 1, growth: 3, enterprise: 6 };
+            const months = planMonths[pharmacy.plan] || 1;
+            const subscriptionStart = new Date();
+            const subscriptionEnd = new Date();
+            subscriptionEnd.setMonth(subscriptionEnd.getMonth() + months);
+            await dbQuery(
+                `UPDATE pharmacies SET subscription_start_date = $1, subscription_end_date = $2 WHERE id = $3`,
+                [subscriptionStart, subscriptionEnd, pharmacy.id]
+            );
+        }
 
         logger.info('Pharmacy approved and set to live', { pharmacyId: pharmacy.id, slug });
 
