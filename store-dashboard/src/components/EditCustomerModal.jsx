@@ -83,6 +83,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             const submitData = {
                 name: formData.name.trim(),
                 mobile: formData.mobile.trim(),
+                area: formData.area ? formData.area.trim() : null,
                 address: formData.address.trim(),
                 landmark: formData.landmark.trim() || null,
                 customerLat: formData.customerLat ? parseFloat(formData.customerLat) : null,

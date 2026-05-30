@@ -31,9 +31,11 @@ const authenticateToken = async (req, res, next) => {
             }
 
             req.user = decoded;
-            // super_admin has all admin privileges
+            // super_admin has all admin privileges — normalize to 'admin' for role checks
             if (req.user.role === 'super_admin') {
                 req.user.isSuperAdmin = true;
+                req.user.originalRole = 'super_admin';
+                req.user.role = 'admin';
             }
             next();
         });

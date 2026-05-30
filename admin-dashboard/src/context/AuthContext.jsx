@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
 
         if (token && savedUser) {
             const parsed = JSON.parse(savedUser);
-            // Only allow admin role on the admin dashboard
-            if (parsed.role === 'admin') {
+            // Only allow admin/super_admin role on the admin dashboard
+            if (parsed.role === 'admin' || parsed.role === 'super_admin') {
                 setUser(parsed);
             } else {
                 // Wrong role for this dashboard — clear stale credentials
