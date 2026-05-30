@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
 
       // Check if user has a pharmacy (admin role)
-      if (userData?.role === 'admin') {
+      if (userData?.role === 'admin' || userData?.role === 'super_admin') {
         await checkPharmacyStatus();
       } else {
         setPharmacyStatus('none');
