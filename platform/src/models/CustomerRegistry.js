@@ -225,8 +225,8 @@ class CustomerRegistry {
             FROM latest_registrations lr
             LEFT JOIN customers c ON lr.customer_mobile = c.mobile
                 AND c.store_id = lr.store_id
-            LEFT JOIN orders o ON lr.customer_mobile = o.customer_phone
-                AND DATE(o.created_at) = $1::date
+            LEFT JOIN orders o ON (lr.customer_mobile = o.customer_phone OR (c.id IS NOT NULL AND o.customer_id = c.id))
+                AND DATE(o.created_at) >= lr.registry_date
                 AND (o.store_id IS NULL OR o.store_id = lr.store_id)
         `;
 

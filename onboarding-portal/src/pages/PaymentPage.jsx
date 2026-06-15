@@ -260,16 +260,26 @@ export default function PaymentPage() {
 
                 {/* Section 3: Actions */}
                 <div className="flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/branding')}
-                        className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </button>
+                    {paymentResult === 'success' ? (
+                        <button
+                            onClick={() => navigate('/build-status')}
+                            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Go to Dashboard
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/branding')}
+                            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Back
+                        </button>
+                    )}
                     <button
                         onClick={handlePayNow}
-                        disabled={paying}
+                        disabled={paying || paymentResult === 'success'}
                         className="px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         {paying ? (

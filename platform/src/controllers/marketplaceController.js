@@ -108,7 +108,7 @@ exports.applyToPharmacy = async (req, res, next) => {
 
         // Verify pharmacy exists and is accepting riders
         const pharmacy = await query(
-            `SELECT pl.id, pl.display_name, u.id AS owner_id
+            `SELECT pl.id, pl.display_name, pl.is_accepting_riders, u.id AS owner_id
              FROM pharmacy_listings pl
              JOIN users u ON u.id = pl.id
              WHERE pl.id = $1`,

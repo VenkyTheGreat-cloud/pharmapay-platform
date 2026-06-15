@@ -153,8 +153,7 @@ export default function DashboardPage() {
     ).length;
     const deliveredOrders = filteredOrders.filter((o) => o.status === 'DELIVERED').length;
     const collectedAmount = filteredOrders
-        .filter((o) => o.status === 'DELIVERED')
-        .reduce((sum, o) => sum + (o.amount || 0), 0);
+        .reduce((sum, o) => sum + (Number(o.payment_summary?.total_paid) || 0), 0);
 
     const handleViewOrderDetails = (orderId) => {
         setSelectedOrderId(orderId);

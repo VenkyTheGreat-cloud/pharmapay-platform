@@ -179,15 +179,9 @@ export default function DashboardPage() {
 
         // Only consider DELIVERED orders for collected amount
         const totalCollectedAmount = inRange
-            .filter((o) => {
-                const status = (o.status || '').toUpperCase();
-                return status === 'DELIVERED';
-            })
             .reduce((sum, o) => {
-                // Use payment_summary.total_paid if available, otherwise use total_amount
-                const amount = o.payment_summary?.total_paid 
-                    ? Number(o.payment_summary.total_paid)
-                    : Number(o.amount || o.total_amount) || 0;
+                // Only count actual payments collected (not order total)
+                const amount = Number(o.payment_summary?.total_paid) || 0;
                 return sum + amount;
             }, 0);
 
@@ -601,13 +595,13 @@ export default function DashboardPage() {
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Paid Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                            ₹{(Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     {(selectedOrder.payment_status) && (

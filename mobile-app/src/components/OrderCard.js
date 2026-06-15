@@ -43,7 +43,7 @@ const OrderCard = ({ order, onPress }) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.amount}>{formatCurrency(order.amount)}</Text>
+        <Text style={styles.amount}>{formatCurrency(order.amount || order.total_amount)}</Text>
         <Ionicons name="chevron-forward" size={20} color="#3B82F6" />
       </View>
     </TouchableOpacity>

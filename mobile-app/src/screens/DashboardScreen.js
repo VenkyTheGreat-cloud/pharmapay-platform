@@ -32,7 +32,7 @@ const DashboardScreen = ({ navigation }) => {
         apiService.getMyOrders().catch(() => ({ data: [] })),
         apiService.getPaymentStatistics().catch(() => ({ data: {} })),
       ]);
-      const orderData = ordersRes.data?.data || ordersRes.data;
+      const orderData = ordersRes.data?.data?.orders || ordersRes.data?.data || ordersRes.data;
       setOrders(Array.isArray(orderData) ? orderData : []);
       setStats(statsRes.data?.data || statsRes.data || {});
     } catch (err) {

@@ -55,11 +55,8 @@ exports.getAllOrders = async (req, res, next) => {
             const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
             filters.store_ids = storeIds;
         } else if (req.user.role === 'store_manager') {
-            // Store manager: use adminId from token to get group, fallback to own ID
-            const User = require('../models/User');
-            const anchorAdminId = req.user.adminId || req.user.userId;
-            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
-            filters.store_ids = storeIds;
+            // Store manager: only see their own store's orders
+            filters.store_ids = [req.user.userId];
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
             const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
@@ -1014,10 +1011,10 @@ exports.createOrder = async (req, res, next) => {
 
         // Create order (no items)
         const order = await transaction(async (client) => {
-            // Check if order number already exists
+            // Check if order number already exists for this store
             const existingOrder = await client.query(
-                'SELECT id FROM orders WHERE order_number = $1',
-                [orderNumber.trim()]
+                'SELECT id FROM orders WHERE order_number = $1 AND store_id = $2',
+                [orderNumber.trim(), storeId]
             );
             if (existingOrder.rowCount > 0) {
                 throw new Error('DUPLICATE_ORDER_NUMBER');
@@ -1035,9 +1032,9 @@ exports.createOrder = async (req, res, next) => {
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, payment_status, payment_mode, customer_comments, 
-                                    return_items, return_adjust_amount, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, $14, $15, CURRENT_TIMESTAMP)
+                                    total_amount, status, payment_status, payment_mode, customer_comments,
+                                    return_items, return_adjust_amount)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, $14, $15)
                  RETURNING *`,
                 [orderNumber.trim(), customerId, null, storeId,
                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
@@ -1608,11 +1605,8 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
             const storeIds = await User.getStoreIdsForAdmin(req.user.userId);
             filters.store_ids = storeIds;
         } else if (req.user.role === 'store_manager') {
-            // Store manager: use adminId from token to get group, fallback to own ID
-            const User = require('../models/User');
-            const anchorAdminId = req.user.adminId || req.user.userId;
-            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
-            filters.store_ids = storeIds;
+            // Store manager: only see their own store's orders
+            filters.store_ids = [req.user.userId];
         } else if (req.user.role === 'delivery_boy') {
             // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
             const deliveryBoy = await DeliveryBoy.findById(req.user.userId);

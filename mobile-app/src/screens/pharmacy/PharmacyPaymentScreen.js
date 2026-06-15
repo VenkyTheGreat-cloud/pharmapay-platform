@@ -52,6 +52,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
   const [payError, setPayError] = useState('');
   const [nameError, setNameError] = useState('');
   const [paymentResult, setPaymentResult] = useState(null); // 'success' | 'failed' | null
+  const [paymentId, setPaymentId] = useState('');
 
   // On web, detect payment callback query params from URL
   useEffect(() => {
@@ -61,12 +62,22 @@ const PharmacyPaymentScreen = ({ navigation }) => {
       const payment = params.get('payment');
       if (payment === 'success') {
         setPaymentResult('success');
+        setPaymentId(params.get('txn') || '');
       } else if (error) {
         setPaymentResult('failed');
         setPayError(error === 'failed' ? 'Payment was not completed. Please try again.' : `Payment error: ${error}`);
       }
     }
   }, []);
+
+  const handleContinue = () => {
+    // Clear the query string so a refresh doesn't re-show the success screen,
+    // then move on to the "Under Review" status page.
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.history) {
+      window.history.replaceState({}, '', '/status');
+    }
+    navigation.replace('PharmacyStatus');
+  };
 
   const handleSaveAppName = async () => {
     if (!appName.trim()) {
@@ -126,6 +137,43 @@ const PharmacyPaymentScreen = ({ navigation }) => {
 
   const planInfo = PLAN_DETAILS[plan] || PLAN_DETAILS.starter;
 
+  // Dedicated Payment Successful screen — shown after the gateway redirects back.
+  // The user must click Continue to proceed to the "Under Review" page.
+  if (paymentResult === 'success') {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.successContent}>
+        <View style={styles.successCard}>
+          <View style={styles.successIconCircle}>
+            <Text style={styles.successIconCheck}>✓</Text>
+          </View>
+          <Text style={styles.successTitle}>Payment Successful!</Text>
+          <Text style={styles.successSubtitle}>Thank you for your payment. Your subscription is now active.</Text>
+
+          <View style={styles.successDetails}>
+            <View style={styles.successRow}>
+              <Text style={styles.successLabel}>Plan</Text>
+              <Text style={styles.successValue}>{planInfo.name}</Text>
+            </View>
+            <View style={styles.successRow}>
+              <Text style={styles.successLabel}>Amount Paid</Text>
+              <Text style={styles.successValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
+            </View>
+            {paymentId ? (
+              <View style={styles.successRow}>
+                <Text style={styles.successLabel}>Payment ID</Text>
+                <Text style={[styles.successValue, { fontSize: 13 }]} numberOfLines={1}>{paymentId}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <TouchableOpacity style={styles.continueBtn} onPress={handleContinue}>
+            <Text style={styles.continueBtnText}>Continue</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => navigation.navigate('PharmacyBranding')} style={{ marginBottom: 16 }}>
@@ -134,20 +182,6 @@ const PharmacyPaymentScreen = ({ navigation }) => {
 
       <Text style={styles.title}>Payment</Text>
       <Text style={styles.subtitle}>Review your plan and complete payment</Text>
-
-      {/* Payment Result Banners */}
-      {paymentResult === 'success' && (
-        <View style={{ backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#86EFAC', borderRadius: 10, padding: 16, marginBottom: 16 }}>
-          <Text style={{ color: '#166534', fontWeight: '700', fontSize: 16 }}>Payment Successful!</Text>
-          <Text style={{ color: '#15803D', fontSize: 13, marginTop: 4 }}>Your pharmacy has been activated. You can now access your dashboards.</Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('PharmacyStatus')}
-            style={{ backgroundColor: '#139900', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, marginTop: 12, alignSelf: 'flex-start' }}
-          >
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Go to Dashboard →</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {paymentResult === 'failed' && (
         <View style={{ backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 10, padding: 16, marginBottom: 16 }}>
@@ -361,6 +395,87 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 14,
     lineHeight: 18,
+  },
+  successContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+    paddingTop: 56,
+  },
+  successCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 32,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  successIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 2,
+    borderColor: '#86EFAC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  successIconCheck: {
+    fontSize: 38,
+    color: '#139900',
+    fontWeight: '800',
+    lineHeight: 44,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  successDetails: {
+    width: '100%',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  successRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  successLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  successValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#111827',
+    maxWidth: '60%',
+    textAlign: 'right',
+  },
+  continueBtn: {
+    backgroundColor: '#139900',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    width: '100%',
+  },
+  continueBtnText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
   },
 });
 

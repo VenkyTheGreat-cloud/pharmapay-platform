@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }) => {
 
         if (token && savedUser) {
             const parsed = JSON.parse(savedUser);
-            // Only allow admin role on the admin dashboard
-            if (parsed.role === 'admin') {
+            // Only allow admin/super_admin role on the admin dashboard
+            if (parsed.role === 'admin' || parsed.role === 'super_admin') {
                 setUser(parsed);
             } else {
                 // Wrong role for this dashboard — clear stale credentials
@@ -44,6 +44,14 @@ export const AuthProvider = ({ children }) => {
             }
 
             const { token, refreshToken, user } = response.data.data || {};
+
+            // Only allow admin and super_admin roles on the admin dashboard
+            if (user?.role !== 'admin' && user?.role !== 'super_admin') {
+                return {
+                    success: false,
+                    error: 'Only admin accounts can access this dashboard.',
+                };
+            }
 
             localStorage.setItem('token', token);
             if (refreshToken) {

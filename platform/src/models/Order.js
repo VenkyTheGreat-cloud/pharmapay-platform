@@ -728,7 +728,7 @@ class Order {
 
             // Validate status transition (allows both forward and backward transitions)
             const validTransitions = {
-                'ASSIGNED': ['ACCEPTED', 'REJECTED', 'CANCELLED'], // Can accept, reject, or cancel
+                'ASSIGNED': ['ACCEPTED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can accept, pick up directly, reject, or cancel
                 'ACCEPTED': ['ASSIGNED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can go back to ASSIGNED, forward to PICKED_UP, reject, or cancel
                 'REJECTED': ['ASSIGNED'], // Rejected orders can be reassigned
                 'PICKED_UP': ['ACCEPTED', 'IN_TRANSIT', 'CANCELLED'], // Can go back to ACCEPTED, forward to IN_TRANSIT, or cancel

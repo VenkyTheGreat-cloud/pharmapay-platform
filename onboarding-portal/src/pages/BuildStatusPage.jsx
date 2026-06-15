@@ -18,6 +18,25 @@ export default function BuildStatusPage() {
     const pollRef = useRef(null);
 
     useEffect(() => {
+        // If redirected from payment, poll until status updates from pending
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('payment') === 'success') {
+            // Poll every 2s for up to 30s to wait for status update
+            let attempts = 0;
+            const paymentPoll = setInterval(async () => {
+                attempts++;
+                try {
+                    const response = await pharmacyAPI.getMyPharmacy();
+                    const data = response.data?.data;
+                    setPharmacy(data);
+                    setLoading(false);
+                    if (data?.status === 'live' || data?.status === 'approved' || attempts >= 15) {
+                        clearInterval(paymentPoll);
+                    }
+                } catch { /* ignore */ }
+            }, 2000);
+            return () => clearInterval(paymentPoll);
+        }
         loadStatus();
         return () => {
             if (pollRef.current) clearInterval(pollRef.current);
@@ -279,6 +298,16 @@ export default function BuildStatusPage() {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="mt-8">
+                            <button
+                                onClick={logout}
+                                className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Sign Out
+                            </button>
                         </div>
                     </div>
                 )}

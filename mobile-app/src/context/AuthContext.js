@@ -83,9 +83,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, selectedRole = 'owner') => {
     try {
-      const response = await apiService.login(email, password);
+      const response = await apiService.login(email, password, 'mobile');
       // API returns { success, data: { token, refreshToken, user } }
       const responseData = response.data?.data || response.data;
       const { token, user: userData } = responseData;
@@ -102,6 +102,20 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
+      // Validate role matches the selected login tab
+      if (selectedRole === 'partner' && userData?.role !== 'delivery_boy') {
+        return {
+          success: false,
+          message: 'This account is not a Delivery Partner. Please use the Pharmacy Owner tab to sign in.',
+        };
+      }
+      if (selectedRole === 'owner' && userData?.role === 'delivery_boy') {
+        return {
+          success: false,
+          message: 'Delivery Partner accounts cannot log in here. Please use the Delivery Partner tab to sign in.',
+        };
+      }
+
       // Save token and user data
       await storage.saveToken(token);
       await storage.saveUser(userData);
@@ -109,7 +123,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
 
-      // Check if user has a pharmacy (admin role)
+      // Check if user has a pharmacy (pharmacy-owner admins only).
+      // super_admin is the platform owner with no pharmacy of their own, so
+      // skip the /pharmacies/mine lookup (it would 404) and go to AdminPanel.
       if (userData?.role === 'admin') {
         await checkPharmacyStatus();
       } else {
@@ -173,7 +189,7 @@ export const AuthProvider = ({ children }) => {
   const updateUser = async (userData) => {
     try {
       const response = await apiService.updateProfile(userData);
-      const updatedUser = response.data;
+      const updatedUser = response.data?.data || response.data;
 
       await storage.saveUser(updatedUser);
       setUser(updatedUser);

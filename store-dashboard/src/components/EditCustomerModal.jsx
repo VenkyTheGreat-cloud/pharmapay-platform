@@ -6,6 +6,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
+        area: '',
         address: '',
         landmark: '',
         customerLat: '',
@@ -19,6 +20,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             setFormData({
                 name: customer.name || customer.full_name || '',
                 mobile: customer.mobile || customer.mobile_number || '',
+                area: customer.area || customer.customer_area || '',
                 address: customer.address || '',
                 landmark: customer.landmark || '',
                 customerLat: customer.customerLat || customer.customer_lat || customer.latitude || '',
@@ -29,6 +31,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             setFormData({
                 name: '',
                 mobile: '',
+                area: '',
                 address: '',
                 landmark: '',
                 customerLat: '',
@@ -80,6 +83,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             const submitData = {
                 name: formData.name.trim(),
                 mobile: formData.mobile.trim(),
+                area: formData.area ? formData.area.trim() : null,
                 address: formData.address.trim(),
                 landmark: formData.landmark.trim() || null,
                 customerLat: formData.customerLat ? parseFloat(formData.customerLat) : null,
@@ -175,6 +179,21 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
                             {errors.mobile && (
                                 <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>
                             )}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Area
+                            </label>
+                            <input
+                                type="text"
+                                name="area"
+                                value={formData.area}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs"
+                                placeholder="Enter area name"
+                                disabled={isSubmitting}
+                            />
                         </div>
 
                         <div>

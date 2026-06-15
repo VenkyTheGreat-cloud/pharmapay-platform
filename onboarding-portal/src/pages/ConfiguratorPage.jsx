@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { pharmacyAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import StepIndicator from '../components/StepIndicator';
-import { Package, Zap, Crown, Check, Settings, Save, ArrowRight, Loader2 } from 'lucide-react';
+import { Package, Zap, Crown, Check, Settings, Save, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 
 const PLANS = [
     {
@@ -270,7 +270,14 @@ export default function ConfiguratorPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-between">
+                    <button
+                        onClick={() => navigate('/signup')}
+                        className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back
+                    </button>
                     <button
                         onClick={handleSaveAndContinue}
                         disabled={saving}

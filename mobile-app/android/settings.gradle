@@ -31,7 +31,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 }
 expoAutolinking.useExpoModules()
 
-rootProject.name = 'SwinkPayPharma'
+rootProject.name = 'PharmaGig'
 
 expoAutolinking.useExpoVersionCatalog()
 

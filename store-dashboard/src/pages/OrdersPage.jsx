@@ -215,7 +215,7 @@ export default function OrdersPage() {
                     const total =
                         Number(selectedOrder.amount || selectedOrder.total_amount || 0);
                     const paid =
-                        Number(selectedOrder.paidAmount || selectedOrder.paid_amount || 0);
+                        Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount || 0);
                     remaining = total - paid;
                 }
 
@@ -300,7 +300,7 @@ export default function OrdersPage() {
                         <h1 className="text-lg font-bold text-gray-800">Orders</h1>
                         <p className="text-xs text-gray-600 mt-0.5">Create and manage all orders</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex items-center gap-2">
                             <label className="text-xs font-medium text-gray-600 whitespace-nowrap">Date:</label>
                             <input
@@ -321,9 +321,9 @@ export default function OrdersPage() {
                         </button>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center gap-1.5"
+                            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1.5 text-xs font-medium rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
                         >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5 flex-shrink-0" />
                             Create Order
                         </button>
                     </div>
@@ -777,13 +777,13 @@ export default function OrdersPage() {
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Paid Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{(Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
+                                                            ₹{(Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     <div className="flex justify-between items-center border-b pb-2">
                                                         <span className="text-sm font-medium text-gray-700">Remaining Amount</span>
                                                         <span className="text-lg font-semibold text-gray-900">
-                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
+                                                            ₹{((Number(selectedOrder.amount || selectedOrder.total_amount) || 0) - (Number(selectedOrder.payment_summary?.total_paid || selectedOrder.paidAmount || selectedOrder.paid_amount) || 0)).toFixed(2)}
                                                         </span>
                                                     </div>
                                                     {(selectedOrder.payment_status) && (

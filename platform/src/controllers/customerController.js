@@ -19,16 +19,13 @@ exports.getAllCustomers = async (req, res, next) => {
         };
 
         if (userRole === 'admin') {
-            // Admin: anchor is their own ID
+            // Admin: see customers from all stores in their group
             const User = require('../models/User');
             const storeIds = await User.getStoreIdsForAdmin(storeId);
             filters.store_ids = storeIds;
         } else if (userRole === 'store_manager') {
-            // Store manager: anchor is adminId from token (group admin)
-            const User = require('../models/User');
-            const anchorAdminId = adminIdFromToken || storeId;
-            const storeIds = await User.getStoreIdsForAdmin(anchorAdminId);
-            filters.store_ids = storeIds;
+            // Store manager: only see their own store's customers
+            filters.store_ids = [storeId];
         }
 
         if (search) {
@@ -54,12 +51,27 @@ exports.getCustomerById = async (req, res, next) => {
     try {
         const customer = await Customer.findById(req.params.id);
         if (!customer) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
                 error: {
                     code: 'NOT_FOUND',
                     message: 'Customer not found'
                 }
+            });
+        }
+
+        // Verify the customer belongs to the requesting user's store(s)
+        const userRole = req.user.role;
+        const storeId = req.user.userId;
+        let allowedStoreIds = [storeId];
+        if (userRole === 'admin') {
+            const User = require('../models/User');
+            allowedStoreIds = await User.getStoreIdsForAdmin(storeId);
+        }
+        if (!allowedStoreIds.includes(customer.store_id)) {
+            return res.status(404).json({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Customer not found' }
             });
         }
 
@@ -101,12 +113,27 @@ exports.getCustomerOrders = async (req, res, next) => {
         // Verify customer exists
         const customer = await Customer.findById(req.params.id);
         if (!customer) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
                 error: {
                     code: 'NOT_FOUND',
                     message: 'Customer not found'
                 }
+            });
+        }
+
+        // Verify the customer belongs to the requesting user's store(s)
+        const userRole = req.user.role;
+        const storeId = req.user.userId;
+        let allowedStoreIds = [storeId];
+        if (userRole === 'admin') {
+            const User = require('../models/User');
+            allowedStoreIds = await User.getStoreIdsForAdmin(storeId);
+        }
+        if (!allowedStoreIds.includes(customer.store_id)) {
+            return res.status(404).json({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Customer not found' }
             });
         }
 
@@ -435,10 +462,15 @@ exports.searchCustomers = async (req, res, next) => {
         const storeId = req.user.userId;
         const userRole = req.user.role;
 
-        const customers = await Customer.findAll({
-            search: searchQuery.trim(),
-            store_id: userRole === 'admin' ? null : storeId
-        });
+        const filters = { search: searchQuery.trim() };
+        if (userRole === 'admin') {
+            const User = require('../models/User');
+            filters.store_ids = await User.getStoreIdsForAdmin(storeId);
+        } else {
+            filters.store_ids = [storeId];
+        }
+
+        const customers = await Customer.findAll(filters);
 
         res.json({ 
             success: true,
@@ -489,10 +521,8 @@ exports.getCustomersWithOrderStatusByDate = async (req, res, next) => {
             const User = require('../models/User');
             storeIds = await User.getStoreIdsForAdmin(storeId);
         } else if (userRole === 'store_manager') {
-            // Store manager: get all stores in their admin group
-            const User = require('../models/User');
-            const adminId = req.user.adminId || storeId;
-            storeIds = await User.getStoreIdsForAdmin(adminId);
+            // Store manager: only their own store
+            storeIds = [storeId];
         } else {
             // For other roles, use single store_id
             storeIds = [storeId];

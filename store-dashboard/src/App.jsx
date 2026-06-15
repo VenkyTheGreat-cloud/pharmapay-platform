@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import { getPlan, canAccess } from './utils/planAccess';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DeliveryBoysPage from './pages/DeliveryBoysPage';
@@ -13,7 +14,8 @@ import DismissedCapturesPage from './pages/DismissedCapturesPage';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, loading, user } = useAuth();
+    const location = useLocation();
 
     if (loading) {
         return (
@@ -25,6 +27,11 @@ function ProtectedRoute({ children }) {
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
+    }
+
+    // Block deep-links to modules the active subscription plan doesn't include
+    if (!canAccess(getPlan(user), location.pathname)) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return <Layout>{children}</Layout>;

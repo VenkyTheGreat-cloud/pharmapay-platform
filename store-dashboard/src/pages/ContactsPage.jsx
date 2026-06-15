@@ -97,7 +97,11 @@ export default function ContactsPage() {
     });
 
     const handleCustomerSearch = (e) => {
-        const query = e.target.value;
+        let query = e.target.value;
+        // If input is all digits, limit to 10 characters (mobile number)
+        if (/^\d+$/.test(query) && query.length > 10) {
+            query = query.slice(0, 10);
+        }
         setCustomerSearchQuery(query);
         setShowCustomerDropdown(true);
         setIsNewCustomer(false);
@@ -119,14 +123,21 @@ export default function ContactsPage() {
     };
 
     const handleAddNewCustomer = () => {
+        const searchText = customerSearchQuery.trim();
         setIsNewCustomer(true);
         setSelectedCustomer(null);
-        setCustomerSearchQuery('');
         setShowCustomerDropdown(false);
-        // Keep mobile number if user typed it, otherwise clear
-        if (!mobileNumber.trim()) {
-            setCustomerName('');
+        // Auto-fill the typed text into the appropriate field
+        if (searchText) {
+            if (/^\d+$/.test(searchText)) {
+                // User typed digits — treat as mobile number
+                setMobileNumber(searchText);
+            } else {
+                // User typed text — treat as customer name
+                setCustomerName(searchText);
+            }
         }
+        setCustomerSearchQuery('');
     };
 
     // Helper function to get current date and time in IST as ISO string

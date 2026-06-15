@@ -52,10 +52,28 @@ api.interceptors.response.use(
         }
         return response;
     },
-    (error) => {
-        if (error.response?.status === 401) {
-            // Unauthorized - token missing or invalid
-            // Don't redirect if already on login page (let the login form show the error)
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            const refreshToken = localStorage.getItem('refreshToken');
+
+            if (refreshToken && !window.location.pathname.includes('/login')) {
+                originalRequest._retry = true;
+                try {
+                    const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+                    const newToken = data.data?.accessToken || data.data?.token;
+                    if (newToken) {
+                        localStorage.setItem('token', newToken);
+                        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                        return api(originalRequest);
+                    }
+                } catch (refreshError) {
+                    // Refresh failed - clear everything and redirect
+                }
+            }
+
+            // No refresh token or refresh failed
             if (!window.location.pathname.includes('/login')) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('refreshToken');
@@ -64,7 +82,6 @@ api.interceptors.response.use(
             }
         } else if (error.response?.status === 403) {
             // Forbidden - token valid but insufficient permissions
-            // Log the error but don't auto-redirect (let the component handle it)
             console.error('403 Forbidden - Access denied:', error.response?.data);
         }
         return Promise.reject(error);

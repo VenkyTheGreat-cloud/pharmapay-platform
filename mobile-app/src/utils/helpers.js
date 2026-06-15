@@ -2,7 +2,9 @@ import CONFIG from '../config/api';
 
 // Format date
 export const formatDate = (dateString) => {
+  if (!dateString) return '-';
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '-';
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
@@ -26,7 +28,8 @@ export const formatDateTime = (dateString) => {
 
 // Format currency
 export const formatCurrency = (amount) => {
-  return `₹${parseFloat(amount).toFixed(2)}`;
+  const num = parseFloat(amount);
+  return `₹${isNaN(num) ? '0.00' : num.toFixed(2)}`;
 };
 
 // Get order status color
