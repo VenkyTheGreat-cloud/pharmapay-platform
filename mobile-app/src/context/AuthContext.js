@@ -123,8 +123,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
 
-      // Check if user has a pharmacy (admin role)
-      if (userData?.role === 'admin' || userData?.role === 'super_admin') {
+      // Check if user has a pharmacy (pharmacy-owner admins only).
+      // super_admin is the platform owner with no pharmacy of their own, so
+      // skip the /pharmacies/mine lookup (it would 404) and go to AdminPanel.
+      if (userData?.role === 'admin') {
         await checkPharmacyStatus();
       } else {
         setPharmacyStatus('none');

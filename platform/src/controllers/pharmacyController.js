@@ -440,7 +440,11 @@ exports.paymentCallback = async (req, res, next) => {
 
             logger.info('Payment successful, pharmacy pending admin approval', { pharmacyId: pharmacy.id, slug });
 
-            return res.redirect('https://pharmagig.swinkpay-fintech.com/status?payment=success');
+            // Redirect to the payment screen with the transaction id so the PWA can
+            // show a "Payment Successful" banner (with Payment ID) before the user
+            // clicks Continue to reach the "Under Review" page.
+            const txn = encodeURIComponent(transactionId || pharmacy.payment_reference || '');
+            return res.redirect(`https://pharmagig.swinkpay-fintech.com/payment?payment=success&txn=${txn}`);
         } else {
             // Payment failed, cancelled, or unconfirmed
             await Pharmacy.updatePayment(pharmacy.id, {

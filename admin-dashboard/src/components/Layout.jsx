@@ -17,6 +17,7 @@ import {
 import { useState, useEffect } from 'react';
 import ProfileModal from './ProfileModal';
 import defaultLogo from '../assets/logo.png';
+import { getPlan, canAccess } from '../utils/planAccess';
 
 function hexToHSL(hex) {
     hex = hex.replace('#', '');
@@ -77,6 +78,7 @@ export default function Layout({ children }) {
         navigate('/login');
     };
 
+    const plan = getPlan(user);
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'Pending Orders', href: '/pending-orders', icon: Clock },
@@ -86,7 +88,7 @@ export default function Layout({ children }) {
         { name: 'Day Calls', href: '/contacts', icon: Phone },
         { name: 'Reports', href: '/reports', icon: FileSpreadsheet },
         { name: 'Dismissed Log', href: '/dismissed-captures', icon: PhoneOff },
-    ];
+    ].filter((item) => canAccess(plan, item.href));
 
     const isActive = (href) => location.pathname === href;
 

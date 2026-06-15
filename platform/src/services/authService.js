@@ -255,21 +255,27 @@ class AuthService {
                 if (adminId) {
                     // Try owner_id first, then fallback to checking if store's admin has a pharmacy
                     let pharmacyResult = await dbQuery(
-                        'SELECT logo_url, primary_color, name as pharmacy_name FROM pharmacies WHERE owner_id = $1 LIMIT 1',
+                        'SELECT logo_url, primary_color, name as pharmacy_name, plan, features FROM pharmacies WHERE owner_id = $1 LIMIT 1',
                         [adminId]
                     );
                     // If store_manager and no pharmacy found under admin_id, try own userId
                     if (!pharmacyResult.rows[0] && user.role === 'store_manager' && user.admin_id) {
                         pharmacyResult = await dbQuery(
-                            'SELECT logo_url, primary_color, name as pharmacy_name FROM pharmacies WHERE owner_id = $1 LIMIT 1',
+                            'SELECT logo_url, primary_color, name as pharmacy_name, plan, features FROM pharmacies WHERE owner_id = $1 LIMIT 1',
                             [user.id]
                         );
                     }
                     if (pharmacyResult.rows[0]) {
+                        const row = pharmacyResult.rows[0];
                         userData.branding = {
-                            logo_url: pharmacyResult.rows[0].logo_url || null,
-                            primary_color: pharmacyResult.rows[0].primary_color || null,
-                            pharmacy_name: pharmacyResult.rows[0].pharmacy_name || null,
+                            logo_url: row.logo_url || null,
+                            primary_color: row.primary_color || null,
+                            pharmacy_name: row.pharmacy_name || null,
+                        };
+                        // Active subscription — dashboards gate modules by plan/features
+                        userData.subscription = {
+                            plan: row.plan || 'starter',
+                            features: row.features || {},
                         };
                     }
                 }

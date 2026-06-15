@@ -27,6 +27,14 @@ const HomeRouter = ({ navigation }) => {
 
     const route = async () => {
         try {
+            // super_admin is the platform owner — they have no pharmacy of their
+            // own, so send them straight to the platform AdminPanel. (Routing them
+            // to 'Main' hangs forever because that screen isn't registered for admins.)
+            if (user?.role === 'super_admin') {
+                navigation.replace('AdminPanel');
+                return;
+            }
+
             // Non-admin users go straight to main app
             if (user?.role !== 'admin') {
                 navigation.replace('Main');
