@@ -3,8 +3,12 @@ import { deliveryBoysAPI, marketplaceAPI } from '../services/api';
 import { UserCheck, UserX, Clock, Plus, Edit, Trash2, Truck, ClipboardList, Calendar, Check, X, Loader2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function DeliveryBoysPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -121,7 +125,7 @@ export default function DeliveryBoysPage() {
             await marketplaceAPI.markF2F(appId);
             loadApplications();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to mark F2F done');
+            toast.error(err.response?.data?.message || 'Failed to mark F2F done');
         } finally {
             setActionLoading(false);
         }
@@ -148,7 +152,7 @@ export default function DeliveryBoysPage() {
             setApproveForm({ ratePerKm: '', baseRate: '', contractPeriod: '3', termsNotes: '' });
             loadApplications();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to approve application');
+            toast.error(err.response?.data?.message || 'Failed to approve application');
         } finally {
             setActionLoading(false);
         }
@@ -163,37 +167,39 @@ export default function DeliveryBoysPage() {
             setRejectReason('');
             loadApplications();
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to reject application');
+            toast.error(err.response?.data?.message || 'Failed to reject application');
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDelete = async (userId) => {
-        if (!confirm('Are you sure you want to delete this delivery boy?')) return;
+        const confirmed = await confirm('Are you sure you want to delete this delivery boy?');
+        if (!confirmed) return;
 
         try {
             await deliveryBoysAPI.delete(userId);
             loadDeliveryBoys();
-            alert('Delivery boy deleted successfully');
+            toast.success('Delivery boy deleted successfully');
         } catch (error) {
-            alert('Error deleting delivery boy');
+            toast.error('Error deleting delivery boy');
         }
     };
 
     const handleToggleActive = async (userId, isActive) => {
         const action = isActive ? 'activate' : 'deactivate';
-        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this delivery boy?`)) return;
+        const confirmed = await confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this delivery boy?`);
+        if (!confirmed) return;
 
         try {
             await deliveryBoysAPI.toggleActive(userId, isActive);
             loadDeliveryBoys();
-            alert(`Delivery boy ${action}d successfully`);
+            toast.success(`Delivery boy ${action}d successfully`);
         } catch (error) {
             const errorMsg = error.response?.data?.error?.message ||
                            error.response?.data?.message ||
                            `Error ${action}ing delivery boy`;
-            alert(errorMsg);
+            toast.error(errorMsg);
         }
     };
 

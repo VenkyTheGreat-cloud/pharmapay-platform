@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, Calendar, Clock, FileSpreadsheet, User, Users, Package, ShoppingCart, TrendingUp, Phone } from 'lucide-react';
 import { reportsAPI, deliveryBoysAPI, customersAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -35,6 +36,7 @@ const REPORT_TYPES = [
 
 export default function ReportsPage() {
     const { user } = useAuth();
+    const toast = useToast();
     const [reportType, setReportType] = useState('');
     const [fromDate, setFromDate] = useState(getTodayIST());
     const [fromTime, setFromTime] = useState('00:00:00');
@@ -97,24 +99,24 @@ export default function ReportsPage() {
 
     const validateInputs = () => {
         if (!reportType) {
-            alert('Please select a report type');
+            toast.warning('Please select a report type');
             return false;
         }
 
         if (reportType !== 'pending-orders' && (!fromDate || !toDate)) {
-            alert('Please select both From Date and To Date');
+            toast.warning('Please select both From Date and To Date');
             return false;
         }
 
         if (reportType !== 'pending-orders' && (!fromTime || !toTime)) {
-            alert('Please enter both From Time and To Time');
+            toast.warning('Please enter both From Time and To Time');
             return false;
         }
 
         // Validate time format (supports HH:MM:SS)
         const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
         if (reportType !== 'pending-orders' && (!timeRegex.test(fromTime) || !timeRegex.test(toTime))) {
-            alert('Please enter valid time in HH:MM:SS format');
+            toast.warning('Please enter valid time in HH:MM:SS format');
             return false;
         }
 
@@ -124,19 +126,19 @@ export default function ReportsPage() {
             const toDateTime = new Date(formatDateTime(toDate, toTime));
 
             if (fromDateTime >= toDateTime) {
-                alert('From Date & Time must be before To Date & Time');
+                toast.warning('From Date & Time must be before To Date & Time');
                 return false;
             }
         }
 
         // Validate filters based on report type
         if (reportType === 'delivery-boy' && !selectedDeliveryBoy) {
-            alert('Please select a delivery boy or choose "All"');
+            toast.warning('Please select a delivery boy or choose "All"');
             return false;
         }
 
         if (reportType === 'customer' && !selectedCustomer) {
-            alert('Please select a customer or choose "All"');
+            toast.warning('Please select a customer or choose "All"');
             return false;
         }
 
@@ -237,7 +239,7 @@ export default function ReportsPage() {
                     break;
 
                 default:
-                    alert('Invalid report type selected');
+                    toast.error('Invalid report type selected');
                     return;
             }
 
@@ -281,7 +283,7 @@ export default function ReportsPage() {
             window.URL.revokeObjectURL(url);
 
             setTimeout(() => {
-                alert('Report downloaded successfully!');
+                toast.success('Report downloaded successfully!');
             }, 100);
         } catch (error) {
             console.error('Error downloading report:', error);
@@ -291,14 +293,14 @@ export default function ReportsPage() {
                 reader.onload = () => {
                     try {
                         const errorData = JSON.parse(reader.result);
-                        alert(errorData.error?.message || errorData.message || 'Error downloading report. Please try again.');
+                        toast.error(errorData.error?.message || errorData.message || 'Error downloading report. Please try again.');
                     } catch (e) {
-                        alert('Error downloading report. Please try again.');
+                        toast.error('Error downloading report. Please try again.');
                     }
                 };
                 reader.readAsText(error.response.data);
             } else {
-                alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error downloading report. Please try again.');
+                toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error downloading report. Please try again.');
             }
         } finally {
             setIsDownloading(false);

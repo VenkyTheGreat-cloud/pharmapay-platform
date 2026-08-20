@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { deliveryBoysAPI } from '../services/api';
 import { UserCheck, UserX, Users, Clock, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function DeliveryBoysPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
     const [deliveryBoys, setDeliveryBoys] = useState([]);
     const [pendingRequests, setPendingRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,53 +47,57 @@ export default function DeliveryBoysPage() {
     };
 
     const handleApprove = async (userId) => {
-        if (!confirm('Approve this delivery boy?')) return;
+        const confirmed = await confirm('Approve this delivery boy?');
+        if (!confirmed) return;
 
         try {
             await deliveryBoysAPI.approve(userId);
             await loadDeliveryBoys();
             await loadPendingRequests();
-            alert('Delivery boy approved successfully');
+            toast.success('Delivery boy approved successfully');
         } catch (error) {
-            alert('Error approving delivery boy');
+            toast.error('Error approving delivery boy');
         }
     };
 
     const handleReject = async (userId) => {
-        if (!confirm('Reject this delivery boy request?')) return;
+        const confirmed = await confirm('Reject this delivery boy request?');
+        if (!confirmed) return;
 
         try {
             // No explicit "reject" endpoint in spec; delete pending record instead
             await deliveryBoysAPI.delete(userId);
             await loadDeliveryBoys();
             await loadPendingRequests();
-            alert('Request rejected');
+            toast.success('Request rejected');
         } catch (error) {
-            alert('Error rejecting request');
+            toast.error('Error rejecting request');
         }
     };
 
     const handleDelete = async (userId) => {
-        if (!confirm('Are you sure you want to delete this delivery boy?')) return;
+        const confirmed = await confirm('Are you sure you want to delete this delivery boy?');
+        if (!confirmed) return;
 
         try {
             await deliveryBoysAPI.delete(userId);
             await loadDeliveryBoys();
-            alert('Delivery boy deleted successfully');
+            toast.success('Delivery boy deleted successfully');
         } catch (error) {
-            alert('Error deleting delivery boy');
+            toast.error('Error deleting delivery boy');
         }
     };
 
     const handleDeactivate = async (userId) => {
-        if (!confirm('Deactivate this delivery boy?')) return;
+        const confirmed = await confirm('Deactivate this delivery boy?');
+        if (!confirmed) return;
 
         try {
             await deliveryBoysAPI.toggleActive(userId, false);
             await loadDeliveryBoys();
-            alert('Delivery boy deactivated');
+            toast.success('Delivery boy deactivated');
         } catch (error) {
-            alert('Error deactivating delivery boy');
+            toast.error('Error deactivating delivery boy');
         }
     };
 

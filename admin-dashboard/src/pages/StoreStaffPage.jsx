@@ -3,8 +3,12 @@ import { accessControlAPI } from '../services/api';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import AddUserModal from '../components/AddUserModal';
 import EditUserModal from '../components/EditUserModal';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function StoreStaffPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
     const [storeStaff, setStoreStaff] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -71,29 +75,31 @@ export default function StoreStaffPage() {
 
     const handleToggleActive = async (userId, isActive) => {
         const action = isActive ? 'activate' : 'deactivate';
-        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this store manager?`)) return;
+        const confirmed = await confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this store manager?`);
+        if (!confirmed) return;
 
         try {
             await accessControlAPI.toggleActive(userId, isActive);
             loadStoreStaff();
-            alert(`Store manager ${action}d successfully`);
+            toast.success(`Store manager ${action}d successfully`);
         } catch (error) {
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
+            const errorMsg = error.response?.data?.error?.message ||
+                           error.response?.data?.message ||
                            `Error ${action}ing store manager`;
-            alert(errorMsg);
+            toast.error(errorMsg);
         }
     };
 
     const handleDelete = async (userId) => {
-        if (!confirm('Are you sure you want to delete this store staff member?')) return;
+        const confirmed = await confirm('Are you sure you want to delete this store staff member?');
+        if (!confirmed) return;
 
         try {
             await accessControlAPI.delete(userId);
             loadStoreStaff();
-            alert('Store staff deleted successfully');
+            toast.success('Store staff deleted successfully');
         } catch (error) {
-            alert('Error deleting store staff');
+            toast.error('Error deleting store staff');
         }
     };
 

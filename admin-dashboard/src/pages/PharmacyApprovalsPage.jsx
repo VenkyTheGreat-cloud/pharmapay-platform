@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { pharmacyAPI } from '../services/api';
 import { Building2, Check, X, Clock, Eye, Rocket, ChevronDown, ChevronUp } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const STATUS_TABS = ['all', 'pending', 'submitted', 'approved', 'rejected', 'live'];
 
@@ -13,6 +14,7 @@ const STATUS_COLORS = {
 };
 
 export default function PharmacyApprovalsPage() {
+    const toast = useToast();
     const [pharmacies, setPharmacies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -52,7 +54,7 @@ export default function PharmacyApprovalsPage() {
             await loadPharmacies();
         } catch (err) {
             console.error('Error approving pharmacy:', err);
-            alert('Failed to approve pharmacy');
+            toast.error('Failed to approve pharmacy');
         } finally {
             setActionLoading(null);
         }
@@ -68,7 +70,7 @@ export default function PharmacyApprovalsPage() {
             await loadPharmacies();
         } catch (err) {
             console.error('Error rejecting pharmacy:', err);
-            alert('Failed to reject pharmacy');
+            toast.error('Failed to reject pharmacy');
         } finally {
             setActionLoading(null);
         }
@@ -78,10 +80,10 @@ export default function PharmacyApprovalsPage() {
         try {
             setActionLoading(id);
             await pharmacyAPI.triggerBuild(id);
-            alert('Build triggered successfully');
+            toast.success('Build triggered successfully');
         } catch (err) {
             console.error('Error triggering build:', err);
-            alert('Failed to trigger build');
+            toast.error('Failed to trigger build');
         } finally {
             setActionLoading(null);
         }

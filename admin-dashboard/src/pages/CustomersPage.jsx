@@ -4,9 +4,13 @@ import { Search, Eye, Edit, Trash2, Plus } from 'lucide-react';
 import AddCustomerModal from '../components/AddCustomerModal';
 import EditCustomerModal from '../components/EditCustomerModal';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function CustomersPage() {
     const { user } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -99,7 +103,7 @@ export default function CustomersPage() {
             const errorMsg = error.response?.data?.error?.message || 
                            error.response?.data?.message || 
                            'Failed to load customers';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -120,23 +124,24 @@ export default function CustomersPage() {
 
     const handleDelete = async () => {
         if (!customerToDelete) return;
-        
-        if (!window.confirm(`Are you sure you want to delete customer "${customerToDelete.name}"? This action cannot be undone.`)) {
+
+        const confirmed = await confirm(`Are you sure you want to delete customer "${customerToDelete.name}"? This action cannot be undone.`);
+        if (!confirmed) {
             setCustomerToDelete(null);
             return;
         }
 
         try {
             await customersAPI.delete(customerToDelete.id);
-            alert('Customer deleted successfully!');
+            toast.success('Customer deleted successfully!');
             setCustomerToDelete(null);
             loadCustomers();
         } catch (error) {
             console.error('Error deleting customer:', error);
-            const errorMsg = error.response?.data?.error?.message || 
-                           error.response?.data?.message || 
+            const errorMsg = error.response?.data?.error?.message ||
+                           error.response?.data?.message ||
                            'Failed to delete customer';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         }
     };
 
@@ -205,7 +210,7 @@ export default function CustomersPage() {
                     setShowModal(true);
                 } else {
                     console.error('Customer not found in response or list:', customerRes.data);
-                    alert('Customer details not found');
+                    toast.error('Customer details not found');
                 }
             }
         } catch (error) {
@@ -213,7 +218,7 @@ export default function CustomersPage() {
             const errorMsg = error.response?.data?.error?.message || 
                            error.response?.data?.message || 
                            'Failed to load customer details';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }

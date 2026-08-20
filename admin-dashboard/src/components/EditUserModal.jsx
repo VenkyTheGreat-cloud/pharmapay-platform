@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { deliveryBoysAPI, accessControlAPI } from '../services/api';
+import { useToast } from './Toast';
 
 export default function EditUserModal({ isOpen, onClose, onSuccess, user, userType = 'delivery_boy' }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
@@ -86,7 +88,7 @@ export default function EditUserModal({ isOpen, onClose, onSuccess, user, userTy
                 await accessControlAPI.update(user.id, updatePayload);
                 await accessControlAPI.toggleActive(user.id, formData.status === 'active');
             }
-            alert('User updated successfully!');
+            toast.success('User updated successfully!');
             onSuccess();
             onClose();
         } catch (err) {

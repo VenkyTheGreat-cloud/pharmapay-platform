@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { customersAPI } from '../services/api';
+import { useToast } from './Toast';
 
 export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
@@ -38,7 +40,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
 
         try {
             await customersAPI.create(formData);
-            alert('Customer created successfully!');
+            toast.success('Customer created successfully!');
             onSuccess();
             onClose();
             setFormData({

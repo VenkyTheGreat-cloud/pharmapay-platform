@@ -107,7 +107,7 @@ const LoginScreen = ({ navigation }) => {
               </Text>
               <View style={styles.inputRow}>
                 <Ionicons
-                  name={role === 'partner' ? 'call-outline' : 'mail-outline'}
+                  name={role === 'partner' ? 'call-outline' : 'person-outline'}
                   size={18}
                   color="#94A3B8"
                   style={styles.inputIcon}

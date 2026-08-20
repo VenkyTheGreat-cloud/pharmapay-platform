@@ -3,6 +3,8 @@ import { ordersAPI, deliveryBoysAPI } from '../services/api';
 import { Package, Calendar, Filter, Eye, Plus, UserPlus, Trash2, Edit } from 'lucide-react';
 import CreateOrderModal from '../components/CreateOrderModal';
 import EditOrderModal from '../components/EditOrderModal';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -56,6 +58,8 @@ const formatImageUrl = (url) => {
 };
 
 export default function OrdersPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
     const [allOrders, setAllOrders] = useState([]); // Store all downloaded orders
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
@@ -200,7 +204,7 @@ export default function OrdersPage() {
 
     const handleAssign = async () => {
         if (!selectedDeliveryBoy) {
-            alert('Please select an option');
+            toast.warning('Please select an option');
             return;
         }
 
@@ -220,21 +224,20 @@ export default function OrdersPage() {
                 }
 
                 if (remaining > 0.01) {
-                    alert(
+                    toast.warning(
                         'Pending amount should be zero before marking this order as delivered (Customer received at store).'
                     );
                     return;
                 }
 
-                if (!confirm('Mark this order as DELIVERED (Customer received at store)?')) {
-                    return;
-                }
+                const confirmed = await confirm('Mark this order as DELIVERED (Customer received at store)?');
+                if (!confirmed) return;
                 await ordersAPI.assign(selectedOrder.id, null, { customerReceivedAtStore: true });
-                alert('Order marked as delivered (customer received at store)!');
+                toast.success('Order marked as delivered (customer received at store)!');
             } else {
                 // Normal assignment to delivery boy
                 await ordersAPI.assign(selectedOrder.id, selectedDeliveryBoy);
-                alert('Order assigned successfully!');
+                toast.success('Order assigned successfully!');
             }
 
             setShowAssignModal(false);
@@ -243,22 +246,21 @@ export default function OrdersPage() {
             loadOrders();
         } catch (error) {
             console.error('Error assigning order:', error);
-            alert(error.response?.data?.message || 'Error assigning order');
+            toast.error(error.response?.data?.message || 'Error assigning order');
         }
     };
 
     const handleDelete = async (orderId, orderNumber) => {
-        if (!confirm(`Are you sure you want to delete order "${orderNumber}"?`)) {
-            return;
-        }
+        const confirmed = await confirm(`Are you sure you want to delete order "${orderNumber}"?`);
+        if (!confirmed) return;
 
         try {
             await ordersAPI.delete(orderId);
-            alert('Order deleted successfully!');
+            toast.success('Order deleted successfully!');
             loadOrders();
         } catch (error) {
             console.error('Error deleting order:', error);
-            alert(error.response?.data?.message || 'Error deleting order');
+            toast.error(error.response?.data?.message || 'Error deleting order');
         }
     };
 

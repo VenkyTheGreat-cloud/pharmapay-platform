@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
 import { X } from 'lucide-react';
+import { useToast } from './Toast';
 
 export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
@@ -70,7 +72,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             }
 
             await customersAPI.create(submitData);
-            alert('Customer added successfully!');
+            toast.success('Customer added successfully!');
 
             // Reset form
             setFormData({
@@ -91,7 +93,7 @@ export default function AddCustomerModal({ isOpen, onClose, onSuccess }) {
             const errorMessage = error.response?.data?.error?.message || 
                                 error.response?.data?.message || 
                                 (error.response?.status === 403 ? 'Access denied. Please check your authentication.' : 'Error adding customer');
-            alert(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

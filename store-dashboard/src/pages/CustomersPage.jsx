@@ -3,8 +3,12 @@ import { customersAPI } from '../services/api';
 import { Users, Search, Eye, MapPin, Plus, Edit, Trash2, Package } from 'lucide-react';
 import AddCustomerModal from '../components/AddCustomerModal';
 import EditCustomerModal from '../components/EditCustomerModal';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function CustomersPage() {
+    const toast = useToast();
+    const confirm = useConfirm();
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -84,7 +88,7 @@ export default function CustomersPage() {
             setShowViewModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
-            alert('Error loading customer details. Please try again.');
+            toast.error('Error loading customer details. Please try again.');
             setCustomerOrders([]);
         } finally {
             setLoadingOrders(false);
@@ -100,22 +104,21 @@ export default function CustomersPage() {
             setShowEditModal(true);
         } catch (error) {
             console.error('Error loading customer details:', error);
-            alert('Error loading customer details. Please try again.');
+            toast.error('Error loading customer details. Please try again.');
         }
     };
 
     const handleDelete = async (customerId, customerName) => {
-        if (!confirm(`Are you sure you want to delete customer "${customerName}"?`)) {
-            return;
-        }
+        const confirmed = await confirm(`Are you sure you want to delete customer "${customerName}"?`);
+        if (!confirmed) return;
 
         try {
             await customersAPI.delete(customerId);
-            alert('Customer deleted successfully!');
+            toast.success('Customer deleted successfully!');
             loadCustomers();
         } catch (error) {
             console.error('Error deleting customer:', error);
-            alert(error.response?.data?.message || 'Error deleting customer');
+            toast.error(error.response?.data?.message || 'Error deleting customer');
         }
     };
 

@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { ordersAPI, accessControlAPI } from '../services/api';
 import { Package, CheckCircle, Clock, IndianRupee, Eye, RefreshCw, Search, Store } from 'lucide-react';
 import OrderDetailsModal from '../components/OrderDetailsModal';
+import { useToast } from '../components/Toast';
 
 export default function DashboardPage() {
+    const toast = useToast();
     const [allOrders, setAllOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -118,7 +120,7 @@ export default function DashboardPage() {
             const errorMsg = error.response?.data?.error?.message || 
                            error.response?.data?.message || 
                            'Failed to load orders';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
 import { Eye } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 // Helper function to format image URL - handles base64 data and regular URLs
 const formatImageUrl = (url) => {
@@ -56,6 +57,7 @@ const getStatusColor = (status) => {
 };
 
 export default function PendingOrdersPage() {
+    const toast = useToast();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -90,7 +92,7 @@ export default function PendingOrdersPage() {
             setOrders(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error loading pending orders:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading pending orders. Please try again.');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading pending orders. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -103,7 +105,7 @@ export default function PendingOrdersPage() {
             setShowViewModal(true);
         } catch (error) {
             console.error('Error loading order details:', error);
-            alert('Error loading order details. Please try again.');
+            toast.error('Error loading order details. Please try again.');
         }
     };
 

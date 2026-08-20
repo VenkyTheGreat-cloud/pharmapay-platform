@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ordersAPI, customersAPI, customerRegistryAPI } from '../services/api';
 import { X, Search, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { useToast } from './Toast';
 
 // Helper function to get today's date in IST format (YYYY-MM-DD)
 const getTodayIST = () => {
@@ -11,6 +12,7 @@ const getTodayIST = () => {
 };
 
 export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
+    const toast = useToast();
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [customerSearchQuery, setCustomerSearchQuery] = useState('');
@@ -366,7 +368,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             }
 
             if (!finalCustomerId) {
-                alert('Failed to find or create customer. Please try again.');
+                toast.error('Failed to find or create customer. Please try again.');
                 return;
             }
 
@@ -403,13 +405,13 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                 setErrors(prev => ({ ...prev, customerId: '' }));
             }
 
-            alert('Customer details updated successfully!');
+            toast.success('Customer details updated successfully!');
 
             // Reload customers list to reflect changes in the registry dropdown
             await loadCustomers();
         } catch (error) {
             console.error('Error updating customer:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating customer. Please try again.');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating customer. Please try again.');
         } finally {
             setIsUpdatingCustomer(false);
         }
@@ -561,7 +563,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             }
 
             await ordersAPI.create(submitData);
-            alert('Order created successfully!');
+            toast.success('Order created successfully!');
 
             // Reset form
             setFormData({
@@ -586,7 +588,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
             onClose();
         } catch (error) {
             console.error('Error creating order:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error creating order');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error creating order');
         } finally {
             setIsSubmitting(false);
         }

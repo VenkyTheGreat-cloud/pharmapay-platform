@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { customerRegistryAPI } from '../services/api';
 import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -20,6 +22,8 @@ const getTodayIST = () => {
 
 export default function ContactsPage() {
     const { user } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
@@ -53,7 +57,7 @@ export default function ContactsPage() {
             const errorMsg = error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 'Error loading contacts. Please try again.';
-            alert(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -87,19 +91,19 @@ export default function ContactsPage() {
         e.preventDefault();
 
         if (!customerName.trim()) {
-            alert('Please enter a customer name');
+            toast.warning('Please enter a customer name');
             return;
         }
 
         if (!mobileNumber.trim()) {
-            alert('Please enter a mobile number');
+            toast.warning('Please enter a mobile number');
             return;
         }
 
         // Validate mobile number (10 digits)
         const mobileRegex = /^[0-9]{10}$/;
         if (!mobileRegex.test(mobileNumber.trim())) {
-            alert('Please enter a valid 10-digit mobile number');
+            toast.warning('Please enter a valid 10-digit mobile number');
             return;
         }
 
@@ -122,13 +126,13 @@ export default function ContactsPage() {
             // Reload contacts
             await loadContacts();
 
-            alert('Contact added successfully');
+            toast.success('Contact added successfully');
         } catch (error) {
             console.error('Error adding contact:', error);
             const errorMsg = error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 'Error adding contact. Please try again.';
-            alert(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsSubmitting(false);
         }
@@ -139,21 +143,22 @@ export default function ContactsPage() {
     };
 
     const handleDeleteContact = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this contact record?')) {
+        const confirmed = await confirm('Are you sure you want to delete this contact record?');
+        if (!confirmed) {
             return;
         }
 
         try {
             setLoading(true);
             await customerRegistryAPI.delete(id);
-            alert('Contact record deleted successfully');
+            toast.success('Contact record deleted successfully');
             await loadContacts();
         } catch (error) {
             console.error('Error deleting contact:', error);
             const errorMsg = error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 'Error deleting contact. Please try again.';
-            alert(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }

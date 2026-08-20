@@ -3,9 +3,13 @@ import { ordersAPI } from '../services/api';
 import { Clock, Eye, Package, Search, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import OrderDetailsModal from '../components/OrderDetailsModal';
+import { useToast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function PendingOrdersPage() {
     const { user } = useAuth();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
@@ -67,7 +71,7 @@ export default function PendingOrdersPage() {
             const errorMsg = error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 'Failed to load pending orders';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -102,21 +106,22 @@ export default function PendingOrdersPage() {
     };
 
     const handleDeleteOrder = async (orderId) => {
-        if (!window.confirm('Are you sure you want to delete this order?')) {
+        const confirmed = await confirm('Are you sure you want to delete this order?');
+        if (!confirmed) {
             return;
         }
 
         try {
             setLoading(true);
             await ordersAPI.delete(orderId);
-            alert('Order deleted successfully');
+            toast.success('Order deleted successfully');
             await loadPendingOrders();
         } catch (error) {
             console.error('Error deleting order:', error);
             const errorMsg = error.response?.data?.error?.message ||
                 error.response?.data?.message ||
                 'Failed to delete order';
-            alert(`Error: ${errorMsg}`);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }

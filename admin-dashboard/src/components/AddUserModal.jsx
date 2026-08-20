@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { deliveryBoysAPI, accessControlAPI } from '../services/api';
+import { useToast } from './Toast';
 
 export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'delivery_boy' }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -70,7 +72,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
                 });
             }
 
-            alert(`${userType === 'store_staff' ? 'Store Manager' : 'Delivery Boy'} created successfully!`);
+            toast.success(`${userType === 'store_staff' ? 'Store Manager' : 'Delivery Boy'} created successfully!`);
             onSuccess();
             onClose();
             setFormData({
@@ -90,6 +92,21 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, userType = 'd
             setLoading(false);
         }
     };
+
+    // Reset form when modal closes
+    useEffect(() => {
+        if (!isOpen) {
+            setFormData({
+                email: '',
+                password: '',
+                name: '',
+                mobile: '',
+                address: '',
+                store_name: '',
+            });
+            setError('');
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 

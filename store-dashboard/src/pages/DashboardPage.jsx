@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ordersAPI } from '../services/api';
 import { Package, DollarSign, CheckCircle, Truck, Calendar, IndianRupee, Eye } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 // Helper function to format image URL - handles base64 data and regular URLs
 const formatImageUrl = (url) => {
@@ -54,6 +55,7 @@ const getTodayIST = () => {
 };
 
 export default function DashboardPage() {
+    const toast = useToast();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -113,7 +115,7 @@ export default function DashboardPage() {
             setShowViewModal(true);
         } catch (error) {
             console.error('Error loading order details:', error);
-            alert('Error loading order details. Please try again.');
+            toast.error('Error loading order details. Please try again.');
         }
     };
 

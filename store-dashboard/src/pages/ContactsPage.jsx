@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Phone, Calendar, RefreshCw, Plus, CheckCircle, XCircle, Search } from 'lucide-react';
 import { customerRegistryAPI, customersAPI } from '../services/api';
+import { useToast } from '../components/Toast';
 
 // Helper function to get today's date in IST (Indian Standard Time, UTC+5:30)
 const getTodayIST = () => {
@@ -18,6 +19,7 @@ const getTodayIST = () => {
 };
 
 export default function ContactsPage() {
+    const toast = useToast();
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getTodayIST());
@@ -67,7 +69,7 @@ export default function ContactsPage() {
             setContacts(list);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading contacts. Please try again.');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error loading contacts. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -168,14 +170,14 @@ export default function ContactsPage() {
         e.preventDefault();
         
         if (!mobileNumber.trim()) {
-            alert('Please enter a mobile number');
+            toast.warning('Please enter a mobile number');
             return;
         }
 
         // Validate mobile number (10 digits)
         const mobileRegex = /^[0-9]{10}$/;
         if (!mobileRegex.test(mobileNumber.trim())) {
-            alert('Please enter a valid 10-digit mobile number');
+            toast.warning('Please enter a valid 10-digit mobile number');
             return;
         }
 
@@ -219,10 +221,10 @@ export default function ContactsPage() {
             // Reload contacts
             await loadContacts();
             
-            alert('Contact added successfully');
+            toast.success('Contact added successfully');
         } catch (error) {
             console.error('Error adding contact:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error adding contact. Please try again.');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error adding contact. Please try again.');
         } finally {
             setIsSubmitting(false);
         }

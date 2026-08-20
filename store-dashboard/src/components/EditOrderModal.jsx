@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ordersAPI } from '../services/api';
 import { X } from 'lucide-react';
+import { useToast } from './Toast';
 
 export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         totalAmount: '',
         paidAmount: '',
@@ -188,13 +190,13 @@ export default function EditOrderModal({ isOpen, onClose, onSuccess, order }) {
             }
 
             await ordersAPI.update(order.id, submitData);
-            alert('Order updated successfully!');
+            toast.success('Order updated successfully!');
 
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
             console.error('Error updating order:', error);
-            alert(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating order');
+            toast.error(error.response?.data?.error?.message || error.response?.data?.message || 'Error updating order');
         } finally {
             setIsSubmitting(false);
         }

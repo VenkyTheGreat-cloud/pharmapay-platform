@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
 import { X } from 'lucide-react';
+import { useToast } from './Toast';
 
 export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer }) {
+    const toast = useToast();
     const [formData, setFormData] = useState({
         name: '',
         mobile: '',
@@ -91,7 +93,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             };
 
             await customersAPI.update(customer.id, submitData);
-            alert('Customer updated successfully!');
+            toast.success('Customer updated successfully!');
 
             setErrors({});
 
@@ -99,7 +101,7 @@ export default function EditCustomerModal({ isOpen, onClose, onSuccess, customer
             onClose();
         } catch (error) {
             console.error('Error updating customer:', error);
-            alert(error.response?.data?.message || 'Error updating customer');
+            toast.error(error.response?.data?.message || 'Error updating customer');
         } finally {
             setIsSubmitting(false);
         }

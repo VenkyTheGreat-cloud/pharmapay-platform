@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './components/Toast';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import Layout from './components/Layout';
 import { getPlan, canAccess } from './utils/planAccess';
 import LoginPage from './pages/LoginPage';
@@ -119,7 +121,11 @@ function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
-                <AppRoutes />
+                <ToastProvider>
+                    <ConfirmProvider>
+                        <AppRoutes />
+                    </ConfirmProvider>
+                </ToastProvider>
             </AuthProvider>
         </BrowserRouter>
     );
