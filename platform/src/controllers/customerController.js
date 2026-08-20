@@ -28,6 +28,11 @@ exports.getAllCustomers = async (req, res, next) => {
             filters.store_ids = [storeId];
         }
 
+        // Defensive guard: never query without store_ids to prevent cross-store data leaks
+        if (!filters.store_ids || filters.store_ids.length === 0) {
+            return res.json({ success: true, data: { customers: [], count: 0 } });
+        }
+
         if (search) {
             filters.search = search;
         }

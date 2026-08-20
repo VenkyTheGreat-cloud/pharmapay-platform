@@ -19,7 +19,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('store_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -56,7 +56,7 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
-            const refreshToken = localStorage.getItem('refreshToken');
+            const refreshToken = localStorage.getItem('store_refreshToken');
 
             if (refreshToken && !window.location.pathname.includes('/login')) {
                 originalRequest._retry = true;
@@ -64,7 +64,7 @@ api.interceptors.response.use(
                     const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
                     const newToken = data.data?.accessToken || data.data?.token;
                     if (newToken) {
-                        localStorage.setItem('token', newToken);
+                        localStorage.setItem('store_token', newToken);
                         originalRequest.headers.Authorization = `Bearer ${newToken}`;
                         return api(originalRequest);
                     }
@@ -75,9 +75,9 @@ api.interceptors.response.use(
 
             // No refresh token or refresh failed
             if (!window.location.pathname.includes('/login')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
+                localStorage.removeItem('store_token');
+                localStorage.removeItem('store_refreshToken');
+                localStorage.removeItem('store_user');
                 window.location.href = '/login';
             }
         } else if (error.response?.status === 403) {
@@ -144,7 +144,7 @@ export const authAPI = {
     },
     getProfile: () => {
         if (API_DISABLED) {
-            const savedUser = localStorage.getItem('user');
+            const savedUser = localStorage.getItem('store_user');
             return mockResolve({
                 success: true,
                 data: savedUser ? JSON.parse(savedUser) : null,
@@ -154,9 +154,9 @@ export const authAPI = {
     },
     updateProfile: (data) => {
         if (API_DISABLED) {
-            const savedUser = localStorage.getItem('user');
+            const savedUser = localStorage.getItem('store_user');
             const user = savedUser ? { ...JSON.parse(savedUser), ...data } : data;
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('store_user', JSON.stringify(user));
             return mockResolve({ success: true, data: user });
         }
         return api.put('/auth/profile', data);

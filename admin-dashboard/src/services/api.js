@@ -16,7 +16,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('admin_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -46,11 +46,11 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
-            const refreshToken = localStorage.getItem('refreshToken');
+            const refreshToken = localStorage.getItem('admin_refreshToken');
 
             if (!refreshToken) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
                 if (window.location.pathname !== '/admin/login') {
                     window.location.href = '/admin/login';
                 }
@@ -73,16 +73,16 @@ api.interceptors.response.use(
                 const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
                 const newToken = data.data?.accessToken || data.data?.token;
                 if (newToken) {
-                    localStorage.setItem('token', newToken);
+                    localStorage.setItem('admin_token', newToken);
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
                     processQueue(null, newToken);
                     return api(originalRequest);
                 }
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_refreshToken');
+                localStorage.removeItem('admin_user');
                 if (window.location.pathname !== '/admin/login') {
                     window.location.href = '/admin/login';
                 }

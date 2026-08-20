@@ -14,9 +14,9 @@ import {
 import { pharmacyAPI } from '../../services/api';
 
 const PLAN_DETAILS = {
-  starter: { name: 'Starter', price: 999 },
-  growth: { name: 'Growth', price: 2499 },
-  enterprise: { name: 'Enterprise', price: 5999 },
+  starter: { name: 'Starter', price: 999, setup: 2000 },
+  growth: { name: 'Growth', price: 2499, setup: 5000 },
+  enterprise: { name: 'Enterprise', price: 5999, setup: 10000 },
 };
 
 const PharmacyPaymentScreen = ({ navigation }) => {
@@ -156,7 +156,7 @@ const PharmacyPaymentScreen = ({ navigation }) => {
             </View>
             <View style={styles.successRow}>
               <Text style={styles.successLabel}>Amount Paid</Text>
-              <Text style={styles.successValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
+              <Text style={styles.successValue}>₹{(planInfo.price + planInfo.setup).toLocaleString('en-IN')}</Text>
             </View>
             {paymentId ? (
               <View style={styles.successRow}>
@@ -238,8 +238,17 @@ const PharmacyPaymentScreen = ({ navigation }) => {
           </View>
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryTotalLabel}>Monthly Total</Text>
-            <Text style={styles.summaryTotalValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
+            <Text style={styles.summaryLabel}>Monthly Subscription</Text>
+            <Text style={styles.summaryValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>One-time Setup Fee</Text>
+            <Text style={styles.summaryValue}>₹{planInfo.setup.toLocaleString('en-IN')}</Text>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryTotalLabel}>Total Due Today</Text>
+            <Text style={styles.summaryTotalValue}>₹{(planInfo.price + planInfo.setup).toLocaleString('en-IN')}</Text>
           </View>
         </View>
       </View>

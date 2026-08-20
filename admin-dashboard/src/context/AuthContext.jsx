@@ -10,8 +10,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('admin_token');
+        const savedUser = localStorage.getItem('admin_user');
 
         if (token && savedUser) {
             const parsed = JSON.parse(savedUser);
@@ -20,9 +20,9 @@ export const AuthProvider = ({ children }) => {
                 setUser(parsed);
             } else {
                 // Wrong role for this dashboard — clear stale credentials
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_refreshToken');
+                localStorage.removeItem('admin_user');
             }
         }
         setLoading(false);
@@ -53,11 +53,11 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
-            localStorage.setItem('token', token);
+            localStorage.setItem('admin_token', token);
             if (refreshToken) {
-                localStorage.setItem('refreshToken', refreshToken);
+                localStorage.setItem('admin_refreshToken', refreshToken);
             }
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('admin_user', JSON.stringify(user));
             setUser(user);
 
             return { success: true };
@@ -70,9 +70,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refreshToken');
+        localStorage.removeItem('admin_user');
         setUser(null);
         window.location.href = '/admin/login';
     };
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUser = (userData) => {
         const updatedUser = { ...user, ...userData };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem('admin_user', JSON.stringify(updatedUser));
         setUser(updatedUser);
     };
 
