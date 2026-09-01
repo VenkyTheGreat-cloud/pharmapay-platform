@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  SectionList,
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CONFIG from '../../config/api';
 
-const PharmacyMarketplaceScreen = () => {
+const PharmacyMarketplaceScreen = ({ navigation }) => {
   const [pharmacies, setPharmacies] = useState([]);
   const [applications, setApplications] = useState({});
   const [loading, setLoading] = useState(true);
@@ -23,6 +23,16 @@ const PharmacyMarketplaceScreen = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Refresh when navigating back from MyPharmacies
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!loading) {
+        loadData();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, loading]);
 
   const getAuthHeaders = async () => {
     const token = await AsyncStorage.getItem('token');
@@ -104,15 +114,28 @@ const PharmacyMarketplaceScreen = () => {
     loadData();
   }, []);
 
-  const renderBadge = (pharmacyId, isAccepting) => {
+  // Split pharmacies into sections
+  const myPharmacies = pharmacies.filter((p) => applications[p.id] === 'approved');
+  const availablePharmacies = pharmacies.filter((p) => applications[p.id] !== 'approved');
+
+  const sections = [];
+  if (myPharmacies.length > 0) {
+    sections.push({ title: `My Pharmacies (${myPharmacies.length})`, key: 'my', data: myPharmacies });
+  }
+  sections.push({ title: `Available Pharmacies (${availablePharmacies.length})`, key: 'available', data: availablePharmacies });
+
+  const renderBadge = (pharmacyId, isAccepting, isMyPharmacy) => {
     const status = applications[pharmacyId];
 
     if (status === 'approved') {
       return (
-        <View style={[styles.badge, styles.badgeApproved]}>
+        <TouchableOpacity
+          style={[styles.badge, styles.badgeApproved]}
+          onPress={() => navigation.navigate('MyPharmacies')}
+        >
           <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
-          <Text style={styles.badgeText}>Approved</Text>
-        </View>
+          <Text style={styles.badgeText}>View Details</Text>
+        </TouchableOpacity>
       );
     }
 
@@ -141,7 +164,7 @@ const PharmacyMarketplaceScreen = () => {
       );
     }
 
-    // No application yet — show Apply button
+    // No application yet — show Send Request button
     return (
       <TouchableOpacity
         style={styles.applyButton}
@@ -151,13 +174,13 @@ const PharmacyMarketplaceScreen = () => {
         {applyingTo === pharmacyId ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
-          <Text style={styles.applyButtonText}>Apply</Text>
+          <Text style={styles.applyButtonText}>Send Request</Text>
         )}
       </TouchableOpacity>
     );
   };
 
-  const renderPharmacyCard = ({ item }) => (
+  const renderPharmacyCard = ({ item, section }) => (
     <View style={styles.card}>
       <View style={styles.cardBody}>
         <Text style={styles.pharmacyName}>{item.display_name}</Text>
@@ -177,9 +200,15 @@ const PharmacyMarketplaceScreen = () => {
               <Text style={[styles.statusBadgeText, { color: '#6B7280' }]}>Not accepting</Text>
             </View>
           )}
-          {renderBadge(item.id, item.is_accepting_riders)}
+          {renderBadge(item.id, item.is_accepting_riders, section.key === 'my')}
         </View>
       </View>
+    </View>
+  );
+
+  const renderSectionHeader = ({ section }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{section.title}</Text>
     </View>
   );
 
@@ -194,15 +223,13 @@ const PharmacyMarketplaceScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Pharmacies Near You</Text>
-      </View>
-
-      <FlatList
-        data={pharmacies}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderPharmacyCard}
+        renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContent}
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -237,18 +264,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+  sectionHeader: {
+    paddingHorizontal: 4,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  headerTitle: {
-    fontSize: 22,
+  sectionHeaderText: {
+    fontSize: 16,
     fontWeight: '700',
-    color: '#111827',
+    color: '#374151',
   },
   listContent: {
     padding: 16,

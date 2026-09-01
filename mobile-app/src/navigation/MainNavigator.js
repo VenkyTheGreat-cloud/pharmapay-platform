@@ -12,6 +12,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
 import PharmacyMarketplaceScreen from '../screens/marketplace/PharmacyMarketplaceScreen';
+import MyPharmaciesScreen from '../screens/marketplace/MyPharmaciesScreen';
 import CaptureReviewScreen from '../screens/captures/CaptureReviewScreen';
 
 const Tab = createBottomTabNavigator();
@@ -68,6 +69,24 @@ const ProfileStack = () => {
   );
 };
 
+// Marketplace Stack
+const MarketplaceStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="MarketplaceHome"
+        component={PharmacyMarketplaceScreen}
+        options={{ title: 'Pharmacies' }}
+      />
+      <Stack.Screen
+        name="MyPharmacies"
+        component={MyPharmaciesScreen}
+        options={{ title: 'My Pharmacies' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
 // Main Tab Navigator
 const MainNavigator = () => {
   return (
@@ -80,7 +99,7 @@ const MainNavigator = () => {
             iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'Orders') {
             iconName = focused ? 'list-circle' : 'list-circle-outline';
-          } else if (route.name === 'Marketplace') {
+          } else if (route.name === 'Pharmacies') {
             iconName = focused ? 'storefront' : 'storefront-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person-circle' : 'person-circle-outline';
@@ -95,7 +114,7 @@ const MainNavigator = () => {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Orders" component={OrdersStack} />
-      <Tab.Screen name="Marketplace" component={PharmacyMarketplaceScreen} />
+      <Tab.Screen name="Pharmacies" component={MarketplaceStack} />
       <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
