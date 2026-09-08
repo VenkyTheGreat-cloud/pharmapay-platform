@@ -282,6 +282,7 @@ export default function OrdersPage() {
         if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
         const normalized = status.toUpperCase();
         const colors = {
+            CREATED: 'bg-gradient-to-r from-blue-300 to-blue-500 text-white',
             ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
             ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
             REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
@@ -349,6 +350,7 @@ export default function OrdersPage() {
                                 className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="">All Status</option>
+                                <option value="CREATED">Created</option>
                                 <option value="ASSIGNED">Assigned</option>
                                 <option value="ACCEPTED">Accepted</option>
                                 <option value="REJECTED">Rejected</option>
@@ -382,9 +384,6 @@ export default function OrdersPage() {
                             )}
                         </div>
                     </div>
-                    {orders.length === 0 ? (
-                        <p className="text-gray-600 text-sm">No orders found.</p>
-                    ) : (
                             <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
                                     <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
@@ -425,7 +424,13 @@ export default function OrdersPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {orders.map((order, index) => {
+                                        {orders.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={11} className="text-center py-8 text-gray-500 text-sm">
+                                                    No orders found.
+                                                </td>
+                                            </tr>
+                                        ) : orders.map((order, index) => {
                                     const orderNumber = order.orderNumber || order.order_number || '';
 
                                     // Format order number by trimming the middle for long IDs
@@ -491,7 +496,7 @@ export default function OrdersPage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                                        {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
+                                                        {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString('en-GB') : '-'}
                                                     </td>
                                                     <td className="px-6 py-3 whitespace-nowrap" style={{ minWidth: '150px' }}>
                                                         <div className="flex items-center justify-start gap-3">
@@ -515,11 +520,12 @@ export default function OrdersPage() {
                                                                     <Edit className="w-4 h-4" />
                                                                 </button>
                                                             )}
-                                                            {/* Show Assign button for: unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
+                                                            {/* Show Assign button for: CREATED, unassigned orders, REJECTED orders (to reassign), or ASSIGNED orders (to change assignment) */}
                                                             {/* Hide assign button for orders marked as "Customer received at store" */}
                                                             {!order.customer_received_at_store &&
                                                              !order.customerReceivedAtStore &&
-                                                             ((order.status === 'REJECTED' || order.status === 'rejected') ||
+                                                             ((order.status === 'CREATED' || order.status === 'created') ||
+                                                              (order.status === 'REJECTED' || order.status === 'rejected') ||
                                                               !(order.deliveryBoyId || order.assigned_delivery_boy_id) ||
                                                               (order.status === 'ASSIGNED' || order.status === 'assigned')) && (
                                                                 <button
@@ -530,7 +536,7 @@ export default function OrdersPage() {
                                                                     <UserPlus className="w-5 h-5" />
                                                                 </button>
                                                             )}
-                                                            {(order.status === 'ASSIGNED' || order.status === 'assigned') && (
+                                                            {(order.status === 'CREATED' || order.status === 'created' || order.status === 'ASSIGNED' || order.status === 'assigned') && (
                                                                 <button
                                                                     onClick={() => handleDelete(order.id, order.orderNumber || order.order_number)}
                                                                     className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
@@ -547,7 +553,6 @@ export default function OrdersPage() {
                                 </tbody>
                                 </table>
                             </div>
-                        )}
                     </div>
                 </div>
             )}

@@ -11,19 +11,34 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // Check if user is logged in
-        const token = localStorage.getItem('token');
-        const savedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('store_token');
+        const savedUser = localStorage.getItem('store_user');
 
         if (token && savedUser) {
             const parsed = JSON.parse(savedUser);
             // Only allow store_manager role on the store dashboard
             if (parsed.role === 'store_manager') {
-                setUser(parsed);
+                // Validate tenant - user must belong to the pharmacy matching the subdomain
+                const hostname = window.location.hostname;
+                const parts = hostname.split('.');
+                if (parts.length >= 3) {
+                    const subdomain = parts[0];
+                    const userSlug = parsed.pharmacySlug || parsed.pharmacy_slug;
+                    if (userSlug && subdomain !== userSlug) {
+                        localStorage.removeItem('store_token');
+                        localStorage.removeItem('store_refreshToken');
+                        localStorage.removeItem('store_user');
+                    } else {
+                        setUser(parsed);
+                    }
+                } else {
+                    setUser(parsed);
+                }
             } else {
                 // Wrong role for this dashboard — clear stale credentials
-                localStorage.removeItem('token');
-                localStorage.removeItem('refreshToken');
-                localStorage.removeItem('user');
+                localStorage.removeItem('store_token');
+                localStorage.removeItem('store_refreshToken');
+                localStorage.removeItem('store_user');
             }
         }
         setLoading(false);
@@ -55,12 +70,30 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
-            localStorage.setItem('token', token);
+            localStorage.setItem('store_token', token);
             if (refreshToken) {
-                localStorage.setItem('refreshToken', refreshToken);
+                localStorage.setItem('store_refreshToken', refreshToken);
             }
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('store_user', JSON.stringify(user));
             setUser(user);
+
+            // Validate tenant - user must belong to the pharmacy matching the subdomain
+            const hostname = window.location.hostname;
+            const parts = hostname.split('.');
+            if (parts.length >= 3) {
+                const subdomain = parts[0];
+                const userSlug = user.pharmacySlug || user.pharmacy_slug;
+                if (userSlug && subdomain !== userSlug) {
+                    localStorage.removeItem('store_token');
+                    localStorage.removeItem('store_refreshToken');
+                    localStorage.removeItem('store_user');
+                    setUser(null);
+                    return {
+                        success: false,
+                        error: 'You are not authorized to access this pharmacy dashboard.',
+                    };
+                }
+            }
 
             return { success: true };
         } catch (error) {
@@ -71,10 +104,15 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+    const logout = async () => {
+        try {
+            await authAPI.logout();
+        } catch (e) {
+            // Ignore errors - still proceed with local logout
+        }
+        localStorage.removeItem('store_token');
+        localStorage.removeItem('store_refreshToken');
+        localStorage.removeItem('store_user');
         setUser(null);
         // Redirect to login page
         window.location.href = '/login';
@@ -108,7 +146,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUser = (userData) => {
         const updatedUser = { ...user, ...userData };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem('store_user', JSON.stringify(updatedUser));
         setUser(updatedUser);
     };
 

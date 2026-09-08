@@ -328,6 +328,10 @@ const realApiService = {
     return api.put(CONFIG.ENDPOINTS.UPDATE_ORDER_STATUS(id), { status, notes });
   },
 
+  acceptOrder: (orderId) => api.post(`/orders/${orderId}/accept`),
+
+  rejectOrder: (orderId) => api.post(`/orders/${orderId}/reject`),
+
   getOrderHistory: (id) => api.get(CONFIG.ENDPOINTS.ORDER_HISTORY(id)),
 
   createPayment: (data) => api.post(CONFIG.ENDPOINTS.PAYMENTS, data),

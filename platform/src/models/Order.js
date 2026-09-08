@@ -27,24 +27,30 @@ class Order {
             const orderNumber = orderNumberResult.rows[0].order_number;
 
             // Create order
+            // Determine initial status based on whether a delivery boy is assigned
+            const initialStatus = assigned_delivery_boy_id ? 'ASSIGNED' : 'CREATED';
+
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                                    total_amount, status, customer_comments, return_items, return_adjust_amount, assigned_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, CURRENT_TIMESTAMP)
+                                    total_amount, status, customer_comments, return_items, return_adjust_amount,
+                                    assigned_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+                         CASE WHEN $3 IS NOT NULL THEN CURRENT_TIMESTAMP ELSE NULL END)
                  RETURNING *`,
                 [orderNumber, customer_id, assigned_delivery_boy_id, store_id,
                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
-                    total_amount, customer_comments, return_items, return_adjust_amount]
+                    total_amount, initialStatus, customer_comments, return_items, return_adjust_amount]
             );
 
             const order = orderResult.rows[0];
 
             // Create order status history
+            const historyNote = assigned_delivery_boy_id ? 'Order created and assigned' : 'Order created';
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [order.id, 'ASSIGNED', store_id, 'Order created and assigned']
+                [order.id, initialStatus, store_id, historyNote]
             );
 
             return order;
@@ -265,21 +271,21 @@ class Order {
         return this.findAll(filters);
     }
 
-    // Get ongoing orders (ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT, PAYMENT_COLLECTION)
+    // Get ongoing orders (CREATED, ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT, PAYMENT_COLLECTION)
     static async getOngoingOrders(storeId = null) {
         const filters = {
-            status: ['ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
+            status: ['CREATED', 'ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION']
         };
         if (storeId) filters.store_id = storeId;
 
         let queryText = `
-            SELECT o.*, 
+            SELECT o.*,
                    db.name as delivery_boy_name, db.mobile as delivery_boy_mobile,
                    c.area as customer_area
             FROM orders o
             LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
             LEFT JOIN customers c ON o.customer_id = c.id
-            WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+            WHERE o.status IN ('CREATED', 'ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
         `;
         const params = [];
         let paramCount = 1;
@@ -309,14 +315,15 @@ class Order {
              LEFT JOIN delivery_boys db ON o.assigned_delivery_boy_id = db.id
              LEFT JOIN users u ON o.store_id = u.id
              LEFT JOIN customers c ON o.customer_id = c.id
-             WHERE o.status IN ('ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
+             WHERE o.status IN ('CREATED', 'ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION')
                AND NOT (o.status = 'DELIVERED' AND o.assigned_delivery_boy_id IS NULL)
         `;
         const params = [];
         let paramCount = 1;
 
         if (storeIds && storeIds.length > 0) {
-            // Show unassigned orders for this admin group OR orders assigned to this delivery boy
+            // Show unassigned orders (CREATED or ASSIGNED with no delivery boy) for this admin group
+            // OR orders assigned to this delivery boy
             // IMPORTANT: Unassigned orders (assigned_delivery_boy_id IS NULL) should be visible to ALL delivery boys
             // under the same admin, regardless of which store created the order
             queryText += ` AND (
@@ -380,6 +387,7 @@ class Order {
             SELECT
                 COUNT(*) AS total_orders,
                 COUNT(*) FILTER (WHERE o.status = 'DELIVERED') AS delivered_orders,
+                COUNT(*) FILTER (WHERE o.status = 'CREATED') AS created_orders,
                 COUNT(*) FILTER (WHERE o.status = 'ASSIGNED') AS assigned_orders,
                 COUNT(*) FILTER (WHERE o.status = 'PICKED_UP') AS picked_up_orders,
                 COUNT(*) FILTER (WHERE o.status = 'PAYMENT_COLLECTION') AS payment_collection_orders
@@ -412,7 +420,7 @@ class Order {
             LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.created_at >= $1::date
               AND o.created_at < ($2::date + INTERVAL '1 day')
-              AND o.status IN ('ASSIGNED', 'PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED')
+              AND o.status IN ('CREATED', 'ASSIGNED', 'PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED')
         `;
         params.push(fromDate, toDate || fromDate);
         paramCount = 3;
@@ -565,9 +573,9 @@ class Order {
                 throw new Error('NOT_FOUND');
             }
 
-            // If order is REJECTED, allow reassignment. Otherwise, it should be in a state that allows assignment
+            // Allow assignment from CREATED, ASSIGNED, or REJECTED states
             const currentStatus = currentOrder.rows[0].status;
-            if (currentStatus !== 'REJECTED' && currentStatus !== 'ASSIGNED') {
+            if (currentStatus !== 'CREATED' && currentStatus !== 'REJECTED' && currentStatus !== 'ASSIGNED') {
                 throw new Error('INVALID_STATUS_FOR_ASSIGNMENT');
             }
 
@@ -613,8 +621,8 @@ class Order {
 
             const order = orderResult.rows[0];
 
-            // Only ASSIGNED orders can be accepted
-            if (order.status !== 'ASSIGNED') {
+            // CREATED or ASSIGNED orders can be accepted
+            if (order.status !== 'CREATED' && order.status !== 'ASSIGNED') {
                 throw new Error('INVALID_STATUS_TRANSITION');
             }
 
@@ -676,12 +684,12 @@ class Order {
                 throw new Error('INVALID_STATUS_TRANSITION');
             }
 
-            // Update order: unassign (set assigned_delivery_boy_id to NULL) and set status to ASSIGNED
+            // Update order: unassign (set assigned_delivery_boy_id to NULL) and set status to CREATED
             // This makes the order available again to all delivery boys under the admin
             const result = await client.query(
-                `UPDATE orders 
-                 SET assigned_delivery_boy_id = NULL, status = 'ASSIGNED', assigned_at = CURRENT_TIMESTAMP 
-                 WHERE id = $1 
+                `UPDATE orders
+                 SET assigned_delivery_boy_id = NULL, status = 'CREATED', assigned_at = NULL
+                 WHERE id = $1
                  RETURNING *`,
                 [orderId]
             );
@@ -728,9 +736,10 @@ class Order {
 
             // Validate status transition (allows both forward and backward transitions)
             const validTransitions = {
-                'ASSIGNED': ['ACCEPTED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can accept, pick up directly, reject, or cancel
+                'CREATED': ['ASSIGNED', 'ACCEPTED', 'CANCELLED'], // Can be assigned, accepted directly, or cancelled
+                'ASSIGNED': ['CREATED', 'ACCEPTED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can go back to CREATED, accept, pick up directly, reject, or cancel
                 'ACCEPTED': ['ASSIGNED', 'PICKED_UP', 'REJECTED', 'CANCELLED'], // Can go back to ASSIGNED, forward to PICKED_UP, reject, or cancel
-                'REJECTED': ['ASSIGNED'], // Rejected orders can be reassigned
+                'REJECTED': ['ASSIGNED', 'CREATED'], // Rejected orders can be reassigned or set back to CREATED
                 'PICKED_UP': ['ACCEPTED', 'IN_TRANSIT', 'CANCELLED'], // Can go back to ACCEPTED, forward to IN_TRANSIT, or cancel
                 'IN_TRANSIT': ['PICKED_UP', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'], // Can go back to PICKED_UP, forward to PAYMENT_COLLECTION/DELIVERED, or cancel
                 'PAYMENT_COLLECTION': ['IN_TRANSIT', 'DELIVERED', 'CANCELLED'], // Can go back to IN_TRANSIT, forward to DELIVERED, or cancel

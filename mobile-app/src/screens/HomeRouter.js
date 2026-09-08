@@ -54,7 +54,9 @@ const HomeRouter = ({ navigation }) => {
             }
 
             if (status && status !== 'none') {
-                if (status === 'pending_approval' || status === 'rejected') {
+                if (status === 'pending_approval') {
+                    navigation.replace('PharmacyStatus');
+                } else if (status === 'rejected') {
                     navigation.replace('PharmacyConfigure');
                 } else if (status === 'submitted' || status === 'approved' || status === 'building') {
                     navigation.replace('PharmacyStatus');

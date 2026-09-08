@@ -10,6 +10,48 @@ const { successResponse, errorResponse, paginatedResponse } = require('../utils/
 const { query, transaction } = require('../config/database');
 const ExcelJS = require('exceljs');
 
+// Helper: get all store IDs a delivery boy can access (own store + marketplace-approved pharmacies)
+const getDeliveryBoyStoreIds = async (deliveryBoy) => {
+    const User = require('../models/User');
+    let storeIds = [];
+
+    if (deliveryBoy.store_id) {
+        const storeUser = await User.findById(deliveryBoy.store_id);
+        if (storeUser) {
+            const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
+            storeIds = await User.getStoreIdsForAdmin(adminId);
+        }
+        if (!storeIds || storeIds.length === 0) {
+            storeIds = [deliveryBoy.store_id];
+        } else if (!storeIds.map(String).includes(String(deliveryBoy.store_id))) {
+            storeIds.push(deliveryBoy.store_id);
+        }
+    }
+
+    // Fetch marketplace-approved pharmacy IDs
+    const mktResult = await query(
+        `SELECT pharmacy_id FROM delivery_boy_pharmacies
+         WHERE delivery_boy_id = $1 AND status = 'approved'`,
+        [deliveryBoy.id]
+    );
+    for (const row of mktResult.rows) {
+        const pid = row.pharmacy_id;
+        if (!storeIds.map(String).includes(String(pid))) {
+            storeIds.push(pid);
+        }
+        const pUser = await User.findById(pid);
+        if (pUser) {
+            const aId = pUser.role === 'admin' ? pUser.id : (pUser.admin_id || pid);
+            const groupIds = await User.getStoreIdsForAdmin(aId);
+            for (const gid of groupIds) {
+                if (!storeIds.map(String).includes(String(gid))) storeIds.push(gid);
+            }
+        }
+    }
+
+    return storeIds;
+};
+
 // Helper: normalize incoming date string to YYYY-MM-DD (for consistent filtering)
 const normalizeDateParam = (rawDate) => {
     if (!rawDate) return null;
@@ -58,25 +100,15 @@ exports.getAllOrders = async (req, res, next) => {
             // Store manager: only see their own store's orders
             filters.store_ids = [req.user.userId];
         } else if (req.user.role === 'delivery_boy') {
-            // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
+            // Delivery boys: show unassigned orders in their admin group + marketplace-approved pharmacies
             const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
-            if (!deliveryBoy || !deliveryBoy.store_id) {
+            if (!deliveryBoy) {
                 return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
             }
 
-            const User = require('../models/User');
-            const storeUser = await User.findById(deliveryBoy.store_id);
-
-            let storeIds = [];
-            if (storeUser) {
-                const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
-                storeIds = await User.getStoreIdsForAdmin(adminId);
-            }
-            // Always include delivery boy's own store_id
-            if (!storeIds || storeIds.length === 0) {
-                storeIds = [deliveryBoy.store_id];
-            } else if (!storeIds.includes(deliveryBoy.store_id)) {
-                storeIds.push(deliveryBoy.store_id);
+            const storeIds = await getDeliveryBoyStoreIds(deliveryBoy);
+            if (storeIds.length === 0) {
+                return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
             }
 
             // Special filter: include unassigned + assigned to this delivery boy
@@ -241,44 +273,16 @@ exports.getTodayOrders = async (req, res, next) => {
 // Get ongoing orders
 exports.getOngoingOrders = async (req, res, next) => {
     try {
-        // For delivery boys, show unassigned orders for their admin group + orders assigned to them
+        // For delivery boys, show unassigned orders for their admin group + marketplace-approved pharmacies
         if (req.user.role === 'delivery_boy') {
-            // Get delivery boy's store_id to find admin group
             const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
-            if (!deliveryBoy || !deliveryBoy.store_id) {
+            if (!deliveryBoy) {
                 return res.json(successResponse({ orders: [], count: 0 }));
             }
 
-            // Get all store IDs for the admin group
-            const User = require('../models/User');
-            // Find the admin ID (could be the store_id itself if it's an admin, or find the admin via admin_id)
-            const storeUser = await User.findById(deliveryBoy.store_id);
-
-            let storeIds = [];
-            if (storeUser) {
-                const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
-                storeIds = await User.getStoreIdsForAdmin(adminId);
-            }
-
-            // Always include delivery boy's store_id to ensure they see orders from their store
-            if (!storeIds || storeIds.length === 0) {
-                storeIds = [deliveryBoy.store_id];
-                logger.warn('No store IDs found for admin group, using delivery boy store_id only', {
-                    deliveryBoyId: req.user.userId,
-                    storeId: deliveryBoy.store_id
-                });
-            } else {
-                // Ensure delivery boy's store_id is in the list (convert to string for comparison)
-                const storeIdStr = String(deliveryBoy.store_id);
-                const storeIdsStr = storeIds.map(id => String(id));
-                if (!storeIdsStr.includes(storeIdStr)) {
-                    storeIds.push(deliveryBoy.store_id);
-                    logger.info('Added delivery boy store_id to storeIds list', {
-                        deliveryBoyId: req.user.userId,
-                        addedStoreId: deliveryBoy.store_id,
-                        storeIds: storeIds
-                    });
-                }
+            const storeIds = await getDeliveryBoyStoreIds(deliveryBoy);
+            if (storeIds.length === 0) {
+                return res.json(successResponse({ orders: [], count: 0 }));
             }
 
             logger.info('Delivery boy order query - controller', {
@@ -287,9 +291,6 @@ exports.getOngoingOrders = async (req, res, next) => {
                 storeId: deliveryBoy.store_id,
                 storeIds: storeIds,
                 storeIdsCount: storeIds.length,
-                storeUserFound: !!storeUser,
-                storeUserRole: storeUser?.role,
-                storeUserAdminId: storeUser?.admin_id
             });
 
             const orders = await Order.getOngoingOrdersForDeliveryBoy(req.user.userId, storeIds);
@@ -1024,17 +1025,13 @@ exports.createOrder = async (req, res, next) => {
             const customerAddress = customer.address || customer.area || '';
 
             // Create order with provided order number
-            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
-
-
-            // Create order with provided order number
-            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
+            // Status is 'CREATED' (no delivery boy assigned yet - available to all delivery boys under admin)
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
                                     total_amount, status, payment_status, payment_mode, customer_comments,
                                     return_items, return_adjust_amount)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, $14, $15)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'CREATED', $11, $12, $13, $14, $15)
                  RETURNING *`,
                 [orderNumber.trim(), customerId, null, storeId,
                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
@@ -1088,13 +1085,13 @@ exports.createOrder = async (req, res, next) => {
 
             // Create status history
             const statusNotes = paidAmountNum > 0
-                ? `Order created and assigned. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
-                : 'Order created and assigned';
+                ? `Order created. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
+                : 'Order created';
 
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [order.id, 'ASSIGNED', storeId, statusNotes]
+                [order.id, 'CREATED', storeId, statusNotes]
             );
 
             return order;
@@ -1608,25 +1605,15 @@ exports.getPendingOrdersTillYesterday = async (req, res, next) => {
             // Store manager: only see their own store's orders
             filters.store_ids = [req.user.userId];
         } else if (req.user.role === 'delivery_boy') {
-            // Delivery boys: show unassigned orders in their admin group OR orders assigned to them
+            // Delivery boys: show unassigned orders in their admin group + marketplace-approved pharmacies
             const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
-            if (!deliveryBoy || !deliveryBoy.store_id) {
+            if (!deliveryBoy) {
                 return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
             }
 
-            const User = require('../models/User');
-            const storeUser = await User.findById(deliveryBoy.store_id);
-
-            let storeIds = [];
-            if (storeUser) {
-                const adminId = storeUser.role === 'admin' ? storeUser.id : (storeUser.admin_id || deliveryBoy.store_id);
-                storeIds = await User.getStoreIdsForAdmin(adminId);
-            }
-            // Always include delivery boy's own store_id
-            if (!storeIds || storeIds.length === 0) {
-                storeIds = [deliveryBoy.store_id];
-            } else if (!storeIds.includes(deliveryBoy.store_id)) {
-                storeIds.push(deliveryBoy.store_id);
+            const storeIds = await getDeliveryBoyStoreIds(deliveryBoy);
+            if (storeIds.length === 0) {
+                return res.json(paginatedResponse({ orders: [], pagination: { total: 0, page: 1, limit: filters.limit, totalPages: 0 } }));
             }
 
             // Special filter: include unassigned + assigned to this delivery boy

@@ -208,7 +208,7 @@ export default function DeliveryBoysPage() {
         const months = parseInt(approveForm.contractPeriod);
         const endDate = new Date(today);
         endDate.setMonth(endDate.getMonth() + months);
-        return endDate.toLocaleDateString();
+        return endDate.toLocaleDateString('en-GB');
     };
 
     // Show loading only for the delivery boys tab initial load
@@ -370,7 +370,7 @@ export default function DeliveryBoysPage() {
                                                     <StatusBadge isActive={boy.isActive} status={boy.status} />
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
-                                                    {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString() : '-'}
+                                                    {boy.createdAt ? new Date(boy.createdAt).toLocaleDateString('en-GB') : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
                                                     <div className="flex gap-2">
@@ -492,7 +492,7 @@ export default function DeliveryBoysPage() {
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
                                                         {app.applied_at || app.created_at
-                                                            ? new Date(app.applied_at || app.created_at).toLocaleDateString()
+                                                            ? new Date(app.applied_at || app.created_at).toLocaleDateString('en-GB')
                                                             : '-'}
                                                     </td>
                                                     <td className="px-4 py-3 whitespace-nowrap">
@@ -606,7 +606,7 @@ export default function DeliveryBoysPage() {
                                 <div className="flex items-center gap-2 text-xs text-gray-600">
                                     <Calendar className="w-3.5 h-3.5" />
                                     <span className="font-medium">Contract Start:</span>
-                                    <span>{new Date().toLocaleDateString()}</span>
+                                    <span>{new Date().toLocaleDateString('en-GB')}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-gray-600">
                                     <Calendar className="w-3.5 h-3.5" />
@@ -715,7 +715,7 @@ function ApplicationActions({ app, onMarkF2F, onApprove, onReject, actionLoading
                 {(app.contract_end || app.rate_per_km) && (
                     <span className="text-gray-500 text-[10px] block mt-0.5">
                         {app.rate_per_km && `${app.rate_per_km}/km`}
-                        {app.contract_end && ` | Ends ${new Date(app.contract_end).toLocaleDateString()}`}
+                        {app.contract_end && ` | Ends ${new Date(app.contract_end).toLocaleDateString('en-GB')}`}
                     </span>
                 )}
             </div>

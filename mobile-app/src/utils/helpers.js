@@ -35,6 +35,7 @@ export const formatCurrency = (amount) => {
 // Get order status color
 export const getOrderStatusColor = (status) => {
   const colors = {
+    [CONFIG.ORDER_STATUS.CREATED]: '#60A5FA', // light blue
     [CONFIG.ORDER_STATUS.NEW]: '#3B82F6', // blue
     [CONFIG.ORDER_STATUS.ASSIGNED]: '#8B5CF6', // purple
     [CONFIG.ORDER_STATUS.PICKED_UP]: '#F59E0B', // orange
@@ -48,6 +49,7 @@ export const getOrderStatusColor = (status) => {
 // Get order status label
 export const getOrderStatusLabel = (status) => {
   const labels = {
+    [CONFIG.ORDER_STATUS.CREATED]: 'Created',
     [CONFIG.ORDER_STATUS.NEW]: 'New',
     [CONFIG.ORDER_STATUS.ASSIGNED]: 'Assigned',
     [CONFIG.ORDER_STATUS.PICKED_UP]: 'Picked Up',

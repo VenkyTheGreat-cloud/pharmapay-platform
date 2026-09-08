@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import apiService from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import LoadingScreen from '../../components/LoadingScreen';
 import Alert from '../../components/Alert';
@@ -28,6 +29,7 @@ import CONFIG from '../../config/api';
 
 const OrderDetailsScreen = ({ route, navigation }) => {
   const { orderId } = route.params;
+  const { user } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -205,6 +207,43 @@ const OrderDetailsScreen = ({ route, navigation }) => {
     }
   };
 
+  const isMyOrder = () => {
+    return order?.delivery_boy_id === user?.id || order?.deliveryBoyId === user?.id;
+  };
+
+  const acceptOrder = async () => {
+    try {
+      setUpdating(true);
+      setError('');
+      await apiService.acceptOrder(orderId);
+      setSuccess('Order accepted successfully!');
+      await fetchOrderDetails();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      setError(handleApiError(error));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const rejectOrder = async () => {
+    try {
+      setUpdating(true);
+      setError('');
+      await apiService.rejectOrder(orderId);
+      setSuccess('Order rejected');
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1000);
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      setError(handleApiError(error));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getNextStatus = () => {
     const statusFlow = {
       [CONFIG.ORDER_STATUS.ASSIGNED]: CONFIG.ORDER_STATUS.PICKED_UP,
@@ -376,7 +415,44 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
       {/* Action Buttons */}
       <View style={styles.actionsCard}>
-        {canUpdateStatus() && nextStatus && (
+        {(order.status === CONFIG.ORDER_STATUS.CREATED || (order.status === CONFIG.ORDER_STATUS.ASSIGNED && !isMyOrder())) && (
+          <>
+            <Button
+              title="Accept Order"
+              onPress={() => {
+                RNAlert.alert(
+                  'Accept Order',
+                  'Do you want to accept this order for delivery?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Accept', onPress: acceptOrder },
+                  ]
+                );
+              }}
+              loading={updating}
+              variant="success"
+              style={styles.actionButton}
+            />
+            <Button
+              title="Reject"
+              onPress={() => {
+                RNAlert.alert(
+                  'Reject Order',
+                  'Are you sure you want to reject this order?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Reject', style: 'destructive', onPress: rejectOrder },
+                  ]
+                );
+              }}
+              loading={updating}
+              variant="secondary"
+              style={styles.actionButton}
+            />
+          </>
+        )}
+
+        {canUpdateStatus() && nextStatus && isMyOrder() && (
           <Button
             title={`Mark as ${getOrderStatusLabel(nextStatus)}`}
             onPress={() => handleStatusUpdate(nextStatus)}

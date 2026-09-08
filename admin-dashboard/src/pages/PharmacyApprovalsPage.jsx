@@ -252,12 +252,12 @@ function PharmacyRow({ pharmacy, expanded, onToggleExpand, onApprove, onReject, 
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {pharmacy.submittedAt || pharmacy.createdAt
-                        ? new Date(pharmacy.submittedAt || pharmacy.createdAt).toLocaleDateString()
+                        ? new Date(pharmacy.submittedAt || pharmacy.createdAt).toLocaleDateString('en-GB')
                         : '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2">
-                        {status === 'submitted' && (
+                        {(status === 'submitted' || status === 'pending') && (
                             <>
                                 <button
                                     onClick={onApprove}

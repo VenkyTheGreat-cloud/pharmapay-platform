@@ -318,6 +318,8 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId }) {
         switch (status) {
             case 'DELIVERED':
                 return 'bg-green-100 text-green-800';
+            case 'CREATED':
+                return 'bg-blue-100 text-blue-800';
             case 'ASSIGNED':
                 return 'bg-primary-100 text-primary-800';
             case 'PICKED_UP':

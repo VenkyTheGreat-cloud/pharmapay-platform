@@ -207,7 +207,7 @@ export default function DeliveryBoysPage() {
                                         <StatusBadge status={boy.status} />
                                     </td>
                                     <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                        {(boy.createdAt || boy.created_at) ? new Date(boy.createdAt || boy.created_at).toLocaleDateString() : '-'}
+                                        {(boy.createdAt || boy.created_at) ? new Date(boy.createdAt || boy.created_at).toLocaleDateString('en-GB') : '-'}
                                     </td>
                                 </tr>
                             ))

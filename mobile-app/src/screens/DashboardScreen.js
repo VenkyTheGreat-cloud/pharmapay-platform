@@ -62,7 +62,7 @@ const DashboardScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const activeOrders = orders.filter(o => ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT'].includes(o.status));
+  const activeOrders = orders.filter(o => ['CREATED', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT'].includes(o.status));
   const completedToday = orders.filter(o => o.status === 'DELIVERED');
   const totalEarnings = stats.totalEarnings ?? stats.total_earnings ?? 0;
 
@@ -99,7 +99,7 @@ const DashboardScreen = ({ navigation }) => {
       <View style={styles.statsGrid}>
         <StatCard
           title="Today's Earnings"
-          value={`Rs ${totalEarnings.toLocaleString('en-IN')}`}
+          value={`₹${totalEarnings.toLocaleString('en-IN')}`}
           icon="wallet-outline"
           color="#139900"
         />
@@ -117,7 +117,7 @@ const DashboardScreen = ({ navigation }) => {
         />
         <StatCard
           title="Rating"
-          value={stats.rating || '4.9/5'}
+          value={completedToday.length > 0 ? (stats.rating || '-') : 'New'}
           icon="star-outline"
           color="#8B5CF6"
         />
@@ -158,7 +158,7 @@ const DashboardScreen = ({ navigation }) => {
                 </Text>
               </View>
               <View style={styles.orderRight}>
-                <Text style={styles.orderAmount}>Rs {order.amount || 0}</Text>
+                <Text style={styles.orderAmount}>₹{order.total_amount || order.amount || 0}</Text>
                 <Text style={styles.orderStatus}>{order.status?.replace('_', ' ')}</Text>
               </View>
             </TouchableOpacity>
@@ -166,71 +166,6 @@ const DashboardScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => navigation.navigate('Marketplace')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#F0F9EC' }]}>
-              <Ionicons name="storefront-outline" size={22} color="#139900" />
-            </View>
-            <Text style={styles.actionLabel}>Browse Pharmacies</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={async () => {
-              if (Platform.OS === 'android' && CaptureNativeModule) {
-                try {
-                  const perms = await CaptureNativeModule.checkCapturePermissions();
-                  if (!perms.recordAudio || !perms.readPhoneState || !perms.readCallLog) {
-                    const granted = await CaptureNativeModule.requestCapturePermissions();
-                    if (!granted) {
-                      Alert.alert(
-                        'Permissions Required',
-                        'Voice capture needs microphone, phone state, and call log permissions. Please grant them in app settings.',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Open Settings', onPress: () => CaptureNativeModule.openAppSettings() },
-                        ]
-                      );
-                      return;
-                    }
-                  }
-                } catch (e) {
-                  console.log('Permission check error:', e);
-                }
-              }
-              navigation.navigate('Orders', { screen: 'CaptureReview' });
-            }}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FEF3C7' }]}>
-              <Ionicons name="mic-outline" size={22} color="#F59E0B" />
-            </View>
-            <Text style={styles.actionLabel}>Incoming Orders</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => navigation.navigate('Orders')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#EFF6FF' }]}>
-              <Ionicons name="list-outline" size={22} color="#3B82F6" />
-            </View>
-            <Text style={styles.actionLabel}>All Orders</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#F5F3FF' }]}>
-              <Ionicons name="person-outline" size={22} color="#8B5CF6" />
-            </View>
-            <Text style={styles.actionLabel}>Profile</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
     </ScrollView>
   );
 };
@@ -282,10 +217,6 @@ const styles = StyleSheet.create({
   orderAmount: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
   orderStatus: { fontSize: 11, color: '#139900', fontWeight: '600', marginTop: 2 },
 
-  actionsRow: { flexDirection: 'row', gap: 12 },
-  actionBtn: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-  actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  actionLabel: { fontSize: 12, fontWeight: '600', color: '#334155', textAlign: 'center' },
 });
 
 export default DashboardScreen;

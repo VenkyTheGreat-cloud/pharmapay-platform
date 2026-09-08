@@ -134,10 +134,6 @@ const MyPharmaciesScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Pharmacies</Text>
-      </View>
-
       <FlatList
         data={pharmacies}
         keyExtractor={(item) => String(item.id)}
@@ -179,19 +175,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#6B7280',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
   },
   listContent: {
     padding: 16,

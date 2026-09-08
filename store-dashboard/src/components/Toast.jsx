@@ -37,7 +37,7 @@ function ToastItem({ toast, onDismiss }) {
     useEffect(() => {
         const timer = setTimeout(() => {
             onDismiss(toast.id);
-        }, 3000);
+        }, 5000);
         return () => clearTimeout(timer);
     }, [toast.id, onDismiss]);
 
@@ -80,7 +80,7 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={toast}>
             {children}
-            <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 pointer-events-none">
                 {toasts.map((t) => (
                     <ToastItem key={t.id} toast={t} onDismiss={dismiss} />
                 ))}

@@ -24,6 +24,7 @@ const OrdersScreen = ({ navigation }) => {
 
   const filters = [
     { key: 'all', label: 'All', status: null },
+    { key: 'created', label: 'Created', status: CONFIG.ORDER_STATUS.CREATED },
     { key: 'assigned', label: 'Assigned', status: CONFIG.ORDER_STATUS.ASSIGNED },
     { key: 'picked_up', label: 'Picked Up', status: CONFIG.ORDER_STATUS.PICKED_UP },
     { key: 'in_transit', label: 'In Transit', status: CONFIG.ORDER_STATUS.IN_TRANSIT },

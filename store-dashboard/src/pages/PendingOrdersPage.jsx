@@ -44,6 +44,7 @@ const getStatusColor = (status) => {
     if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
     const normalized = status.toUpperCase();
     const colors = {
+        CREATED: 'bg-gradient-to-r from-blue-300 to-blue-500 text-white',
         ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
         ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
         REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
@@ -151,10 +152,6 @@ export default function PendingOrdersPage() {
                         <div className="flex items-center justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500"></div>
                         </div>
-                    ) : orders.length === 0 ? (
-                        <div className="flex items-center justify-center py-12">
-                            <p className="text-gray-600 text-xs">No pending orders found.</p>
-                        </div>
                     ) : (
                         <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                             <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '1200px' }}>
@@ -196,7 +193,13 @@ export default function PendingOrdersPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {orders.map((order, index) => {
+                                    {orders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={11} className="text-center py-8 text-gray-500 text-xs">
+                                                No pending orders found.
+                                            </td>
+                                        </tr>
+                                    ) : orders.map((order, index) => {
                                         const orderNumber = order.orderNumber || order.order_number || '';
                                         
                                         return (
@@ -205,7 +208,7 @@ export default function PendingOrdersPage() {
                                                     {index + 1}
                                                 </td>
                                                 <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                                    {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString() : '-'}
+                                                    {(order.createdTime || order.created_at) ? new Date(order.createdTime || order.created_at).toLocaleDateString('en-GB') : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs font-medium text-gray-900 max-w-[150px]">
                                                     {formatOrderNumber(orderNumber)}

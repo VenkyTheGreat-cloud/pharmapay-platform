@@ -5,6 +5,7 @@ const Pharmacy = require('../models/Pharmacy');
 const User = require('../models/User');
 const logger = require('../config/logger');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const emailService = require('../services/emailService');
 
 const SLUG_REGEX = /^[a-z][a-z0-9-]{1,58}[a-z0-9]$/;
 const RESERVED_SLUGS = ['pharmapay', 'portal', 'admin', 'api', 'www', 'mail', 'ftp', 'ns1', 'ns2'];
@@ -65,6 +66,15 @@ exports.signup = async (req, res, next) => {
         const { accessToken, refreshToken } = AuthService.generateTokens(user);
 
         logger.info('Pharmacy owner registered', { userId: user.id, pharmacyId: pharmacy.id, slug });
+
+        // Send notification emails (fire-and-forget, don't block registration)
+        emailService.sendNewPharmacyNotification({
+            pharmacyName, ownerName, ownerEmail: email, ownerMobile: mobile, slug
+        }).catch(err => logger.error('Admin notification email failed', { error: err.message }));
+
+        emailService.sendWelcomeEmail({
+            ownerName, ownerEmail: email, pharmacyName, slug
+        }).catch(err => logger.error('Welcome email failed', { error: err.message }));
 
         res.status(201).json(successResponse({
             token: accessToken,
@@ -434,11 +444,11 @@ exports.paymentCallback = async (req, res, next) => {
                 JSON.stringify(tenantConfig, null, 2)
             );
 
-            // Store config and set to pending approval (admin must approve before going live)
+            // Store config and submit for admin approval (payment is done)
             await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
-            await Pharmacy.updateStatus(pharmacy.id, 'pending_approval');
+            await Pharmacy.updateStatus(pharmacy.id, 'submitted', { submitted_at: new Date() });
 
-            logger.info('Payment successful, pharmacy pending admin approval', { pharmacyId: pharmacy.id, slug });
+            logger.info('Payment successful, pharmacy submitted for admin approval', { pharmacyId: pharmacy.id, slug });
 
             // Redirect to the payment screen with the transaction id so the PWA can
             // show a "Payment Successful" banner (with Payment ID) before the user

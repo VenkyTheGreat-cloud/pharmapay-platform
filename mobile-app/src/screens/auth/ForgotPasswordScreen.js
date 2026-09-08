@@ -239,7 +239,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   secureTextEntry={!showNewPassword}
                 />
                 <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)} style={styles.eyeBtn}>
-                  <Ionicons name={showNewPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+                  <Ionicons name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
               <PasswordStrength password={newPassword} accentColor={ACCENT} />
@@ -256,7 +256,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   secureTextEntry={!showConfirmPassword}
                 />
                 <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
-                  <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+                  <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
               {confirmPassword.length > 0 && newPassword === confirmPassword && (

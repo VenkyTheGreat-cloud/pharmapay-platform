@@ -118,12 +118,6 @@ export default function DismissedCapturesPage() {
                     <div className="flex items-center justify-center py-20">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
                     </div>
-                ) : captures.length === 0 ? (
-                    <div className="text-center py-20 text-gray-400">
-                        <Phone className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-lg font-medium">No dismissed captures found</p>
-                        <p className="text-sm mt-1">Try adjusting the filters</p>
-                    </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -139,7 +133,14 @@ export default function DismissedCapturesPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {captures.map((cap) => {
+                                {captures.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="text-center py-12 text-gray-400">
+                                            <p className="text-lg font-medium">No dismissed captures found</p>
+                                            <p className="text-sm mt-1">Try adjusting the filters</p>
+                                        </td>
+                                    </tr>
+                                ) : captures.map((cap) => {
                                     const ext = cap.extracted_data || {};
                                     const medicines = ext.medicines || [];
                                     const reason = ext.dismiss_reason || '-';

@@ -5,17 +5,17 @@ import TopNavBar from '../components/TopNavBar';
 
 const PLANS = [
   {
-    name: 'Starter', price: '999', popular: false,
+    name: 'Starter', price: '999', setup: '2,000', popular: false,
     desc: 'Perfect for single store pharmacies just getting started.',
     features: ['Up to 5 Delivery Partners', '100 Orders / month', 'Basic Dashboard', 'Standard Support'],
   },
   {
-    name: 'Growth', price: '2499', popular: true,
+    name: 'Growth', price: '2499', setup: '5,000', popular: true,
     desc: 'For growing pharmacies with active delivery operations.',
     features: ['Up to 20 Delivery Partners', 'Unlimited Orders', 'White-labeled App', 'Live GPS Tracking', 'Advanced Analytics', 'Priority Support'],
   },
   {
-    name: 'Enterprise', price: '5999', popular: false,
+    name: 'Enterprise', price: '5999', setup: '10,000', popular: false,
     desc: 'Multi store chains needing full control and automation.',
     features: ['Unlimited Partners & Orders', 'Custom Branding & Domain', 'API Integrations (POS)', 'Automated Settlements', 'Dedicated Account Manager', '24/7 Phone Support'],
   },
@@ -71,7 +71,7 @@ const PricingScreen = ({ navigation }) => {
                 <Text style={[styles.priceAmount, plan.popular && { color: '#139900' }]}>₹{plan.price}</Text>
                 <Text style={styles.pricePeriod}>/month</Text>
               </View>
-              <Text style={styles.setupNote}>+ one-time setup fee</Text>
+              <Text style={styles.setupNote}>+ ₹{plan.setup} one-time setup fee</Text>
               <View style={styles.featuresList}>
                 {plan.features.map((f) => (
                   <View key={f} style={styles.featureRow}>

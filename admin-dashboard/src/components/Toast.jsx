@@ -43,7 +43,7 @@ function Toast({ toast, onDismiss }) {
     useEffect(() => {
         const timer = setTimeout(() => {
             onDismiss(toast.id);
-        }, 3000);
+        }, 5000);
         return () => clearTimeout(timer);
     }, [toast.id, onDismiss]);
 
@@ -86,8 +86,8 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={toast}>
             {children}
-            {/* Toast container - top right */}
-            <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
+            {/* Toast container - top center */}
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2">
                 {toasts.map((t) => (
                     <Toast key={t.id} toast={t} onDismiss={dismiss} />
                 ))}
@@ -97,11 +97,11 @@ export function ToastProvider({ children }) {
                 @keyframes slide-in {
                     from {
                         opacity: 0;
-                        transform: translateX(100%);
+                        transform: translateY(-100%);
                     }
                     to {
                         opacity: 1;
-                        transform: translateX(0);
+                        transform: translateY(0);
                     }
                 }
                 .animate-slide-in {

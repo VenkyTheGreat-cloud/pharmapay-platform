@@ -240,7 +240,7 @@ export default function StoreStaffPage() {
                                             <StatusBadge isActive={staff.isActive} status={staff.status} />
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600">
-                                            {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString() : '-'}
+                                            {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString('en-GB') : '-'}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap text-xs font-medium">
                                             <div className="flex gap-2">

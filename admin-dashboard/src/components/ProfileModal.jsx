@@ -169,7 +169,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                                         <div>
                                             <p className="text-sm text-gray-600">Member Since</p>
                                             <p className="text-lg font-semibold text-gray-900">
-                                                {new Date(user.createdAt).toLocaleDateString('en-US', {
+                                                {new Date(user.createdAt).toLocaleDateString('en-GB', {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
