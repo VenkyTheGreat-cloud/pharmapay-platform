@@ -108,7 +108,7 @@ const loginLimiter = rateLimit({
     message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many login attempts. Please try again after 15 minutes.' } },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.ip + ':' + (req.body?.mobileEmail || req.body?.identifier || ''),
+    validate: { xForwardedForHeader: false },
 });
 app.use('/api/auth/login', loginLimiter);
 
