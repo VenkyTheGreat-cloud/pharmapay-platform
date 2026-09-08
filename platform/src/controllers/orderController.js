@@ -1025,17 +1025,13 @@ exports.createOrder = async (req, res, next) => {
             const customerAddress = customer.address || customer.area || '';
 
             // Create order with provided order number
-            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
-
-
-            // Create order with provided order number
-            // Note: assigned_delivery_boy_id is NULL - order is available to all delivery boys under admin
+            // Status is 'CREATED' (no delivery boy assigned yet - available to all delivery boys under admin)
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
                                     customer_name, customer_phone, customer_address, customer_lat, customer_lng,
                                     total_amount, status, payment_status, payment_mode, customer_comments,
                                     return_items, return_adjust_amount)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNED', $11, $12, $13, $14, $15)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'CREATED', $11, $12, $13, $14, $15)
                  RETURNING *`,
                 [orderNumber.trim(), customerId, null, storeId,
                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
@@ -1089,13 +1085,13 @@ exports.createOrder = async (req, res, next) => {
 
             // Create status history
             const statusNotes = paidAmountNum > 0
-                ? `Order created and assigned. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
-                : 'Order created and assigned';
+                ? `Order created. Initial payment of ${paidAmountNum} received via ${normalizedPaymentMode}.`
+                : 'Order created';
 
             await client.query(
                 `INSERT INTO order_status_history (order_id, status, changed_by, notes)
                  VALUES ($1, $2, $3, $4)`,
-                [order.id, 'ASSIGNED', storeId, statusNotes]
+                [order.id, 'CREATED', storeId, statusNotes]
             );
 
             return order;

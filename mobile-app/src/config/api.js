@@ -46,6 +46,7 @@ export default {
 
   // Order Status (matching backend API)
   ORDER_STATUS: {
+    CREATED: 'CREATED',
     NEW: 'NEW',
     ASSIGNED: 'ASSIGNED',
     PICKED_UP: 'PICKED_UP',

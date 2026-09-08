@@ -167,7 +167,7 @@ export default function Layout({ children }) {
                         </button>
                         <div className="flex items-center gap-4 ml-auto">
                             <span className="text-sm text-gray-600 hidden md:block">
-                                {new Date().toLocaleDateString('en-US', {
+                                {new Date().toLocaleDateString('en-GB', {
                                     weekday: 'long',
                                     year: 'numeric',
                                     month: 'long',

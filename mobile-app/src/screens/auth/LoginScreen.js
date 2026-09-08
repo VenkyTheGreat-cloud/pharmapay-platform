@@ -147,7 +147,7 @@ const LoginScreen = ({ navigation }) => {
                   secureTextEntry={!showPassword}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                  <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+                  <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
                 </TouchableOpacity>
               </View>
               {errors.password && <Text style={styles.errorHint}>{errors.password}</Text>}

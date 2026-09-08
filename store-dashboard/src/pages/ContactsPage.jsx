@@ -424,10 +424,6 @@ export default function ContactsPage() {
                         <div className="flex items-center justify-center py-12">
                             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-500"></div>
                         </div>
-                    ) : contacts.length === 0 ? (
-                        <div className="flex items-center justify-center py-12">
-                            <p className="text-gray-600 text-xs">No contacts found for the selected date.</p>
-                        </div>
                     ) : (
                         <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                             <table className="min-w-full divide-y divide-gray-200">
@@ -451,7 +447,13 @@ export default function ContactsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {contacts.map((customer, index) => {
+                                    {contacts.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="text-center py-8 text-gray-500 text-xs">
+                                                No contacts found for the selected date.
+                                            </td>
+                                        </tr>
+                                    ) : contacts.map((customer, index) => {
                                         const hasOrder = customer.has_order || false;
                                         const order = customer.order || null;
                                         const orderCreatedDate = order?.order_created_at || order?.order_created_date_time || null;

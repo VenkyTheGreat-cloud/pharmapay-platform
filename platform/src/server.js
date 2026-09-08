@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
 const logger = require('./config/logger');
+const rateLimit = require('express-rate-limit');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Initialize Firebase Admin SDK (for push notifications)
@@ -99,6 +100,17 @@ app.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development',
     });
 });
+
+// Rate limiting for login endpoints
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 attempts per window
+    message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many login attempts. Please try again after 15 minutes.' } },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip + ':' + (req.body?.mobileEmail || req.body?.identifier || ''),
+});
+app.use('/api/auth/login', loginLimiter);
 
 // API routes
 app.use('/api/auth', authRoutes);

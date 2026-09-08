@@ -177,6 +177,30 @@ export const authAPI = {
         }
         return api.post('/auth/change-password', data);
     },
+    logout: () => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Logged out (mock)' });
+        }
+        return api.post('/auth/logout');
+    },
+    forgotPasswordSendCode: (identifier) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { maskedContact: 'te**@test.com', expiresIn: 600, otp: '123456' } });
+        }
+        return api.post('/auth/forgot-password/send-code', { identifier });
+    },
+    forgotPasswordVerifyCode: (identifier, otp) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, data: { resetToken: 'mock-reset-token' } });
+        }
+        return api.post('/auth/forgot-password/verify-code', { identifier, otp });
+    },
+    forgotPasswordReset: (resetToken, newPassword) => {
+        if (API_DISABLED) {
+            return mockResolve({ success: true, message: 'Password reset (mock)' });
+        }
+        return api.post('/auth/forgot-password/reset', { resetToken, newPassword });
+    },
 };
 
 // Delivery Boys API

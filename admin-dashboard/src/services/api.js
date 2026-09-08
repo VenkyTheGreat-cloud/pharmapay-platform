@@ -108,6 +108,12 @@ const realAuthAPI = {
     changePassword: (data) => api.post('/auth/change-password', data),
     logout: () => api.post('/auth/logout'),
     verifyToken: () => api.get('/auth/verify'),
+    forgotPasswordSendCode: (identifier) =>
+        api.post('/auth/forgot-password/send-code', { identifier }),
+    forgotPasswordVerifyCode: (identifier, otp) =>
+        api.post('/auth/forgot-password/verify-code', { identifier, otp }),
+    forgotPasswordReset: (resetToken, newPassword) =>
+        api.post('/auth/forgot-password/reset', { resetToken, newPassword }),
 };
 
 const realCustomersAPI = {

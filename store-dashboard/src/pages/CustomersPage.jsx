@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { customersAPI } from '../services/api';
-import { Users, Search, Eye, MapPin, Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Users, Search, Eye, MapPin, Plus, Edit, Trash2, Package, X } from 'lucide-react';
 import AddCustomerModal from '../components/AddCustomerModal';
 import EditCustomerModal from '../components/EditCustomerModal';
 import { useToast } from '../components/Toast';
@@ -146,11 +146,28 @@ export default function CustomersPage() {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                if (!e.target.value.trim()) {
+                                    loadCustomers();
+                                }
+                            }}
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            placeholder="Search by name, mobile, or address..."
-                            className="w-full pl-10 pr-4 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            placeholder="Search by name or mobile"
+                            className="w-full pl-10 pr-8 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
+                        {searchQuery && (
+                            <button
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    loadCustomers();
+                                }}
+                                className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
+                                title="Clear search"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
                     <button
                         onClick={handleSearch}
@@ -225,7 +242,7 @@ export default function CustomersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
-                                            {customer.created_at || customer.createdAt ? new Date(customer.created_at || customer.createdAt).toLocaleDateString() : '-'}
+                                            {customer.created_at || customer.createdAt ? new Date(customer.created_at || customer.createdAt).toLocaleDateString('en-GB') : '-'}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap" style={{ minWidth: '120px' }}>
                                             <div className="flex gap-2">

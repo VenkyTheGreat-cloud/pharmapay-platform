@@ -20,8 +20,12 @@ import CONFIG from '../../config/api';
 const PaymentScreen = ({ route, navigation }) => {
   const { orderId, order } = route.params;
 
+  const totalAmount = parseFloat(order.total_amount || order.amount || 0);
+  const paidAmount = parseFloat(order.payment_summary?.total_paid || order.paid_amount || 0);
+  const pendingAmount = Math.max(0, totalAmount - paidAmount);
+
   const [paymentMode, setPaymentMode] = useState(CONFIG.PAYMENT_MODES.CASH);
-  const [cashAmount, setCashAmount] = useState(order.amount.toString());
+  const [cashAmount, setCashAmount] = useState(pendingAmount.toString());
   const [bankAmount, setBankAmount] = useState('0');
   const [transactionRef, setTransactionRef] = useState('');
   const [receiptPhoto, setReceiptPhoto] = useState(null);
@@ -45,11 +49,11 @@ const PaymentScreen = ({ route, navigation }) => {
 
     // Reset amounts based on mode
     if (mode === CONFIG.PAYMENT_MODES.CASH) {
-      setCashAmount(order.amount.toString());
+      setCashAmount(pendingAmount.toString());
       setBankAmount('0');
     } else if (mode === CONFIG.PAYMENT_MODES.BANK || mode === CONFIG.PAYMENT_MODES.CREDIT) {
       setCashAmount('0');
-      setBankAmount(order.amount.toString());
+      setBankAmount(pendingAmount.toString());
     }
   };
 
@@ -60,15 +64,18 @@ const PaymentScreen = ({ route, navigation }) => {
     const bank = parseFloat(bankAmount) || 0;
     const total = cash + bank;
 
-    if (total !== parseFloat(order.amount)) {
-      newErrors.amount = `Total payment must equal ${formatCurrency(order.amount)}`;
+    if (total > pendingAmount + 0.01) {
+      newErrors.amount = `Payment cannot exceed pending amount ${formatCurrency(pendingAmount)}`;
+    }
+    if (total <= 0) {
+      newErrors.amount = 'Payment amount must be greater than 0';
     }
 
     if ((paymentMode === CONFIG.PAYMENT_MODES.BANK || paymentMode === CONFIG.PAYMENT_MODES.CREDIT) && !transactionRef.trim()) {
       newErrors.transactionRef = 'Transaction reference is required';
     }
 
-    if (!receiptPhoto) {
+    if (!receiptPhoto && paymentMode !== CONFIG.PAYMENT_MODES.CASH) {
       newErrors.receipt = 'Please upload a payment receipt photo';
     }
 
@@ -160,12 +167,12 @@ const PaymentScreen = ({ route, navigation }) => {
 
       const paymentData = {
         order_id: orderId,
-        amount: parseFloat(order.amount),
+        amount: parseFloat(cashAmount) + parseFloat(bankAmount),
         payment_mode: paymentMode,
         cash_amount: parseFloat(cashAmount) || 0,
         bank_amount: parseFloat(bankAmount) || 0,
         transaction_reference: transactionRef.trim() || null,
-        receipt_photo: receiptPhoto.uri,
+        receipt_photo: receiptPhoto ? receiptPhoto.uri : null,
       };
 
       await apiService.createPayment(paymentData);
@@ -199,7 +206,17 @@ const PaymentScreen = ({ route, navigation }) => {
         </View>
         <View style={styles.row}>
           <Text style={styles.label}>Total Amount:</Text>
-          <Text style={styles.amountValue}>{formatCurrency(order.amount)}</Text>
+          <Text style={styles.amountValue}>{formatCurrency(totalAmount)}</Text>
+        </View>
+        {paidAmount > 0 && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Already Paid:</Text>
+            <Text style={[styles.value, { color: '#139900' }]}>{formatCurrency(paidAmount)}</Text>
+          </View>
+        )}
+        <View style={styles.row}>
+          <Text style={styles.label}>Amount to Collect:</Text>
+          <Text style={styles.amountValue}>{formatCurrency(pendingAmount)}</Text>
         </View>
       </View>
 

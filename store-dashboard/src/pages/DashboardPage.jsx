@@ -123,6 +123,7 @@ export default function DashboardPage() {
         if (!status) return 'bg-gradient-to-r from-gray-400 to-gray-600 text-white';
         const normalized = status.toUpperCase();
         const colors = {
+            CREATED: 'bg-gradient-to-r from-blue-300 to-blue-500 text-white',
             ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
             ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
             REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',
@@ -287,6 +288,7 @@ export default function DashboardPage() {
                                     className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                 >
                                     <option value="">All Status</option>
+                                    <option value="CREATED">Created</option>
                                     <option value="ASSIGNED">Assigned</option>
                                     <option value="ACCEPTED">Accepted</option>
                                     <option value="REJECTED">Rejected</option>
@@ -322,9 +324,6 @@ export default function DashboardPage() {
                                 )}
                             </div>
                         </div>
-                        {filteredForList.length === 0 ? (
-                            <p className="text-gray-600 text-sm">No orders found for the selected date.</p>
-                        ) : (
                             <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 border border-gray-200 rounded">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gradient-to-r from-primary-500 to-primary-600">
@@ -368,7 +367,13 @@ export default function DashboardPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
-                                        {filteredForList.map((order, index) => {
+                                        {filteredForList.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={12} className="text-center py-8 text-gray-500 text-sm">
+                                                    No orders found for the selected date.
+                                                </td>
+                                            </tr>
+                                        ) : filteredForList.map((order, index) => {
                                             const orderNumber = order.orderNumber || order.order_number || '';
 
                                             const formatOrderNumber = (orderNum) => {
@@ -453,7 +458,6 @@ export default function DashboardPage() {
                                     </tbody>
                                 </table>
                             </div>
-                        )}
                         </div>
                     </div>
                 </>
@@ -996,6 +1000,7 @@ function StatCard({ icon, label, value, color }) {
 function StatusBadge({ status }) {
     if (!status) return null;
     const labelMap = {
+        CREATED: 'Created',
         ASSIGNED: 'Assigned',
         ACCEPTED: 'Accepted',
         REJECTED: 'Rejected',
@@ -1006,6 +1011,7 @@ function StatusBadge({ status }) {
         CANCELLED: 'Cancelled',
     };
     const colorMap = {
+        CREATED: 'bg-gradient-to-r from-blue-300 to-blue-500 text-white',
         ASSIGNED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
         ACCEPTED: 'bg-gradient-to-r from-primary-400 to-primary-600 text-white',
         REJECTED: 'bg-gradient-to-r from-red-400 to-red-600 text-white',

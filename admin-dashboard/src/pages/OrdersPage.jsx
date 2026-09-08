@@ -83,6 +83,7 @@ export default function OrdersPage() {
                             className="border border-gray-300 rounded px-3 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         >
                             <option value="">All Status</option>
+                            <option value="CREATED">Created</option>
                             <option value="ASSIGNED">Assigned</option>
                             <option value="IN_TRANSIT">In Transit</option>
                             <option value="DELIVERED">Delivered</option>
@@ -166,7 +167,7 @@ export default function OrdersPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {order.createdTime
-                                                ? new Date(order.createdTime).toLocaleDateString()
+                                                ? new Date(order.createdTime).toLocaleDateString('en-GB')
                                                 : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm">

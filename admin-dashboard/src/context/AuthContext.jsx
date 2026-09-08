@@ -17,7 +17,22 @@ export const AuthProvider = ({ children }) => {
             const parsed = JSON.parse(savedUser);
             // Only allow admin/super_admin role on the admin dashboard
             if (parsed.role === 'admin' || parsed.role === 'super_admin') {
-                setUser(parsed);
+                // Validate tenant - user must belong to the pharmacy matching the subdomain
+                const hostname = window.location.hostname;
+                const parts = hostname.split('.');
+                if (parts.length >= 3) {
+                    const subdomain = parts[0];
+                    const userSlug = parsed.pharmacySlug || parsed.pharmacy_slug;
+                    if (userSlug && subdomain !== userSlug && parsed.role !== 'super_admin') {
+                        localStorage.removeItem('admin_token');
+                        localStorage.removeItem('admin_refreshToken');
+                        localStorage.removeItem('admin_user');
+                    } else {
+                        setUser(parsed);
+                    }
+                } else {
+                    setUser(parsed);
+                }
             } else {
                 // Wrong role for this dashboard — clear stale credentials
                 localStorage.removeItem('admin_token');
@@ -60,6 +75,24 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('admin_user', JSON.stringify(user));
             setUser(user);
 
+            // Validate tenant - user must belong to the pharmacy matching the subdomain
+            const hostname = window.location.hostname;
+            const parts = hostname.split('.');
+            if (parts.length >= 3) {
+                const subdomain = parts[0];
+                const userSlug = user.pharmacySlug || user.pharmacy_slug;
+                if (userSlug && subdomain !== userSlug && user.role !== 'super_admin') {
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_refreshToken');
+                    localStorage.removeItem('admin_user');
+                    setUser(null);
+                    return {
+                        success: false,
+                        error: 'You are not authorized to access this pharmacy dashboard.',
+                    };
+                }
+            }
+
             return { success: true };
         } catch (error) {
             return {
@@ -69,7 +102,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await authAPI.logout();
+        } catch (e) {
+            // Ignore errors - still proceed with local logout
+        }
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_refreshToken');
         localStorage.removeItem('admin_user');
