@@ -211,7 +211,15 @@ const AdminPanelScreen = ({ navigation }) => {
       return <ActivityIndicator size="small" color="#139900" style={{ marginTop: 8 }} />;
     }
 
-    if (pharmacy.status === 'submitted') {
+    // A pharmacy is ready for the admin's decision once it has been submitted,
+    // or once payment is complete (the payment callback moves it to
+    // 'pending_approval' with payment_status = 'paid').
+    const isPaid = pharmacy.payment_status === 'paid';
+    const awaitingApproval =
+      pharmacy.status === 'submitted' ||
+      (pharmacy.status === 'pending_approval' && isPaid);
+
+    if (awaitingApproval) {
       return (
         <View style={styles.actionRow}>
           <TouchableOpacity
@@ -231,7 +239,7 @@ const AdminPanelScreen = ({ navigation }) => {
     }
 
     if (pharmacy.status === 'pending_approval') {
-      return <Text style={styles.statusNote}>Awaiting submission</Text>;
+      return <Text style={styles.statusNote}>Awaiting payment</Text>;
     }
 
     if (pharmacy.status === 'live') {
