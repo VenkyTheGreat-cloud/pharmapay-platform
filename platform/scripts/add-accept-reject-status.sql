@@ -5,8 +5,8 @@
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
 
 -- Step 2: Add the new constraint with ACCEPTED and REJECTED statuses
-ALTER TABLE orders ADD CONSTRAINT orders_status_check 
-    CHECK (status IN ('ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'));
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+    CHECK (status IN ('CREATED', 'ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'));
 
 -- Step 3: Verify the constraint
 SELECT conname, pg_get_constraintdef(oid) as definition

@@ -16,8 +16,8 @@
 
 -- Add ACCEPTED and REJECTED statuses to orders table
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check;
-ALTER TABLE orders ADD CONSTRAINT orders_status_check 
-    CHECK (status IN ('ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'));
+ALTER TABLE orders ADD CONSTRAINT orders_status_check
+    CHECK (status IN ('CREATED', 'ASSIGNED', 'ACCEPTED', 'REJECTED', 'PICKED_UP', 'IN_TRANSIT', 'PAYMENT_COLLECTION', 'DELIVERED', 'CANCELLED'));
 
 -- ============================================================================
 -- PART 2: SIMPLIFIED ORDER & PAYMENT FLOW
