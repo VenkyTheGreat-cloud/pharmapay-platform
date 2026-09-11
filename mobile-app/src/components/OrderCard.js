@@ -19,7 +19,7 @@ const OrderCard = ({ order, onPress }) => {
       activeOpacity={0.7}
     >
       <View style={styles.header}>
-        <Text style={styles.orderId}>Order #{order.id}</Text>
+        <Text style={styles.orderId}>Order #{order.order_number || order.id}</Text>
         <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
           <Text style={styles.statusText}>{statusLabel}</Text>
         </View>

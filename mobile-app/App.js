@@ -53,7 +53,27 @@ const linking = {
       PrivacyPolicy: 'privacy-policy',
       Terms: 'terms',
       HomeRouter: 'home',
-      Main: 'main',
+      Main: {
+        screens: {
+          Dashboard: 'dashboard',
+          Orders: {
+            screens: {
+              OrdersList: 'orders',
+              OrderDetails: 'orders/:orderId',
+            },
+          },
+          Pharmacies: {
+            screens: {
+              MarketplaceHome: 'pharmacies',
+            },
+          },
+          Profile: {
+            screens: {
+              ProfileMain: 'profile',
+            },
+          },
+        },
+      },
       AdminPanel: 'admin-panel',
     },
   },

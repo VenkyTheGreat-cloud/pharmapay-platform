@@ -101,7 +101,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Rate limiting for login endpoints
+// Rate limiting for login endpoints — keyed by user identifier (not IP) so shared connections aren't locked out
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // 10 attempts per window
@@ -109,6 +109,12 @@ const loginLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     validate: { xForwardedForHeader: false },
+    keyGenerator: (req) => {
+        const identifier = req.body?.mobileEmail || req.body?.identifier || '';
+        // Use identifier if available, fall back to IP only as last resort
+        return identifier ? `user:${identifier.toLowerCase()}` : req.ip;
+    },
+    skipSuccessfulRequests: true, // Only count failed attempts
 });
 app.use('/api/auth/login', loginLimiter);
 

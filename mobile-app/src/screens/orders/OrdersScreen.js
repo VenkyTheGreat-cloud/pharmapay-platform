@@ -24,11 +24,15 @@ const OrdersScreen = ({ navigation }) => {
 
   const filters = [
     { key: 'all', label: 'All', status: null },
-    { key: 'created', label: 'Created', status: CONFIG.ORDER_STATUS.CREATED },
+    { key: 'created', label: 'New Order', status: CONFIG.ORDER_STATUS.CREATED },
     { key: 'assigned', label: 'Assigned', status: CONFIG.ORDER_STATUS.ASSIGNED },
+    { key: 'accepted', label: 'Accepted', status: CONFIG.ORDER_STATUS.ACCEPTED },
+    { key: 'rejected', label: 'Rejected', status: CONFIG.ORDER_STATUS.REJECTED },
     { key: 'picked_up', label: 'Picked Up', status: CONFIG.ORDER_STATUS.PICKED_UP },
     { key: 'in_transit', label: 'In Transit', status: CONFIG.ORDER_STATUS.IN_TRANSIT },
+    { key: 'payment_collection', label: 'Payment Collection', status: CONFIG.ORDER_STATUS.PAYMENT_COLLECTION },
     { key: 'delivered', label: 'Delivered', status: CONFIG.ORDER_STATUS.DELIVERED },
+    { key: 'cancelled', label: 'Cancelled', status: CONFIG.ORDER_STATUS.CANCELLED },
   ];
 
   useEffect(() => {
@@ -39,13 +43,18 @@ const OrdersScreen = ({ navigation }) => {
     filterOrders();
   }, [selectedFilter, orders]);
 
+  const [error, setError] = useState(null);
+
   const fetchOrders = async () => {
     try {
+      setError(null);
       const response = await apiService.getMyOrders();
       const orderData = response.data?.data?.orders || response.data?.data || response.data;
       setOrders(Array.isArray(orderData) ? orderData : []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError(handleApiError(err));
+      setOrders([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -124,11 +133,13 @@ const OrdersScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <EmptyState
-            icon="file-tray-outline"
+            icon={error ? 'alert-circle-outline' : 'file-tray-outline'}
             message={
-              selectedFilter === 'all'
-                ? 'No orders found'
-                : `No ${filters.find((f) => f.key === selectedFilter)?.label.toLowerCase()} orders`
+              error
+                ? 'Unable to load orders. Pull down to retry.'
+                : selectedFilter === 'all'
+                  ? 'No orders available'
+                  : `No ${filters.find((f) => f.key === selectedFilter)?.label.toLowerCase()} orders`
             }
           />
         }

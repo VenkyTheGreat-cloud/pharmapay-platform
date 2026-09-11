@@ -980,15 +980,22 @@ exports.createOrder = async (req, res, next) => {
             return res.status(404).json(errorResponse('NOT_FOUND', 'Customer not found'));
         }
 
-        // Check if customer belongs to store
-        if (customer.store_id !== storeId) {
-            return res.status(403).json(errorResponse('FORBIDDEN', 'Customer does not belong to your store'));
-        }
-
         // Determine admin ID for push notifications
         // If user is admin, use their ID; if store_manager, use their adminId
         const User = require('../models/User');
         const adminId = req.user.role === 'admin' ? req.user.userId : (req.user.adminId || req.user.userId);
+
+        // Check if customer belongs to store (admins can access customers from all their stores)
+        if (customer.store_id !== storeId) {
+            if (req.user.role === 'admin') {
+                const storeIds = await User.getStoreIdsForAdmin(storeId);
+                if (!storeIds.includes(customer.store_id)) {
+                    return res.status(403).json(errorResponse('FORBIDDEN', 'Customer does not belong to your store'));
+                }
+            } else {
+                return res.status(403).json(errorResponse('FORBIDDEN', 'Customer does not belong to your store'));
+            }
+        }
 
         logger.info('Admin ID determined for push notification', {
             adminId,
@@ -1235,12 +1242,12 @@ exports.assignOrder = async (req, res, next) => {
                 .json(errorResponse('VALIDATION_ERROR', 'Either deliveryBoyId or customerReceivedAtStore must be provided'));
         }
 
-        // Allow assignment if order is ASSIGNED or REJECTED
-        if (order.status !== 'ASSIGNED' && order.status !== 'REJECTED') {
+        // Allow assignment if order is CREATED, ASSIGNED or REJECTED
+        if (order.status !== 'CREATED' && order.status !== 'ASSIGNED' && order.status !== 'REJECTED') {
             return res.status(400).json(
                 errorResponse(
                     'INVALID_STATUS',
-                    `Cannot assign order with status: ${order.status}. Order must be ASSIGNED or REJECTED.`
+                    `Cannot assign order with status: ${order.status}. Order must be CREATED, ASSIGNED or REJECTED.`
                 )
             );
         }
@@ -1391,18 +1398,14 @@ exports.acceptOrder = async (req, res, next) => {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order not available for you'));
         }
 
-        // Check if order belongs to delivery boy's admin group
+        // Check if order belongs to delivery boy's admin group or marketplace-approved pharmacies
         const deliveryBoy = await DeliveryBoy.findById(req.user.userId);
-        if (!deliveryBoy || !deliveryBoy.store_id) {
-            return res.status(403).json(errorResponse('FORBIDDEN', 'Delivery boy not found or not linked to a store'));
+        if (!deliveryBoy) {
+            return res.status(403).json(errorResponse('FORBIDDEN', 'Delivery boy not found'));
         }
 
-        const User = require('../models/User');
-        const storeUser = await User.findById(deliveryBoy.store_id);
-        const adminId = storeUser?.role === 'admin' ? storeUser.id : storeUser?.admin_id || deliveryBoy.store_id;
-        const storeIds = await User.getStoreIdsForAdmin(adminId);
-
-        if (!storeIds.includes(order.store_id)) {
+        const storeIds = await getDeliveryBoyStoreIds(deliveryBoy);
+        if (!storeIds.map(String).includes(String(order.store_id))) {
             return res.status(403).json(errorResponse('FORBIDDEN', 'Order does not belong to your admin group'));
         }
 
@@ -1419,7 +1422,7 @@ exports.acceptOrder = async (req, res, next) => {
         }, 'Order accepted successfully'));
     } catch (error) {
         if (error.message === 'INVALID_STATUS_TRANSITION') {
-            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Order must be in ASSIGNED status to accept'));
+            return res.status(400).json(errorResponse('INVALID_STATUS_TRANSITION', 'Order must be in CREATED or ASSIGNED status to accept'));
         }
         next(error);
     }

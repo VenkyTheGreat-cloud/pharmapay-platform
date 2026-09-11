@@ -85,14 +85,17 @@ exports.register = async (req, res, next) => {
 // Login
 exports.login = async (req, res, next) => {
     try {
-        const { mobileEmail, password, dashboardType } = req.body;
+        const { mobileEmail: rawMobileEmail, password, dashboardType } = req.body;
 
         // Validation
-        if (!mobileEmail || !password) {
+        if (!rawMobileEmail || !password) {
             return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Email/mobile and password are required'));
         }
 
-        logger.info('Login attempt', { 
+        // Normalize email to lowercase (phone numbers are unaffected)
+        const mobileEmail = rawMobileEmail.trim().toLowerCase();
+
+        logger.info('Login attempt', {
             mobileEmail: mobileEmail?.substring(0, 3) + '***',
             hasPassword: !!password,
             dashboardType: dashboardType || 'not specified'
