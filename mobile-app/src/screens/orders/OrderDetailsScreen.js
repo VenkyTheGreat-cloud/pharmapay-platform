@@ -7,7 +7,6 @@ import {
   Image,
   TouchableOpacity,
   Linking,
-  Alert as RNAlert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 import LoadingScreen from '../../components/LoadingScreen';
 import Alert from '../../components/Alert';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import {
   formatDateTime,
   formatCurrency,
@@ -36,6 +36,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [returnItemsPhoto, setReturnItemsPhoto] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ visible: false, type: null });
 
   useEffect(() => {
     fetchOrderDetails();
@@ -247,6 +248,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const getNextStatus = () => {
     const statusFlow = {
       [CONFIG.ORDER_STATUS.ASSIGNED]: CONFIG.ORDER_STATUS.PICKED_UP,
+      [CONFIG.ORDER_STATUS.ACCEPTED]: CONFIG.ORDER_STATUS.PICKED_UP,
       [CONFIG.ORDER_STATUS.PICKED_UP]: CONFIG.ORDER_STATUS.IN_TRANSIT,
       [CONFIG.ORDER_STATUS.IN_TRANSIT]: CONFIG.ORDER_STATUS.DELIVERED,
     };
@@ -256,6 +258,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const canUpdateStatus = () => {
     return [
       CONFIG.ORDER_STATUS.ASSIGNED,
+      CONFIG.ORDER_STATUS.ACCEPTED,
       CONFIG.ORDER_STATUS.PICKED_UP,
       CONFIG.ORDER_STATUS.IN_TRANSIT,
     ].includes(order?.status);
@@ -289,8 +292,8 @@ const OrderDetailsScreen = ({ route, navigation }) => {
       {/* Order Header */}
       <View style={styles.card}>
         <View style={styles.row}>
-          <Text style={styles.label}>Order ID:</Text>
-          <Text style={styles.value}>#{order.id}</Text>
+          <Text style={styles.label}>Order #:</Text>
+          <Text style={styles.value}>#{order.order_number || order.id}</Text>
         </View>
         <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
           <Text style={styles.statusText}>{statusLabel}</Text>
@@ -413,38 +416,42 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         </View>
       )}
 
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        visible={confirmDialog.visible && confirmDialog.type === 'accept'}
+        title="Accept Order"
+        message="Do you want to accept this order for delivery?"
+        confirmText="Accept"
+        confirmVariant="success"
+        icon="checkmark-circle-outline"
+        onConfirm={() => { setConfirmDialog({ visible: false, type: null }); acceptOrder(); }}
+        onCancel={() => setConfirmDialog({ visible: false, type: null })}
+      />
+      <ConfirmDialog
+        visible={confirmDialog.visible && confirmDialog.type === 'reject'}
+        title="Reject Order"
+        message="Are you sure you want to reject this order?"
+        confirmText="Reject"
+        confirmVariant="danger"
+        icon="close-circle-outline"
+        onConfirm={() => { setConfirmDialog({ visible: false, type: null }); rejectOrder(); }}
+        onCancel={() => setConfirmDialog({ visible: false, type: null })}
+      />
+
       {/* Action Buttons */}
       <View style={styles.actionsCard}>
         {(order.status === CONFIG.ORDER_STATUS.CREATED || (order.status === CONFIG.ORDER_STATUS.ASSIGNED && !isMyOrder())) && (
           <>
             <Button
               title="Accept Order"
-              onPress={() => {
-                RNAlert.alert(
-                  'Accept Order',
-                  'Do you want to accept this order for delivery?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Accept', onPress: acceptOrder },
-                  ]
-                );
-              }}
+              onPress={() => setConfirmDialog({ visible: true, type: 'accept' })}
               loading={updating}
               variant="success"
               style={styles.actionButton}
             />
             <Button
               title="Reject"
-              onPress={() => {
-                RNAlert.alert(
-                  'Reject Order',
-                  'Are you sure you want to reject this order?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Reject', style: 'destructive', onPress: rejectOrder },
-                  ]
-                );
-              }}
+              onPress={() => setConfirmDialog({ visible: true, type: 'reject' })}
               loading={updating}
               variant="secondary"
               style={styles.actionButton}

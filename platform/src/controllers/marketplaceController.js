@@ -19,11 +19,18 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 // Public — list pharmacies accepting riders
 exports.listPharmacies = async (req, res, next) => {
     try {
-        const { city, area, lat, lng, radius_km } = req.query;
+        const { city, area, q, lat, lng, radius_km } = req.query;
 
         const conditions = ['pl.is_accepting_riders = true'];
         const params = [];
         let idx = 1;
+
+        // Name/area search
+        if (q) {
+            conditions.push(`(pl.display_name ILIKE $${idx} OR pl.area ILIKE $${idx} OR pl.city ILIKE $${idx})`);
+            params.push(`%${q}%`);
+            idx++;
+        }
 
         if (city) {
             conditions.push(`pl.city ILIKE $${idx}`);
@@ -40,7 +47,7 @@ exports.listPharmacies = async (req, res, next) => {
         const sql = `
             SELECT pl.id, pl.slug, pl.display_name, pl.city, pl.area,
                    pl.lat, pl.lng, pl.logo_url, pl.primary_color, pl.plan,
-                   u.store_name
+                   pl.is_accepting_riders, u.store_name
             FROM pharmacy_listings pl
             JOIN users u ON u.id = pl.id
             WHERE ${conditions.join(' AND ')}

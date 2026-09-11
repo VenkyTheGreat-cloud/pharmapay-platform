@@ -143,7 +143,7 @@ export default function DeliveryBoysPage() {
             await marketplaceAPI.approveWithTerms(approveModal.application.id, {
                 rate_per_km: parseFloat(approveForm.ratePerKm),
                 base_rate: parseFloat(approveForm.baseRate),
-                contract_period_months: months,
+                contract_period: months === 3 ? '3_months' : '6_months',
                 terms_notes: approveForm.termsNotes,
                 contract_start: today.toISOString().split('T')[0],
                 contract_end: endDate.toISOString().split('T')[0],

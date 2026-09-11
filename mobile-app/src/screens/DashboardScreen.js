@@ -28,13 +28,24 @@ const DashboardScreen = ({ navigation }) => {
 
   const loadData = useCallback(async () => {
     try {
-      const [ordersRes, statsRes] = await Promise.all([
+      const [ordersRes, paymentsRes] = await Promise.all([
         apiService.getMyOrders().catch(() => ({ data: [] })),
-        apiService.getPaymentStatistics().catch(() => ({ data: {} })),
+        apiService.getMyPayments().catch(() => ({ data: { payments: [] } })),
       ]);
       const orderData = ordersRes.data?.data?.orders || ordersRes.data?.data || ordersRes.data;
       setOrders(Array.isArray(orderData) ? orderData : []);
-      setStats(statsRes.data?.data || statsRes.data || {});
+
+      // Calculate today's earnings from own payments
+      const payments = paymentsRes.data?.payments || paymentsRes.data?.data?.payments || [];
+      const today = new Date().toISOString().split('T')[0];
+      const todayPayments = Array.isArray(payments)
+        ? payments.filter(p => p.created_at && p.created_at.startsWith(today))
+        : [];
+      const todayEarnings = todayPayments.reduce(
+        (sum, p) => sum + (parseFloat(p.cash_amount) || 0) + (parseFloat(p.bank_amount) || 0),
+        0
+      );
+      setStats({ totalEarnings: todayEarnings });
     } catch (err) {
       console.error('Dashboard load error:', err);
     } finally {
@@ -62,8 +73,9 @@ const DashboardScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const activeOrders = orders.filter(o => ['CREATED', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT'].includes(o.status));
-  const completedToday = orders.filter(o => o.status === 'DELIVERED');
+  const activeOrders = orders.filter(o => ['CREATED', 'ASSIGNED', 'ACCEPTED', 'PICKED_UP', 'IN_TRANSIT'].includes(o.status));
+  const today = new Date().toISOString().split('T')[0];
+  const completedToday = orders.filter(o => o.status === 'DELIVERED' && o.updated_at && o.updated_at.startsWith(today));
   const totalEarnings = stats.totalEarnings ?? stats.total_earnings ?? 0;
 
   if (loading) {
@@ -152,7 +164,7 @@ const DashboardScreen = ({ navigation }) => {
                 <Ionicons name="cube-outline" size={20} color={ACCENT} />
               </View>
               <View style={styles.orderInfo}>
-                <Text style={styles.orderNumber}>Order #{order.orderNumber || order.id}</Text>
+                <Text style={styles.orderNumber}>Order #{order.order_number || order.orderNumber || order.id}</Text>
                 <Text style={styles.orderAddress} numberOfLines={1}>
                   {order.customer_address || order.customer_name || 'Delivery'}
                 </Text>

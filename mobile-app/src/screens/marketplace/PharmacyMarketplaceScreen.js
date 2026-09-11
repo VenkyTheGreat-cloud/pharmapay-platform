@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,11 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import CONFIG from '../../config/api';
 
 const PharmacyMarketplaceScreen = ({ navigation }) => {
@@ -19,6 +20,8 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [applyingTo, setApplyingTo] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [confirmApply, setConfirmApply] = useState({ visible: false, pharmacyId: null, pharmacyName: '' });
 
   useEffect(() => {
     loadData();
@@ -83,6 +86,7 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
 
   const handleApply = async (pharmacyId) => {
     setApplyingTo(pharmacyId);
+    setConfirmApply({ visible: false, pharmacyId: null, pharmacyName: '' });
     try {
       const headers = await getAuthHeaders();
       const res = await fetch(`${CONFIG.API_URL}/marketplace/apply/${pharmacyId}`, {
@@ -92,18 +96,19 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
       const json = await res.json();
 
       if (res.status === 409) {
-        Alert.alert('Already Applied', json.error?.message || 'You have already applied to this pharmacy.');
+        // Already applied - just update state
+        setApplications((prev) => ({ ...prev, [pharmacyId]: 'pending' }));
         return;
       }
 
       if (!res.ok) {
-        Alert.alert('Error', json.error?.message || 'Something went wrong.');
+        console.error('Apply error:', json.error?.message);
         return;
       }
 
       setApplications((prev) => ({ ...prev, [pharmacyId]: 'pending' }));
     } catch (error) {
-      Alert.alert('Error', 'Could not connect to server.');
+      console.error('Could not connect to server:', error);
     } finally {
       setApplyingTo(null);
     }
@@ -114,9 +119,22 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
     loadData();
   }, []);
 
+  // Filter pharmacies by search query
+  const filteredPharmacies = useMemo(() => {
+    if (!searchQuery.trim()) return pharmacies;
+    const q = searchQuery.toLowerCase().trim();
+    return pharmacies.filter(
+      (p) =>
+        (p.display_name && p.display_name.toLowerCase().includes(q)) ||
+        (p.area && p.area.toLowerCase().includes(q)) ||
+        (p.city && p.city.toLowerCase().includes(q)) ||
+        (p.store_name && p.store_name.toLowerCase().includes(q))
+    );
+  }, [pharmacies, searchQuery]);
+
   // Split pharmacies into sections
-  const myPharmacies = pharmacies.filter((p) => applications[p.id] === 'approved');
-  const availablePharmacies = pharmacies.filter((p) => applications[p.id] !== 'approved');
+  const myPharmacies = filteredPharmacies.filter((p) => applications[p.id] === 'approved');
+  const availablePharmacies = filteredPharmacies.filter((p) => applications[p.id] !== 'approved');
 
   const sections = [];
   if (myPharmacies.length > 0) {
@@ -165,10 +183,15 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
     }
 
     // No application yet — show Send Request button
+    const pharmacy = pharmacies.find(p => p.id === pharmacyId);
     return (
       <TouchableOpacity
         style={styles.applyButton}
-        onPress={() => handleApply(pharmacyId)}
+        onPress={() => setConfirmApply({
+          visible: true,
+          pharmacyId,
+          pharmacyName: pharmacy?.display_name || 'this pharmacy',
+        })}
         disabled={applyingTo === pharmacyId}
       >
         {applyingTo === pharmacyId ? (
@@ -223,6 +246,43 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color="#9CA3AF" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or area..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+        {searchQuery.trim().length > 0 && (
+          <Text style={styles.resultCount}>
+            {filteredPharmacies.length} result{filteredPharmacies.length !== 1 ? 's' : ''} for "{searchQuery.trim()}"
+          </Text>
+        )}
+      </View>
+
+      {/* Confirm Apply Dialog */}
+      <ConfirmDialog
+        visible={confirmApply.visible}
+        title="Send Request"
+        message={`Do you want to send a delivery partner request to ${confirmApply.pharmacyName}?`}
+        confirmText="Send Request"
+        confirmVariant="primary"
+        icon="paper-plane-outline"
+        onConfirm={() => handleApply(confirmApply.pharmacyId)}
+        onCancel={() => setConfirmApply({ visible: false, pharmacyId: null, pharmacyName: '' })}
+      />
+
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -240,7 +300,11 @@ const PharmacyMarketplaceScreen = ({ navigation }) => {
         ListEmptyComponent={
           <View style={styles.centered}>
             <Ionicons name="storefront-outline" size={64} color="#D1D5DB" />
-            <Text style={styles.emptyText}>No pharmacies found in your area</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim()
+                ? `No pharmacies matching "${searchQuery.trim()}"`
+                : 'No pharmacies found in your area'}
+            </Text>
           </View>
         }
       />
@@ -263,6 +327,35 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: '#6B7280',
+  },
+  searchContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 40,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#111827',
+    marginLeft: 8,
+    paddingVertical: 0,
+  },
+  resultCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 6,
+    marginLeft: 4,
   },
   sectionHeader: {
     paddingHorizontal: 4,

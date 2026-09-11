@@ -35,13 +35,16 @@ export const formatCurrency = (amount) => {
 // Get order status color
 export const getOrderStatusColor = (status) => {
   const colors = {
-    [CONFIG.ORDER_STATUS.CREATED]: '#60A5FA', // light blue
+    [CONFIG.ORDER_STATUS.CREATED]: '#3B82F6', // blue
     [CONFIG.ORDER_STATUS.NEW]: '#3B82F6', // blue
-    [CONFIG.ORDER_STATUS.ASSIGNED]: '#8B5CF6', // purple
+    [CONFIG.ORDER_STATUS.ASSIGNED]: '#8B5CF6', // violet
+    [CONFIG.ORDER_STATUS.ACCEPTED]: '#06B6D4', // cyan
+    [CONFIG.ORDER_STATUS.REJECTED]: '#EF4444', // red
     [CONFIG.ORDER_STATUS.PICKED_UP]: '#F59E0B', // orange
-    [CONFIG.ORDER_STATUS.IN_TRANSIT]: '#139900', // green
-    [CONFIG.ORDER_STATUS.DELIVERED]: '#118500', // dark green
-    [CONFIG.ORDER_STATUS.CANCELLED]: '#EF4444', // red
+    [CONFIG.ORDER_STATUS.IN_TRANSIT]: '#EAB308', // gold
+    [CONFIG.ORDER_STATUS.PAYMENT_COLLECTION]: '#EC4899', // pink
+    [CONFIG.ORDER_STATUS.DELIVERED]: '#139900', // green
+    [CONFIG.ORDER_STATUS.CANCELLED]: '#6B7280', // grey
   };
   return colors[status] || '#6B7280';
 };
@@ -49,11 +52,14 @@ export const getOrderStatusColor = (status) => {
 // Get order status label
 export const getOrderStatusLabel = (status) => {
   const labels = {
-    [CONFIG.ORDER_STATUS.CREATED]: 'Created',
-    [CONFIG.ORDER_STATUS.NEW]: 'New',
+    [CONFIG.ORDER_STATUS.CREATED]: 'New Order',
+    [CONFIG.ORDER_STATUS.NEW]: 'New Order',
     [CONFIG.ORDER_STATUS.ASSIGNED]: 'Assigned',
+    [CONFIG.ORDER_STATUS.ACCEPTED]: 'Accepted',
+    [CONFIG.ORDER_STATUS.REJECTED]: 'Rejected',
     [CONFIG.ORDER_STATUS.PICKED_UP]: 'Picked Up',
     [CONFIG.ORDER_STATUS.IN_TRANSIT]: 'In Transit',
+    [CONFIG.ORDER_STATUS.PAYMENT_COLLECTION]: 'Payment Collection',
     [CONFIG.ORDER_STATUS.DELIVERED]: 'Delivered',
     [CONFIG.ORDER_STATUS.CANCELLED]: 'Cancelled',
   };

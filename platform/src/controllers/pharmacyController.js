@@ -548,13 +548,18 @@ exports.approvePharmacy = async (req, res, next) => {
         // Store config_json in database
         await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
 
-        // Auto-create pharmacy listing for marketplace
+        // Auto-create pharmacy listing for marketplace (populate city/area from owner's user record)
         const { query: dbQuery } = require('../config/database');
+        const ownerInfo = await dbQuery(`SELECT city, area, address FROM users WHERE id = $1`, [pharmacy.owner_id]);
+        const ownerCity = ownerInfo.rows[0]?.city || '';
+        const ownerArea = ownerInfo.rows[0]?.area || '';
         await dbQuery(
             `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)
-             VALUES ($4, $1, $2, '', '', true, $3, NOW())
-             ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3`,
-            [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id]
+             VALUES ($4, $1, $2, $5, $6, true, $3, NOW())
+             ON CONFLICT (slug) DO UPDATE SET display_name = $2, is_accepting_riders = true, plan = $3,
+                city = CASE WHEN pharmacy_listings.city = '' OR pharmacy_listings.city IS NULL THEN $5 ELSE pharmacy_listings.city END,
+                area = CASE WHEN pharmacy_listings.area = '' OR pharmacy_listings.area IS NULL THEN $6 ELSE pharmacy_listings.area END`,
+            [pharmacy.slug, pharmacy.app_name || pharmacy.name, pharmacy.plan, pharmacy.owner_id, ownerCity, ownerArea]
         );
 
         // Set subscription dates if not already set

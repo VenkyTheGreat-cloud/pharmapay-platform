@@ -350,7 +350,7 @@ export default function OrdersPage() {
                                 className="border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             >
                                 <option value="">All Status</option>
-                                <option value="CREATED">Created</option>
+                                <option value="CREATED">New Order</option>
                                 <option value="ASSIGNED">Assigned</option>
                                 <option value="ACCEPTED">Accepted</option>
                                 <option value="REJECTED">Rejected</option>
