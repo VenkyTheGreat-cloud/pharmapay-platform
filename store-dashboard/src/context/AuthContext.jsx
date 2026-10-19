@@ -10,11 +10,14 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in
-        const token = localStorage.getItem('store_token');
-        const savedUser = localStorage.getItem('store_user');
+        // Check sessionStorage first (current tab), then localStorage (persisted sessions)
+        const token = sessionStorage.getItem('store_token') || localStorage.getItem('store_token');
+        const savedUser = sessionStorage.getItem('store_user') || localStorage.getItem('store_user');
 
         if (token && savedUser) {
+            // Ensure sessionStorage has the token for this tab
+            sessionStorage.setItem('store_token', token);
+            sessionStorage.setItem('store_user', savedUser);
             const parsed = JSON.parse(savedUser);
             // Only allow store_manager role on the store dashboard
             if (parsed.role === 'store_manager') {
@@ -25,6 +28,8 @@ export const AuthProvider = ({ children }) => {
                     const subdomain = parts[0];
                     const userSlug = parsed.pharmacySlug || parsed.pharmacy_slug;
                     if (userSlug && subdomain !== userSlug) {
+                        sessionStorage.removeItem('store_token');
+                        sessionStorage.removeItem('store_user');
                         localStorage.removeItem('store_token');
                         localStorage.removeItem('store_refreshToken');
                         localStorage.removeItem('store_user');
@@ -36,6 +41,8 @@ export const AuthProvider = ({ children }) => {
                 }
             } else {
                 // Wrong role for this dashboard — clear stale credentials
+                sessionStorage.removeItem('store_token');
+                sessionStorage.removeItem('store_user');
                 localStorage.removeItem('store_token');
                 localStorage.removeItem('store_refreshToken');
                 localStorage.removeItem('store_user');
@@ -70,6 +77,10 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
+            // Store token in sessionStorage (cleared on browser close) for security
+            sessionStorage.setItem('store_token', token);
+            sessionStorage.setItem('store_user', JSON.stringify(user));
+            // Also keep in localStorage for tab-to-tab sharing
             localStorage.setItem('store_token', token);
             if (refreshToken) {
                 localStorage.setItem('store_refreshToken', refreshToken);
@@ -84,6 +95,8 @@ export const AuthProvider = ({ children }) => {
                 const subdomain = parts[0];
                 const userSlug = user.pharmacySlug || user.pharmacy_slug;
                 if (userSlug && subdomain !== userSlug) {
+                    sessionStorage.removeItem('store_token');
+                    sessionStorage.removeItem('store_user');
                     localStorage.removeItem('store_token');
                     localStorage.removeItem('store_refreshToken');
                     localStorage.removeItem('store_user');
@@ -106,10 +119,13 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await authAPI.logout();
+            const refreshToken = sessionStorage.getItem('store_refreshToken') || localStorage.getItem('store_refreshToken');
+            await authAPI.logout(refreshToken);
         } catch (e) {
             // Ignore errors - still proceed with local logout
         }
+        sessionStorage.removeItem('store_token');
+        sessionStorage.removeItem('store_user');
         localStorage.removeItem('store_token');
         localStorage.removeItem('store_refreshToken');
         localStorage.removeItem('store_user');
@@ -146,6 +162,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUser = (userData) => {
         const updatedUser = { ...user, ...userData };
+        sessionStorage.setItem('store_user', JSON.stringify(updatedUser));
         localStorage.setItem('store_user', JSON.stringify(updatedUser));
         setUser(updatedUser);
     };

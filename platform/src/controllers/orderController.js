@@ -874,9 +874,17 @@ exports.createOrder = async (req, res, next) => {
         } = req.body;
         const storeId = req.user.userId;
 
-        // Validate order number
-        if (!orderNumber || orderNumber.trim() === '') {
-            return res.status(400).json(errorResponse('VALIDATION_ERROR', 'Order number is required'));
+        // Auto-generate order number if not provided
+        let finalOrderNumber = orderNumber ? orderNumber.trim() : null;
+        if (!finalOrderNumber) {
+            const { query: dbQuery } = require('../config/database');
+            const seqResult = await dbQuery(
+                `SELECT COALESCE(MAX(CAST(NULLIF(regexp_replace(order_number, '[^0-9]', '', 'g'), '') AS INTEGER)), 0) + 1 AS next_num
+                 FROM orders WHERE store_id = $1`,
+                [storeId]
+            );
+            const nextNum = seqResult.rows[0]?.next_num || 1;
+            finalOrderNumber = `ORD-${String(nextNum).padStart(4, '0')}`;
         }
 
         // Validate total amount
@@ -1022,7 +1030,7 @@ exports.createOrder = async (req, res, next) => {
             // Check if order number already exists for this store
             const existingOrder = await client.query(
                 'SELECT id FROM orders WHERE order_number = $1 AND store_id = $2',
-                [orderNumber.trim(), storeId]
+                [finalOrderNumber, storeId]
             );
             if (existingOrder.rowCount > 0) {
                 throw new Error('DUPLICATE_ORDER_NUMBER');
@@ -1031,7 +1039,7 @@ exports.createOrder = async (req, res, next) => {
             // Use customer address if available, otherwise use area as fallback
             const customerAddress = customer.address || customer.area || '';
 
-            // Create order with provided order number
+            // Create order with order number (auto-generated or user-provided)
             // Status is 'CREATED' (no delivery boy assigned yet - available to all delivery boys under admin)
             const orderResult = await client.query(
                 `INSERT INTO orders (order_number, customer_id, assigned_delivery_boy_id, store_id,
@@ -1040,7 +1048,7 @@ exports.createOrder = async (req, res, next) => {
                                     return_items, return_adjust_amount)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'CREATED', $11, $12, $13, $14, $15)
                  RETURNING *`,
-                [orderNumber.trim(), customerId, null, storeId,
+                [finalOrderNumber, customerId, null, storeId,
                 customer.name, customer.mobile, customerAddress || null, customer.customer_lat, customer.customer_lng,
                     totalAmountNum, initialPaymentStatus, normalizedPaymentMode, customerCommentsVal,
                     returnItemsFlag, returnAdjustAmountNum]

@@ -50,9 +50,20 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const [customerUpdateErrors, setCustomerUpdateErrors] = useState({});
     const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
 
+    // Auto-generate order number
+    const generateOrderNumber = () => {
+        const now = new Date();
+        const ts = String(now.getHours()).padStart(2, '0') +
+            String(now.getMinutes()).padStart(2, '0') +
+            String(now.getSeconds()).padStart(2, '0') +
+            String(Math.floor(Math.random() * 100)).padStart(2, '0');
+        return ts;
+    };
+
     useEffect(() => {
         if (isOpen) {
             setLoading(true);
+            setFormData(prev => ({ ...prev, orderNumber: generateOrderNumber() }));
             loadCustomers()
                 .finally(() => setLoading(false));
         } else {
@@ -440,9 +451,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
     const validate = () => {
         const newErrors = {};
 
-        if (!formData.orderNumber || !formData.orderNumber.trim()) {
-            newErrors.orderNumber = 'Order Number is required';
-        } else if (!/^\d{1,8}$/.test(formData.orderNumber.trim())) {
+        if (formData.orderNumber && formData.orderNumber.trim() && !/^\d{1,8}$/.test(formData.orderNumber.trim())) {
             newErrors.orderNumber = 'Order Number must be between 1 and 8 digits';
         }
 
@@ -520,10 +529,12 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
         setIsSubmitting(true);
         try {
             const submitData = {
-                orderNumber: formData.orderNumber.trim(),
                 customerId: parseInt(formData.customerId),
                 totalAmount: parseFloat(formData.totalAmount),
             };
+            if (formData.orderNumber && formData.orderNumber.trim()) {
+                submitData.orderNumber = formData.orderNumber.trim();
+            }
 
             // Add deliveryBoyId only if provided (optional)
             if (formData.deliveryBoyId) {
@@ -621,7 +632,7 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                             {/* Order Number */}
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Order Number <span className="text-red-500">*</span>
+                                    Order Number <span className="text-gray-400 text-xs font-normal">(auto-generated if empty)</span>
                                 </label>
                                 <input
                                     type="text"
@@ -629,11 +640,10 @@ export default function CreateOrderModal({ isOpen, onClose, onSuccess }) {
                                     value={formData.orderNumber}
                                     onChange={handleChange}
                                     maxLength="8"
-                                    pattern="[0-9]{1,8}"
                                     inputMode="numeric"
                                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.orderNumber ? 'border-red-500' : 'border-gray-300'
                                         }`}
-                                    placeholder="Enter 1-8 digit order number"
+                                    placeholder="Leave empty to auto-generate"
                                     disabled={isSubmitting}
                                 />
                                 {errors.orderNumber && (

@@ -10,10 +10,14 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('admin_token');
-        const savedUser = localStorage.getItem('admin_user');
+        // Check sessionStorage first (current tab), then localStorage (persisted sessions)
+        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
+        const savedUser = sessionStorage.getItem('admin_user') || localStorage.getItem('admin_user');
 
         if (token && savedUser) {
+            // Ensure sessionStorage has the token for this tab
+            sessionStorage.setItem('admin_token', token);
+            sessionStorage.setItem('admin_user', savedUser);
             const parsed = JSON.parse(savedUser);
             // Only allow admin/super_admin role on the admin dashboard
             if (parsed.role === 'admin' || parsed.role === 'super_admin') {
@@ -24,6 +28,8 @@ export const AuthProvider = ({ children }) => {
                     const subdomain = parts[0];
                     const userSlug = parsed.pharmacySlug || parsed.pharmacy_slug;
                     if (userSlug && subdomain !== userSlug && parsed.role !== 'super_admin') {
+                        sessionStorage.removeItem('admin_token');
+                        sessionStorage.removeItem('admin_user');
                         localStorage.removeItem('admin_token');
                         localStorage.removeItem('admin_refreshToken');
                         localStorage.removeItem('admin_user');
@@ -35,6 +41,8 @@ export const AuthProvider = ({ children }) => {
                 }
             } else {
                 // Wrong role for this dashboard — clear stale credentials
+                sessionStorage.removeItem('admin_token');
+                sessionStorage.removeItem('admin_user');
                 localStorage.removeItem('admin_token');
                 localStorage.removeItem('admin_refreshToken');
                 localStorage.removeItem('admin_user');
@@ -68,6 +76,10 @@ export const AuthProvider = ({ children }) => {
                 };
             }
 
+            // Store token in sessionStorage (cleared on browser close) for security
+            sessionStorage.setItem('admin_token', token);
+            sessionStorage.setItem('admin_user', JSON.stringify(user));
+            // Also keep in localStorage for tab-to-tab sharing
             localStorage.setItem('admin_token', token);
             if (refreshToken) {
                 localStorage.setItem('admin_refreshToken', refreshToken);
@@ -82,6 +94,8 @@ export const AuthProvider = ({ children }) => {
                 const subdomain = parts[0];
                 const userSlug = user.pharmacySlug || user.pharmacy_slug;
                 if (userSlug && subdomain !== userSlug && user.role !== 'super_admin') {
+                    sessionStorage.removeItem('admin_token');
+                    sessionStorage.removeItem('admin_user');
                     localStorage.removeItem('admin_token');
                     localStorage.removeItem('admin_refreshToken');
                     localStorage.removeItem('admin_user');
@@ -104,10 +118,13 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await authAPI.logout();
+            const refreshToken = sessionStorage.getItem('admin_refreshToken') || localStorage.getItem('admin_refreshToken');
+            await authAPI.logout(refreshToken);
         } catch (e) {
             // Ignore errors - still proceed with local logout
         }
+        sessionStorage.removeItem('admin_token');
+        sessionStorage.removeItem('admin_user');
         localStorage.removeItem('admin_token');
         localStorage.removeItem('admin_refreshToken');
         localStorage.removeItem('admin_user');
@@ -134,6 +151,7 @@ export const AuthProvider = ({ children }) => {
 
     const updateUser = (userData) => {
         const updatedUser = { ...user, ...userData };
+        sessionStorage.setItem('admin_user', JSON.stringify(updatedUser));
         localStorage.setItem('admin_user', JSON.stringify(updatedUser));
         setUser(updatedUser);
     };

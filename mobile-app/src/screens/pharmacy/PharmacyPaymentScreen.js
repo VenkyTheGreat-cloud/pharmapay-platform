@@ -155,8 +155,16 @@ const PharmacyPaymentScreen = ({ navigation }) => {
               <Text style={styles.successValue}>{planInfo.name}</Text>
             </View>
             <View style={styles.successRow}>
-              <Text style={styles.successLabel}>Amount Paid</Text>
-              <Text style={styles.successValue}>₹{(planInfo.price + planInfo.setup).toLocaleString('en-IN')}</Text>
+              <Text style={styles.successLabel}>Monthly Subscription</Text>
+              <Text style={styles.successValue}>₹{planInfo.price.toLocaleString('en-IN')}</Text>
+            </View>
+            <View style={styles.successRow}>
+              <Text style={styles.successLabel}>Setup Fee</Text>
+              <Text style={styles.successValue}>₹{planInfo.setup.toLocaleString('en-IN')}</Text>
+            </View>
+            <View style={styles.successRow}>
+              <Text style={[styles.successLabel, { fontWeight: '700' }]}>Total Paid</Text>
+              <Text style={[styles.successValue, { fontWeight: '700', color: '#139900' }]}>₹{(planInfo.price + planInfo.setup).toLocaleString('en-IN')}</Text>
             </View>
             {paymentId ? (
               <View style={styles.successRow}>

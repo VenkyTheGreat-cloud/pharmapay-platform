@@ -18,6 +18,7 @@ const PLANS = [
     id: 'starter',
     name: 'Starter',
     price: 999,
+    setup: 2000,
     description: 'Perfect for small pharmacies',
     highlights: ['Online ordering', 'Basic analytics', 'Up to 100 products'],
   },
@@ -25,6 +26,7 @@ const PLANS = [
     id: 'growth',
     name: 'Growth',
     price: 2499,
+    setup: 5000,
     popular: true,
     description: 'For growing pharmacies',
     highlights: ['Everything in Starter', 'Delivery tracking', 'Up to 1,000 products', 'Priority support'],
@@ -33,6 +35,7 @@ const PLANS = [
     id: 'enterprise',
     name: 'Enterprise',
     price: 5999,
+    setup: 10000,
     description: 'Full-featured platform',
     highlights: ['Everything in Growth', 'Custom domain', 'Unlimited products', 'API access'],
   },
@@ -41,10 +44,10 @@ const PLANS = [
 // Feature-to-plan mapping: minimum plan required for each feature
 const FEATURE_TOGGLES = [
   { key: 'online_ordering', label: 'Online Ordering', description: 'Accept orders from customers online', minPlan: 'starter', group: 'Core Operations' },
-  { key: 'inventory_management', label: 'Inventory Management', description: 'Track stock levels automatically', minPlan: 'growth', group: 'Core Operations' },
-  { key: 'delivery_tracking', label: 'Delivery Tracking', description: 'Real-time order tracking for customers', minPlan: 'growth', group: 'Customer Experience' },
-  { key: 'customer_notifications', label: 'Customer Notifications', description: 'Send SMS/push notifications', minPlan: 'growth', group: 'Customer Experience' },
-  { key: 'analytics_dashboard', label: 'Analytics Dashboard', description: 'View sales and performance data', minPlan: 'enterprise', group: 'Advanced Analytics' },
+  { key: 'inventory_management', label: 'Inventory Management (Coming Soon)', description: 'Track stock levels automatically', minPlan: 'growth', group: 'Core Operations', comingSoon: true },
+  { key: 'delivery_tracking', label: 'Delivery Tracking (Coming Soon)', description: 'Real-time order tracking for customers', minPlan: 'growth', group: 'Customer Experience', comingSoon: true },
+  { key: 'customer_notifications', label: 'Customer Notifications (Coming Soon)', description: 'Send SMS/push notifications', minPlan: 'growth', group: 'Customer Experience', comingSoon: true },
+  { key: 'analytics_dashboard', label: 'Analytics Dashboard (Coming Soon)', description: 'View sales and performance data', minPlan: 'enterprise', group: 'Advanced Analytics', comingSoon: true },
 ];
 
 const PLAN_RANK = { starter: 0, growth: 1, enterprise: 2 };
@@ -96,7 +99,7 @@ const PharmacyConfigureScreen = ({ navigation }) => {
 
   const toggleFeature = (key) => {
     const feat = FEATURE_TOGGLES.find(f => f.key === key);
-    if (!feat) return;
+    if (!feat || feat.comingSoon) return; // Coming soon features can't be toggled
     const allowed = PLAN_RANK[selectedPlan] >= PLAN_RANK[feat.minPlan];
     if (!allowed) return; // Locked — can't toggle
     setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -160,6 +163,9 @@ const PharmacyConfigureScreen = ({ navigation }) => {
               ₹{plan.price.toLocaleString('en-IN')}
               <Text style={styles.planPricePer}>/mo</Text>
             </Text>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
+              + ₹{plan.setup.toLocaleString('en-IN')} one-time setup fee
+            </Text>
             <Text style={styles.planDesc}>{plan.description}</Text>
             {plan.highlights.map((f, i) => (
               <Text key={i} style={styles.planFeature}>✓ {f}</Text>
@@ -181,22 +187,23 @@ const PharmacyConfigureScreen = ({ navigation }) => {
           {groupFeatures.map((feat) => {
             const locked = isFeatureLocked(feat);
             return (
-              <View key={feat.key} style={[styles.featureRow, locked && styles.featureRowLocked]}>
+              <View key={feat.key} style={[styles.featureRow, (locked || feat.comingSoon) && styles.featureRowLocked]}>
                 <View style={styles.featureInfo}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[styles.featureLabel, locked && styles.featureLabelLocked]}>{feat.label}</Text>
-                    {locked && <Text style={styles.lockIcon}>🔒</Text>}
+                    <Text style={[styles.featureLabel, (locked || feat.comingSoon) && styles.featureLabelLocked]}>{feat.label.replace(' (Coming Soon)', '')}</Text>
+                    {feat.comingSoon && <View style={{ backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FDE68A', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: '#92400E', fontSize: 9, fontWeight: '700' }}>COMING SOON</Text></View>}
+                    {locked && !feat.comingSoon && <Text style={styles.lockIcon}>🔒</Text>}
                   </View>
-                  <Text style={[styles.featureDesc, locked && styles.featureDescLocked]}>
-                    {locked ? `Requires ${getRequiredPlan(feat)} Plan` : feat.description}
+                  <Text style={[styles.featureDesc, (locked || feat.comingSoon) && styles.featureDescLocked]}>
+                    {feat.comingSoon ? 'This feature is under development' : locked ? `Requires ${getRequiredPlan(feat)} Plan` : feat.description}
                   </Text>
                 </View>
                 <Switch
                   value={features[feat.key]}
                   onValueChange={() => toggleFeature(feat.key)}
-                  disabled={locked}
+                  disabled={locked || feat.comingSoon}
                   trackColor={{ false: '#D1D5DB', true: '#99e0dc' }}
-                  thumbColor={locked ? '#ccc' : features[feat.key] ? '#139900' : '#f4f3f4'}
+                  thumbColor={(locked || feat.comingSoon) ? '#ccc' : features[feat.key] ? '#139900' : '#f4f3f4'}
                 />
               </View>
             );

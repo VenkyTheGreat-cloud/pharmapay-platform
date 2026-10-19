@@ -14,6 +14,7 @@ import apiService from '../../services/api';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import Alert from '../../components/Alert';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { formatCurrency, handleApiError } from '../../utils/helpers';
 import CONFIG from '../../config/api';
 
@@ -32,6 +33,7 @@ const PaymentScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const paymentModes = [
     { key: CONFIG.PAYMENT_MODES.CASH, label: 'Cash', icon: 'cash-outline' },
@@ -149,15 +151,7 @@ const PaymentScreen = ({ route, navigation }) => {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
-    RNAlert.alert(
-      'Confirm Payment',
-      'Are you sure you want to record this payment?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: submitPayment },
-      ]
-    );
+    setShowConfirm(true);
   };
 
   const submitPayment = async () => {
@@ -328,6 +322,18 @@ const PaymentScreen = ({ route, navigation }) => {
           <Text style={styles.errorText}>{errors.receipt}</Text>
         )}
       </View>
+
+      {/* Confirm Payment Dialog */}
+      <ConfirmDialog
+        visible={showConfirm}
+        title="Confirm Payment"
+        message="Are you sure you want to record this payment?"
+        confirmText="Confirm"
+        confirmVariant="success"
+        icon="card-outline"
+        onConfirm={() => { setShowConfirm(false); submitPayment(); }}
+        onCancel={() => setShowConfirm(false)}
+      />
 
       {/* Submit Button */}
       <Button

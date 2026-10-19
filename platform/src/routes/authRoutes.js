@@ -63,5 +63,6 @@ router.put('/profile', authenticateToken, authController.updateProfile);
 router.post('/change-password', authenticateToken, authController.changePassword);
 router.get('/verify', authenticateToken, authController.verify);
 router.post('/logout', authenticateToken, authController.logout);
+router.post('/logout-all', authenticateToken, authController.logoutAllSessions);
 
 module.exports = router;

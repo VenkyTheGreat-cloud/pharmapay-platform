@@ -690,6 +690,20 @@ exports.logout = async (req, res, next) => {
     }
 };
 
+// Logout all other sessions (revoke all refresh tokens for this user)
+exports.logoutAllSessions = async (req, res, next) => {
+    try {
+        const RefreshToken = require('../models/RefreshToken');
+        const count = await RefreshToken.revokeAll(req.user.userId);
+
+        logger.info('User revoked all sessions', { userId: req.user.userId, revokedCount: count });
+
+        res.json(successResponse({ revokedSessions: count }, 'All other sessions have been signed out'));
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Refresh token
 exports.refreshToken = async (req, res, next) => {
     try {

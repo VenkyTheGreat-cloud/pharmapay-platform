@@ -61,7 +61,7 @@ const HomeRouter = ({ navigation }) => {
                 } else if (status === 'submitted' || status === 'approved' || status === 'building') {
                     navigation.replace('PharmacyStatus');
                 } else if (status === 'live') {
-                    navigation.replace('PharmacyStatus');
+                    navigation.replace('AdminPanel');
                 } else {
                     navigation.replace('PharmacyConfigure');
                 }

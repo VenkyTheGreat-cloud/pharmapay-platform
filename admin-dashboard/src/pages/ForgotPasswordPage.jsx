@@ -302,7 +302,7 @@ export default function ForgotPasswordPage() {
                                             className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                                             tabIndex={-1}
                                         >
-                                            {showNewPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                            {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
                                 </div>
@@ -324,7 +324,7 @@ export default function ForgotPasswordPage() {
                                             className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                                             tabIndex={-1}
                                         >
-                                            {showConfirmPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
                                     </div>
                                 </div>

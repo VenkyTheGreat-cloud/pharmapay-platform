@@ -51,7 +51,7 @@ const LoginScreen = ({ navigation }) => {
     if (!validateForm()) return;
     setLoading(true);
     setError('');
-    const result = await login(email.trim(), password, role);
+    const result = await login(email.trim().toLowerCase(), password, role);
     setLoading(false);
     if (!result.success) setError(result.message || 'Login failed.');
   };
@@ -114,7 +114,7 @@ const LoginScreen = ({ navigation }) => {
                 />
                 <TextInput
                   style={[styles.input, { paddingLeft: 40 }]}
-                  placeholder={role === 'partner' ? '+91 98765 43210' : 'owner@pharmacy.com'}
+                  placeholder={role === 'partner' ? '+91 98765 43210' : 'Email address or mobile number'}
                   placeholderTextColor="#9CA3AF"
                   value={email}
                   onChangeText={(t) => { setEmail(t); setErrors({ ...errors, email: '' }); setError(''); }}

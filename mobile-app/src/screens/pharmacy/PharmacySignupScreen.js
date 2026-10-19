@@ -192,7 +192,7 @@ const PharmacySignupScreen = ({ navigation }) => {
             autoComplete="new-password"
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-            <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+            <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
           </TouchableOpacity>
         </View>
         <PasswordStrength password={form.password} accentColor={ACCENT} />
@@ -212,7 +212,7 @@ const PharmacySignupScreen = ({ navigation }) => {
             secureTextEntry={!showConfirm}
           />
           <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={styles.eyeBtn}>
-            <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+            <Ionicons name={showConfirm ? 'eye-outline' : 'eye-off-outline'} size={20} color="#6B7280" />
           </TouchableOpacity>
         </View>
         {form.confirmPassword.length > 0 && form.password === form.confirmPassword && (

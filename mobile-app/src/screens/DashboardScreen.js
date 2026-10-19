@@ -129,7 +129,7 @@ const DashboardScreen = ({ navigation }) => {
         />
         <StatCard
           title="Rating"
-          value={completedToday.length > 0 ? (stats.rating || '-') : 'New'}
+          value={orders.some(o => o.status === 'DELIVERED') ? (stats.rating || '-') : 'New'}
           icon="star-outline"
           color="#8B5CF6"
         />
@@ -146,9 +146,21 @@ const DashboardScreen = ({ navigation }) => {
 
         {activeOrders.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="checkmark-done-circle" size={40} color="#139900" />
-            <Text style={styles.emptyTitle}>All caught up!</Text>
-            <Text style={styles.emptyDesc}>No active deliveries right now.</Text>
+            <Ionicons name={orders.length === 0 ? 'rocket-outline' : 'checkmark-done-circle'} size={40} color="#139900" />
+            <Text style={styles.emptyTitle}>{orders.length === 0 ? "You're all set!" : 'All caught up!'}</Text>
+            <Text style={styles.emptyDesc}>
+              {orders.length === 0
+                ? 'No deliveries yet — your assigned orders will appear here.'
+                : 'No active deliveries right now.'}
+            </Text>
+            {orders.length === 0 && (
+              <TouchableOpacity
+                style={{ marginTop: 12, backgroundColor: ACCENT, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 }}
+                onPress={() => navigation.navigate('Pharmacies')}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Browse Pharmacies</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           activeOrders.slice(0, 4).map((order) => (
