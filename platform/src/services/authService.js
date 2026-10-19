@@ -56,7 +56,8 @@ class AuthService {
 
     // Register delivery boy
     static async registerDeliveryBoy(data) {
-        const { name, mobile, email, password, address, store_id } = data;
+        const { name, mobile, password, address, store_id } = data;
+        const email = data.email ? data.email.trim().toLowerCase() : null;
 
         // Check if mobile already exists
         const existingDeliveryBoyByMobile = await DeliveryBoy.findByMobile(mobile);

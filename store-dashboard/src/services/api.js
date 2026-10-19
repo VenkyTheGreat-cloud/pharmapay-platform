@@ -19,7 +19,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('store_token');
+        const token = sessionStorage.getItem('store_token') || localStorage.getItem('store_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -181,7 +181,12 @@ export const authAPI = {
         if (API_DISABLED) {
             return mockResolve({ success: true, message: 'Logged out (mock)' });
         }
-        return api.post('/auth/logout');
+        const refreshToken = sessionStorage.getItem('store_refreshToken') || localStorage.getItem('store_refreshToken');
+        return api.post('/auth/logout', { refreshToken });
+    },
+    logoutAllSessions: () => {
+        if (API_DISABLED) return mockResolve({ success: true });
+        return api.post('/auth/logout-all');
     },
     forgotPasswordSendCode: (identifier) => {
         if (API_DISABLED) {

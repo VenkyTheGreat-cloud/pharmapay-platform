@@ -101,22 +101,27 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Rate limiting for login endpoints — keyed by user identifier (not IP) so shared connections aren't locked out
-const loginLimiter = rateLimit({
+// Rate limiting for auth endpoints — keyed by user identifier (not IP) so shared connections aren't locked out
+const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // 10 attempts per window
-    message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many login attempts. Please try again after 15 minutes.' } },
+    message: { success: false, error: { code: 'RATE_LIMIT', message: 'Too many attempts. Please try again after 15 minutes.' } },
     standardHeaders: true,
     legacyHeaders: false,
     validate: { xForwardedForHeader: false },
     keyGenerator: (req) => {
-        const identifier = req.body?.mobileEmail || req.body?.identifier || '';
+        const identifier = req.body?.mobileEmail || req.body?.identifier || req.body?.email || req.body?.mobile || '';
         // Use identifier if available, fall back to IP only as last resort
         return identifier ? `user:${identifier.toLowerCase()}` : req.ip;
     },
     skipSuccessfulRequests: true, // Only count failed attempts
 });
-app.use('/api/auth/login', loginLimiter);
+// Apply rate limiting to all password/authentication endpoints
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth/change-password', authLimiter);
+app.use('/api/auth/otp', authLimiter);
 
 // API routes
 app.use('/api/auth', authRoutes);

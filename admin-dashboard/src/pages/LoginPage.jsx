@@ -82,7 +82,7 @@ export default function LoginPage() {
                                     className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                                     tabIndex={-1}
                                 >
-                                    {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
                         </div>

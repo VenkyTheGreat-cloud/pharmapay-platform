@@ -111,11 +111,10 @@ const PharmacyStatusScreen = ({ navigation }) => {
       {/* Navigation */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <TouchableOpacity onPress={() => {
-          logout();
           if (Platform.OS === 'web' && typeof window !== 'undefined') {
-            window.location.href = '/';
+            window.location.href = '/home';
           } else {
-            navigation.reset({ index: 0, routes: [{ name: 'Landing' }] });
+            navigation.reset({ index: 0, routes: [{ name: 'HomeRouter' }] });
           }
         }} activeOpacity={0.5} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <Text style={{ fontSize: 16, color: '#139900', fontWeight: '600' }}>← Back to Home</Text>

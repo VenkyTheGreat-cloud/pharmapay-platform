@@ -18,6 +18,8 @@ export default function CustomersPage() {
     const [showViewModal, setShowViewModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 25;
 
     useEffect(() => {
         loadCustomers();
@@ -147,13 +149,18 @@ export default function CustomersPage() {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                if (!e.target.value.trim()) {
+                                const val = e.target.value;
+                                setSearchQuery(val);
+                                if (!val.trim()) {
                                     loadCustomers();
+                                } else if (val.trim().length >= 2) {
+                                    // Debounced live search
+                                    clearTimeout(window._customerSearchTimer);
+                                    window._customerSearchTimer = setTimeout(() => handleSearch(), 400);
                                 }
                             }}
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            placeholder="Search by name or mobile"
+                            placeholder="Search by name or mobile (min 2 characters)"
                             className="w-full pl-10 pr-8 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
                         {searchQuery && (
@@ -220,10 +227,10 @@ export default function CustomersPage() {
                                     </td>
                                 </tr>
                             ) : (
-                                customers.map((customer, index) => (
+                                customers.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((customer, index) => (
                                     <tr key={customer.id} className="hover:bg-primary-50 transition-colors border-b border-gray-100">
                                         <td className="px-4 py-3 text-xs font-medium text-gray-900 text-center">
-                                            {index + 1}
+                                            {(currentPage - 1) * pageSize + index + 1}
                                         </td>
                                         <td className="px-6 py-3 whitespace-nowrap">
                                             <div className="text-xs font-medium text-gray-900">
@@ -275,6 +282,33 @@ export default function CustomersPage() {
                         </tbody>
                     </table>
                     </div>
+                    {/* Pagination */}
+                    {customers.length > pageSize && (
+                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-500">
+                                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, customers.length)} of {customers.length}
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1 text-xs border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                    Previous
+                                </button>
+                                <span className="px-3 py-1 text-xs text-gray-600">
+                                    Page {currentPage} of {Math.ceil(customers.length / pageSize)}
+                                </span>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(customers.length / pageSize), p + 1))}
+                                    disabled={currentPage >= Math.ceil(customers.length / pageSize)}
+                                    className="px-3 py-1 text-xs border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

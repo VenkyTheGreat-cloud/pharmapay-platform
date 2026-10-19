@@ -92,14 +92,14 @@ const MyPharmaciesScreen = () => {
         {item.rate_per_km != null && (
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Rate per KM</Text>
-            <Text style={styles.detailValue}>Rs. {item.rate_per_km}</Text>
+            <Text style={styles.detailValue}>₹{item.rate_per_km}</Text>
           </View>
         )}
 
         {item.base_rate != null && (
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Base Rate</Text>
-            <Text style={styles.detailValue}>Rs. {item.base_rate}</Text>
+            <Text style={styles.detailValue}>₹{item.base_rate}</Text>
           </View>
         )}
 

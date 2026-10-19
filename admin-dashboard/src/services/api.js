@@ -16,7 +16,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('admin_token');
+        const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -106,7 +106,8 @@ const realAuthAPI = {
     getProfile: () => api.get('/auth/profile'),
     updateProfile: (data) => api.put('/auth/profile', data),
     changePassword: (data) => api.post('/auth/change-password', data),
-    logout: () => api.post('/auth/logout'),
+    logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
+    logoutAllSessions: () => api.post('/auth/logout-all'),
     verifyToken: () => api.get('/auth/verify'),
     forgotPasswordSendCode: (identifier) =>
         api.post('/auth/forgot-password/send-code', { identifier }),

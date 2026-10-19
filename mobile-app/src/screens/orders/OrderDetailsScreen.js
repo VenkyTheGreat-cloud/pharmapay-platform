@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Linking,
+  Alert as RNAlert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +37,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [returnItemsPhoto, setReturnItemsPhoto] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState({ visible: false, type: null });
+  const [confirmDialog, setConfirmDialog] = useState({ visible: false, type: null, status: null });
 
   useEffect(() => {
     fetchOrderDetails();
@@ -91,14 +92,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
       return;
     }
 
-    RNAlert.alert(
-      'Update Status',
-      `Are you sure you want to update status to "${getOrderStatusLabel(newStatus)}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Update', onPress: () => updateStatus(newStatus) },
-      ]
-    );
+    setConfirmDialog({ visible: true, type: 'status', status: newStatus });
   };
 
   const pickImage = async () => {
@@ -435,6 +429,16 @@ const OrderDetailsScreen = ({ route, navigation }) => {
         confirmVariant="danger"
         icon="close-circle-outline"
         onConfirm={() => { setConfirmDialog({ visible: false, type: null }); rejectOrder(); }}
+        onCancel={() => setConfirmDialog({ visible: false, type: null })}
+      />
+      <ConfirmDialog
+        visible={confirmDialog.visible && confirmDialog.type === 'status'}
+        title="Update Status"
+        message={`Are you sure you want to update status to "${confirmDialog.status ? getOrderStatusLabel(confirmDialog.status) : ''}"?`}
+        confirmText="Update"
+        confirmVariant="primary"
+        icon="swap-horizontal-outline"
+        onConfirm={() => { const s = confirmDialog.status; setConfirmDialog({ visible: false, type: null }); updateStatus(s); }}
         onCancel={() => setConfirmDialog({ visible: false, type: null })}
       />
 

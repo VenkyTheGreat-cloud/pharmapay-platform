@@ -13,7 +13,8 @@ const RESERVED_SLUGS = ['pharmapay', 'portal', 'admin', 'api', 'www', 'mail', 'f
 // Signup - register pharmacy owner and pharmacy
 exports.signup = async (req, res, next) => {
     try {
-        const { ownerName, email, mobile, password, pharmacyName, slug } = req.body;
+        const { ownerName, mobile, password, pharmacyName, slug } = req.body;
+        const email = req.body.email ? req.body.email.trim().toLowerCase() : null;
 
         // Validate slug format
         if (!SLUG_REGEX.test(slug)) {
@@ -548,11 +549,15 @@ exports.approvePharmacy = async (req, res, next) => {
         // Store config_json in database
         await Pharmacy.updateConfig(pharmacy.id, { config_json: tenantConfig });
 
-        // Auto-create pharmacy listing for marketplace (populate city/area from owner's user record)
+        // Auto-create pharmacy listing for marketplace (populate city/area from owner's user record or pharmacy config)
         const { query: dbQuery } = require('../config/database');
         const ownerInfo = await dbQuery(`SELECT city, area, address FROM users WHERE id = $1`, [pharmacy.owner_id]);
-        const ownerCity = ownerInfo.rows[0]?.city || '';
-        const ownerArea = ownerInfo.rows[0]?.area || '';
+        const ownerRow = ownerInfo.rows[0] || {};
+        // Use pharmacy config city/area, or owner's user record, or extract from address as last resort
+        const configCity = pharmacy.config_json?.city || '';
+        const configArea = pharmacy.config_json?.area || '';
+        const ownerCity = configCity || ownerRow.city || '';
+        const ownerArea = configArea || ownerRow.area || ownerRow.address || '';
         await dbQuery(
             `INSERT INTO pharmacy_listings (id, slug, display_name, city, area, is_accepting_riders, plan, created_at)
              VALUES ($4, $1, $2, $5, $6, true, $3, NOW())
